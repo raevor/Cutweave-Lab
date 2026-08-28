@@ -1,0 +1,181 @@
+# See https://git-scm.com/docs/gitignore for pattern rules.
+# Keep product source, polished English project documentation and intentionally
+# prepared TestSprite evidence public. Keep the private strategy, user media,
+# credentials and raw local artifacts below off GitHub from the first commit.
+
+# -----------------------------------------------------------------------------
+# Private Cutweave strategy and personal working files — never publish
+# -----------------------------------------------------------------------------
+
+/FullStackGuide.md
+/CUTWEAVE_LAB_MASTER_GUIDE.md
+/CLAUDE.md
+/private-notes/
+/notes-private/
+/research-private/
+/*_PRIVATE.md
+/*-PRIVATE.md
+/private-*.md
+/AUDIT*.md
+/DECISIONS.md
+/HACKATHON-PLAN.md
+/MOTION_SPEC.md
+/QUALITY_BAR.md
+/STORYBOARD.md
+/X-POST.md
+/deep-research-report*.md
+/uiuxgpt.md
+/geminiresearch.md
+/discord.txt
+
+# AGENTS.md and TASKS.md are intentional English project documents. Nora makes
+# its equivalent agent rules, specs and task records public as development proof.
+
+# Local AI/IDE state may contain machine paths, conversation history or keys.
+/.agents/
+/.codex/
+/.cursor/
+/.idea/
+
+# Allow intentionally authored public skills/specs while excluding private state.
+/.claude/settings.json
+/.claude/settings.local.json
+/.claude/projects/
+/.claude/history/
+/.claude/cache/
+/.kiro/settings/
+
+# Editor state stays local. If a shared workspace file is needed later, review it
+# first and add a narrow exception instead of publishing this directory wholesale.
+/.vscode/
+
+# -----------------------------------------------------------------------------
+# Environment files, credentials and local databases
+# -----------------------------------------------------------------------------
+
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.sqlite
+*.sqlite3
+*.db
+
+# -----------------------------------------------------------------------------
+# Dependencies and package-manager state
+# -----------------------------------------------------------------------------
+
+/node_modules/
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+/.npm-cache/
+
+# -----------------------------------------------------------------------------
+# Next.js, TypeScript, production and hosting output
+# -----------------------------------------------------------------------------
+
+/.next/
+/out/
+/build/
+/dist/
+/coverage/
+/.cache/
+/.turbo/
+/.vercel/
+/.netlify/
+/.swc/
+*.tsbuildinfo
+/next-env.d.ts
+
+# Supabase source/config may be committed later; only local CLI state is private.
+/supabase/.temp/
+/supabase/.branches/
+
+# -----------------------------------------------------------------------------
+# Debug, test and browser automation output
+# -----------------------------------------------------------------------------
+
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+/.eslintcache
+/.eslint-json.txt
+/.eslint-out.json
+/get-eslint-errors.js
+/playwright-report/
+/test-results/
+/blob-report/
+/.playwright-mcp/
+.ts-*.json
+
+# TestSprite plans and curated evidence may be published intentionally. Raw
+# scratch and failure artifacts stay local because they can contain signed URLs.
+/testsprite_tests/tmp/
+/.testsprite/*.steps.json
+/.testsprite/failure/**/*.json
+/.testsprite/failure/**/*.html
+/.testsprite/failure/**/*.mp4
+
+# -----------------------------------------------------------------------------
+# Local media, captures and generated evidence
+# -----------------------------------------------------------------------------
+
+/local-media/
+/private-fixtures/
+/artifacts-private/
+/licensed-assets/
+/models-private/
+/uploads/
+/downloads/
+/temp/
+/tmp/
+/reel/
+/audit-screenshots/
+/screenshots-private/
+
+# User footage and rendered videos must never be committed accidentally.
+*.mp4
+*.webm
+*.mov
+*.mkv
+*.avi
+*.m4v
+
+# Loose root captures stay local. Images inside assets/ or public/ remain tracked.
+/*.png
+/*.jpg
+/*.jpeg
+/*.webp
+/*.gif
+/*.pdf
+
+# Local helper scripts and scratch reports.
+/check-*.ps1
+/wait-tests.ps1
+/*.bak
+/*.tmp
+
+# -----------------------------------------------------------------------------
+# Operating-system and editor leftovers
+# -----------------------------------------------------------------------------
+
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~

@@ -1,0 +1,80 @@
+import type { Messages } from "./en";
+
+export const tr: Messages = {
+  common: {
+    nav: { label: "Ana menü", workflow: "Nasıl çalışır", privacy: "Dosyaların", openLab: "Araçları aç" },
+    footer: { line: "Kurgunun tekrar eden hazırlık işleri için küçük araçlar.", status: "Erken sürüm · yalnız yerel dosyalar" },
+    language: { label: "Dil seç", current: "Geçerli dil" },
+  },
+  home: {
+    eyebrowA: "Editörler için", eyebrowB: "Tarayıcıda çalışır",
+    titleLead: "Hazırlığı hızlandır.", titleEmphasis: "Kurguya dön.",
+    lede: "Bir yüz seç, bass vuruşlarını işaretle ya da yumuşak görüntüyü toparla. Cutweave tekrar eden hazırlık işlerini tarayıcıda halleder; sen asıl kurguya dönersin.",
+    browseTools: "Bir araç seç",
+    privacyNote: "Seçtiğin dosya bu cihazda kalır.",
+    previewAria: "Yüz eşleşmeleri ve müzik markerları bulunan Cutweave önizlemesi",
+    previewLabel: "YEREL HAZIRLIK / ÖNİZLEME", faceScenes: "EŞLEŞEN SAHNELER", selectedFace: "TANINAN YÜZ", bassMarkers: "BASS MARKERLARI",
+    scenesFound: "BULUNAN SAHNE", markersFound: "MARKER", mediaSent: "GÖNDERİLEN MEDYA",
+    principlesLabel: "Cutweave'in temel ilkeleri",
+    principles: ["TEK SEFERDE TEK İŞ", "DOSYALAR YERELDE KALIR", "SONUCU SEN KONTROL EDERSİN", "KULLANILABİLİR ÇIKTILAR"],
+    workflowEyebrow: "İlk kesime giden kısa yol", workflowTitleA: "Yapılacak işi seç.", workflowTitleB: "Sonucun kontrolü sende kalsın.",
+    workflow: [
+      { title: "Önce ihtiyacın olan sonucu seç", copy: "Boş bir timeline'a bakmak yerine yüz tanımayı, bass markerlarını veya görüntü temizlemeyi aç." },
+      { title: "Cihazından bir dosya seç", copy: "Cutweave video ya da şarkıyı bu sekmede açar. Medyan sunucularımıza yüklenmez." },
+      { title: "Önerileri kontrol et ve yanına al", copy: "Hatalı seçimleri çıkar, ayarları değiştir ve kendi edit programında kullanabileceğin bir çıktı al." },
+    ],
+    localEyebrow: "Gizli medya yüklemesi yok", localTitleA: "Görüntün", localTitleB: "sana ait kalır.",
+    localCopy: "Video, çözülen kareler, yüz kırpmaları, dalga biçimleri ve iyileştirilmiş önizlemeler cihazında kalacak şekilde tasarlanır. İsteğe bağlı hesap sistemi ileride tercihlerini hatırlayabilir; görüntüne ihtiyaç duymaz.",
+    localLink: "Nelerin yerelde kaldığını gör",
+  },
+  library: {
+    eyebrowA: "Üç odaklı araç", eyebrowB: "Boş timeline yok", titleA: "Önce hangi işi", titleB: "halledelim?",
+    intro: "Bir tane daha tam kapsamlı edit programına ihtiyacın yok. İstediğin sonucu seç, yerel dosyanı aç ve Cutweave'in bulduklarını kontrol et.",
+    localNote: "Medyan bu sekmede kalır", toolsLabel: "Cutweave kurgu araçları", cardLabel: "YEREL ARAÇ", openTool: "AÇ",
+  },
+  tools: {
+    "face-recognition": {
+      title: "Yüz Tanıma", shortTitle: "Bir yüz seç, geçtiği sahneleri bul", eyebrow: "Yüzler / sahne bulma",
+      description: "Videodan bir yüz seç. Cutweave aynı yüzün tekrar göründüğü sahneleri tanıyıp incelemen için listeler. Her şey cihazında çalışır; kişinin kimliğini internette araştırmaz.",
+      promise: "Tek bir kişiyi bulmak için videonun tamamını ileri geri tarama.", input: "Bir yerel video", output: "Yüz eşleşmeli sahneler + zaman kodları",
+      anatomy: "ÖNİZLEME / YÜZ TANIMA", anatomyOutput: "EŞLEŞMELER KONTROLE HAZIR",
+      results: ["Yerel karelerden oluşturulan yüz seçici", "Seçtiğin yüzün göründüğü sahneler", "Dışa aktarmadan önce düzeltebileceğin zaman kodları", "Sonraki kurgu adımına hazır sahne listesi"],
+    },
+    "bass-markers": {
+      title: "Şarkı & Bass Marker", shortTitle: "Vuruşları timeline'a yerleştir", eyebrow: "Müzik / bass ve güçlü vuruşlar",
+      description: "Bir şarkı, ses dosyası veya video ekle. Cutweave kurguya yarayan güçlü vuruşları dinleyip timeline'a ayarlanabilir markerlar yerleştirsin.",
+      promise: "Kesime başlamadan ritim noktaların hazır olsun.", input: "Yerel şarkı, ses veya video", output: "Ayarlanabilir timeline markerları",
+      anatomy: "ÖNİZLEME / ŞARKI & BASS MARKER", anatomyOutput: "VURUŞLAR AYARA HAZIR",
+      results: ["Bass ve güçlü vuruş marker adayları", "Hassasiyet ve minimum aralık ayarları", "Taşıyabileceğin, silebileceğin ve ekleyebileceğin markerlar", "Dışa aktarmaya hazır marker verisi"],
+    },
+    "clarity-boost": {
+      title: "Video Kalite Artırma", shortTitle: "Kullanılabilir detayı geri getir", eyebrow: "Görüntü / gürültü, detay ve büyütme",
+      description: "Yumuşak veya gürültülü görüntüyü temiz bir önizlemede karşılaştır; keskinlik, gürültü azaltma ve büyütme seviyesini kendin seç. Orijinal dosya değişmez.",
+      promise: "Vazgeçmeden önce o kareyi kullanılabilir hâle getir.", input: "Bir yerel video", output: "İyileştirilmiş klip + karşılaştırma",
+      anatomy: "ÖNİZLEME / ÖNCE & SONRA", anatomyOutput: "DETAY KARŞILAŞTIRMAYA HAZIR",
+      results: ["Gerçek bir önce-sonra önizlemesi", "Gürültü temizleme ve detay ayarları", "Cihaza uygun büyütme seçenekleri", "Orijinale dokunmadan yerel iyileştirilmiş çıktı"],
+    },
+  },
+  focused: {
+    navLabel: "Araç menüsü", before: "ÖNCE", after: "SONRA", markerAxisLabel: "ZAMAN KODU / MARKER ADAYLARI",
+    localFoundation: "Bu cihazda çalışır", allTools: "Tüm araçlar", privacy: "Dosyaların", input: "SEN EKLERSİN", output: "SEN ALIRSIN",
+    mediaBoundary: "DOSYAN", zeroSent: "BURADA KALIR", noUpload: "Cutweave dosyayı bu sekmede açar; sunucularımıza göndermez.",
+    browserPreflight: "Bu tarayıcı çalıştırabilir mi?", chooseSource: "BAŞLAMAK İÇİN DOSYA SEÇ", sourceReady: "DOSYA HAZIR", analysisOffline: "ARAÇ MOTORU SONRAKİ ADIMDA",
+    localIntake: "ADIM 01 / DOSYA SEÇ", chooseSuffix: "Dosya yalnızca bu sekmede açılır.", chooseVideo: "Bir video seç", chooseMedia: "Ses veya video seç",
+    localSource: "DOSYA", size: "BOYUT", nextStep: "ŞU ANKİ DURUM", pipelineSpike: "ÖNİZLEME HAZIR", clearSource: "Dosyayı kaldır",
+    sourceReadyLead: "Dosyan açıldı.", pipelinePending: "Bu ekran dosyayı önizleyebiliyor fakat işleme motoru henüz bağlı değil. Hiçbir analiz veya kalite artırma yapılmış gibi gösterilmiyor.", analyzeLocally: "Yerelde çalıştır",
+    resultContract: "Araç hazır olduğunda", resultTitle: "Yanına alabileceğin sonuçlar.",
+  },
+  privacy: {
+    eyebrow: "Dosya seçmek, yüklemek değildir", titleA: "Kurgu", titleB: "senin cihazında kalır.",
+    intro: "Cutweave'in seçtiğin dosyaya erişmesi gerekir; dosyanın bir kopyasına sahip olması gerekmez. Medya işini tarayıcı yapar, sunucularımız görüntünü istemez.",
+    browseTools: "Yerel bir araç seç", boundaryLabel: "Cutweave dosyalarını nasıl işler",
+    boundaries: [
+      { title: "Görüntün burada kalır", copy: "Video baytları, çözülen kareler, yüz kırpmaları, dalga biçimleri ve iyileştirilmiş önizlemeler cihazından çıkmaz." },
+      { title: "Hesabın çok az şey bilmesi yeterli", copy: "Hesap sistemi daha sonra eklenirse tercihlerini ve proje etiketlerini saklayabilir; medyanın kendisini değil." },
+      { title: "Görüntüne ihtiyacımız yok", copy: "Cutweave medya yükleme rotaları, bulut render işleri veya içerik tabanlı takip üzerine kurulmaz." },
+    ],
+    statusTitle: "Bugün çalışan kısım", statusCopy: "Mevcut sürüm yerel dosyayı medya yükleme rotası olmadan açıp önizleyebilir. Üç işleme motoru hâlâ geliştirildiği için arayüz yapılmamış bir analizi yapılmış gibi göstermez.",
+  },
+  notFound: { eyebrow: "404 / Yanlış yer", titleA: "Aradığın araç", titleB: "burada değil.", home: "Araçlara geri dön" },
+};
