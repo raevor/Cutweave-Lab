@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRef } from "react";
+import faceRecognitionHero from "../../assets/face-recognition-hero.png";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ToolVisual } from "@/components/tool-visual";
@@ -76,24 +78,14 @@ export default function HomePage() {
             aria-label={copy.previewLinkAria}
             onClick={scrollToFaceRecognition}
           >
-            <div className="instrument-head">
-              <span>{copy.previewLabel}</span>
-              <span className="mono">00:00:24:18</span>
-            </div>
-            <div className="time-ruler" aria-hidden="true">
-              <span>00:00</span><span>00:08</span><span>00:16</span><span>00:24</span>
-            </div>
-            <div className="result-preview" aria-hidden="true">
-              <div className="playhead" />
-              <div className="preview-track scenes"><b>{copy.faceScenes}</b><i /><i /><i /><i /><i /></div>
-              <div className="preview-track subject"><b>{copy.selectedFace}</b><span className="match-line" /></div>
-              <div className="preview-track beats"><b>{copy.bassMarkers}</b>{Array.from({ length: 14 }, (_, index) => <i key={index} style={{ height: `${16 + ((index * 13) % 34)}%` }} />)}</div>
-            </div>
-            <div className="instrument-foot">
-              <div><small>{copy.scenesFound}</small><strong>05</strong></div>
-              <div><small>{copy.markersFound}</small><strong>14</strong></div>
-              <div><small>{copy.mediaSent}</small><strong className="signal-text">0 B</strong></div>
-            </div>
+            <Image
+              className="hero-instrument-image"
+              src={faceRecognitionHero}
+              alt=""
+              sizes="(max-width: 900px) 100vw, 48vw"
+              preload
+              unoptimized
+            />
             <span className="hero-instrument-cue">{copy.previewJump} <span aria-hidden="true">↓</span></span>
           </a>
         </section>
@@ -131,16 +123,26 @@ export default function HomePage() {
                       </dl>
                       <Link className="home-tool-link" href={`/lab/${slug}`}>{copy.openTool} <span aria-hidden="true">↗</span></Link>
                     </div>
-                    <div className="home-tool-visual">
-                      <ToolVisual
-                        tool={slug}
-                        anatomyLabel={tool.anatomy}
-                        outputLabel={copy.previewOutput}
-                        outputValue={tool.anatomyOutput}
-                        beforeLabel={text.focused.before}
-                        afterLabel={text.focused.after}
-                        markerAxisLabel={text.focused.markerAxisLabel}
-                      />
+                    <div className={`home-tool-visual${slug === "face-recognition" ? " home-tool-visual--feature" : ""}`}>
+                      {slug === "face-recognition" ? (
+                        <Image
+                          className="home-tool-feature-image"
+                          src={faceRecognitionHero}
+                          alt=""
+                          sizes="(max-width: 980px) 100vw, 58vw"
+                          unoptimized
+                        />
+                      ) : (
+                        <ToolVisual
+                          tool={slug}
+                          anatomyLabel={tool.anatomy}
+                          outputLabel={copy.previewOutput}
+                          outputValue={tool.anatomyOutput}
+                          beforeLabel={text.focused.before}
+                          afterLabel={text.focused.after}
+                          markerAxisLabel={text.focused.markerAxisLabel}
+                        />
+                      )}
                       <span className="interface-note">{copy.interfacePreview}</span>
                     </div>
                   </div>
