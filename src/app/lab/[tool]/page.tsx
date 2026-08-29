@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTool, primaryTools } from "@/lib/tool-catalog";
+import { FaceRecognitionWorkspace } from "./face-recognition-workspace";
 import { ToolWorkspace } from "./tool-workspace";
 
 export function generateStaticParams() {
@@ -18,5 +19,6 @@ export default async function FocusedToolPage({ params }: { params: Promise<{ to
   const { tool: slug } = await params;
   const tool = getTool(slug);
   if (!tool) notFound();
+  if (tool.slug === "face-recognition") return <FaceRecognitionWorkspace tool={tool} />;
   return <ToolWorkspace tool={tool} />;
 }

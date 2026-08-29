@@ -24,9 +24,15 @@
 
 - [ ] Add deterministic demo media with a recorded license/source.
 - [ ] Decode frames off the main thread.
-- [ ] Match the selected face to real scene ranges from the selected source.
-- [ ] Render those matches in the focused Face Recognition result screen.
-- [ ] Add cancellation and stale-result protection.
+- [x] Match three selected reference frames to real sampled ranges from the selected source.
+- [x] Render those matches in the focused Face Recognition result screen.
+- [x] Add cancellation and stale-result protection to the face-analysis job.
+- [x] Add a feature-detected local WebM clip ZIP export with JSON and CSV cut plans.
+- [x] Replace the saturated descriptor path with self-hosted 128-dimensional face descriptors, Euclidean matching and strict reference agreement.
+- [x] Add local reference cropping and preserve reference crops across GPU/CPU changes.
+- [x] Anchor clips on a matched opening frame, verify the face through the full duration, and remove reference/near-duplicate scenes.
+- [x] Calibrate the identity threshold from the three reference embeddings and search complete clip windows around coarse detections.
+- [x] Increase bounded scan density, retain one reference-neighborhood scene and relax only internal clip checkpoints while keeping the opening strict.
 - [ ] Verify zero media upload during the complete slice.
 
 ## Gate 3B — Remaining primary tools

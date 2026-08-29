@@ -83,7 +83,7 @@ export const en = {
       { title: "An account should know very little", copy: "If accounts are added later, they may store preferences and project labels—not the media itself." },
       { title: "We do not need your footage", copy: "Cutweave is not designed with media upload routes, cloud rendering jobs or content-based tracking." },
     ],
-    statusTitle: "What works today", statusCopy: "The current build can open and preview a local file without a media upload route. The three processing engines are still being built, so the interface never pretends that an analysis has run.",
+    statusTitle: "What works today", statusCopy: "Face Recognition can now compare three selected reference frames against a video up to three hours long and prepare local scene clips. Music markers and Video Enhancer remain under construction; the interface does not present them as finished.",
   },
   notFound: { eyebrow: "404 / Wrong turn", titleA: "That tool is", titleB: "not here.", home: "Go back to the tools" },
 };

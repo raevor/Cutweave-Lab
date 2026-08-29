@@ -85,7 +85,7 @@ export const tr: Messages = {
       { title: "Hesabın çok az şey bilmesi yeterli", copy: "Hesap sistemi daha sonra eklenirse tercihlerini ve proje etiketlerini saklayabilir; medyanın kendisini değil." },
       { title: "Görüntüne ihtiyacımız yok", copy: "Cutweave medya yükleme rotaları, bulut render işleri veya içerik tabanlı takip üzerine kurulmaz." },
     ],
-    statusTitle: "Bugün çalışan kısım", statusCopy: "Mevcut sürüm yerel dosyayı medya yükleme rotası olmadan açıp önizleyebilir. Üç işleme motoru hâlâ geliştirildiği için arayüz yapılmamış bir analizi yapılmış gibi göstermez.",
+    statusTitle: "Bugün çalışan kısım", statusCopy: "Yüz Tanıma artık seçilen üç referans kareyi en fazla üç saatlik videoda karşılaştırıp yerel sahne klipleri hazırlayabilir. Şarkı markerları ve Video Kalite Artırma hâlâ yapım aşamasındadır; arayüz bunları bitmiş gibi göstermez.",
   },
   notFound: { eyebrow: "404 / Yanlış yer", titleA: "Aradığın araç", titleB: "burada değil.", home: "Araçlara geri dön" },
 };
