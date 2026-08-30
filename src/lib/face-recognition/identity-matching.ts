@@ -48,9 +48,13 @@ export function evaluateIdentityCandidate(references: number[][], candidate: num
   const normalizedCandidate = prepareFaceEmbedding(candidate);
   const similarities = references.map((reference) => faceDescriptorSimilarity(prepareFaceEmbedding(reference), normalizedCandidate));
   const sorted = [...similarities].sort((a, b) => b - a);
+  const consensusSimilarity = sorted[1] ?? 0;
   return {
-    similarity: sorted[1] ?? 0,
-    weakestSimilarity: sorted.at(-1) ?? 0,
+    // Three references form a 2-of-3 robust template. The third, possibly
+    // occluded reference is an outlier and must not weaken an otherwise
+    // consistent identity decision.
+    similarity: consensusSimilarity,
+    weakestSimilarity: consensusSimilarity,
     referenceHits: similarities.filter((score) => score >= threshold).length,
     similarities,
   };

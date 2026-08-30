@@ -363,24 +363,26 @@ export function selectSceneMatches(
 export function createClipCheckOffsets(clipDuration: number) {
   const safeDuration = Math.max(0.5, clipDuration);
   const last = Math.max(0.05, safeDuration - 0.12);
-  const offsets = [0.04, Math.min(0.3, last)];
+  const offsets = [0.04, Math.min(0.22, last), Math.min(0.55, last)];
   const interval = Math.max(0.65, Math.min(0.9, safeDuration / 6));
-  for (let offset = Math.max(0.75, interval); offset < last - 0.15; offset += interval) offsets.push(offset);
+  for (let offset = Math.max(1.15, interval); offset < last - 0.15; offset += interval) offsets.push(offset);
   offsets.push(last);
   return [...new Set(offsets.map((offset) => Math.round(offset * 1000) / 1000))].sort((a, b) => a - b);
 }
 
 export function createCandidateClipStarts(candidateTimestamp: number, clipDuration: number, videoDuration: number) {
   const maximumStart = Math.max(0, videoDuration - clipDuration);
-  return [...new Set([0.75, 0.5, 0.25, 0].map((fraction) => {
+  return [...new Set([0, 0.25, 0.5, 0.75].map((fraction) => {
     const start = Math.max(0, Math.min(maximumStart, candidateTimestamp - clipDuration * fraction));
     return Math.round(start * 1000) / 1000;
-  }))].sort((a, b) => a - b);
+  }))];
 }
 
 export function calibrateIdentityThreshold(requestedThreshold: number, referenceAgreement: number) {
-  const referenceBasedThreshold = referenceAgreement - 0.14;
-  return Math.max(0.26, Math.min(0.62, requestedThreshold, referenceBasedThreshold));
+  // Reference disagreement signals uncertainty. It must never make matching
+  // more permissive; the robust 2-of-3 template handles one weak reference.
+  const uncertaintyFloor = Number.isFinite(referenceAgreement) && referenceAgreement >= 0.28 ? 0.26 : 0.28;
+  return Math.max(uncertaintyFloor, Math.min(0.62, requestedThreshold));
 }
 
 export function samplePassesIdentity(sample: ScanSample, threshold: number) {
@@ -390,15 +392,45 @@ export function samplePassesIdentity(sample: ScanSample, threshold: number) {
     && sample.faceQuality >= 0.35;
 }
 
-export function validateClipChecks(checks: ScanSample[], threshold: number) {
+function calculatePassingCoverage(
+  checks: ScanSample[],
+  states: boolean[],
+  clipStart: number,
+  clipDuration: number,
+) {
+  const clipEnd = clipStart + clipDuration;
+  let passingSeconds = 0;
+  for (let index = 0; index < checks.length; index += 1) {
+    if (!states[index]) continue;
+    const left = index === 0
+      ? clipStart
+      : (checks[index - 1].timestamp + checks[index].timestamp) / 2;
+    const right = index === checks.length - 1
+      ? clipEnd
+      : (checks[index].timestamp + checks[index + 1].timestamp) / 2;
+    passingSeconds += Math.max(0, Math.min(clipEnd, right) - Math.max(clipStart, left));
+  }
+  return Math.min(clipDuration, passingSeconds);
+}
+
+export function validateClipChecks(
+  checks: ScanSample[],
+  threshold: number,
+  clipStart = checks[0]?.timestamp ?? 0,
+  clipDuration = Math.max(0, (checks.at(-1)?.timestamp ?? clipStart) - clipStart),
+) {
   const states = checks.map((sample) => samplePassesIdentity(sample, threshold));
   const passing = states.filter(Boolean);
-  const openingIsValid = states[0] === true && states[1] === true;
-  const requiredPassing = Math.ceil(checks.length * 0.6);
+  const openingChecks = states.slice(0, Math.min(3, states.length));
+  const openingIsValid = states[0] === true && openingChecks.filter(Boolean).length >= 2;
+  const passingSeconds = calculatePassingCoverage(checks, states, clipStart, clipDuration);
+  const requiredPresenceSeconds = clipDuration * 0.52;
   return {
-    accepted: checks.length >= 3 && openingIsValid && passing.length >= requiredPassing,
+    accepted: checks.length >= 3 && openingIsValid && passingSeconds >= requiredPresenceSeconds,
     passing: passing.length,
     total: checks.length,
+    passingSeconds,
+    requiredPresenceSeconds,
     conservativeSimilarity: passing.length ? Math.min(...checks.filter((_, index) => states[index]).map((sample) => sample.similarity)) : 0,
   };
 }
@@ -408,8 +440,8 @@ function medianNumber(values: number[]) {
   return sorted[Math.floor(sorted.length / 2)] ?? 0;
 }
 
-export function createVerifiedClipSample(checks: ScanSample[], threshold: number, clipStart: number) {
-  const validation = validateClipChecks(checks, threshold);
+export function createVerifiedClipSample(checks: ScanSample[], threshold: number, clipStart: number, clipDuration: number) {
+  const validation = validateClipChecks(checks, threshold, clipStart, clipDuration);
   if (!validation.accepted) return null;
   const passingChecks = checks.filter((sample) => samplePassesIdentity(sample, threshold));
   const visualFingerprint = averageVisualFingerprints(

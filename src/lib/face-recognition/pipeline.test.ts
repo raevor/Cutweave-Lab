@@ -57,26 +57,42 @@ describe("strict clip validation", () => {
   it("checks the opening instant and the full selected duration", () => {
     const offsets = createClipCheckOffsets(5);
     expect(offsets[0]).toBeLessThan(0.1);
-    expect(offsets[1]).toBeLessThanOrEqual(0.3);
+    expect(offsets[1]).toBeLessThanOrEqual(0.22);
+    expect(offsets[2]).toBeLessThanOrEqual(0.55);
     expect(offsets.at(-1)).toBeGreaterThan(4.8);
-    expect(offsets.length).toBeGreaterThanOrEqual(7);
+    expect(offsets.length).toBeGreaterThanOrEqual(8);
   });
 
-  it("requires the face at the opening and through most of the clip", () => {
-    const intermittentMisses = Array.from({ length: 8 }, (_, index) => sample(10 + index, [4, 7].includes(index) ? { similarity: 0.2, referenceHits: 0 } : {}));
-    const openingMiss = intermittentMisses.map((item, index) => index === 0 ? sample(10, { similarity: 0.2, referenceHits: 0 }) : item);
-    expect(validateClipChecks(intermittentMisses, 0.52)).toMatchObject({ accepted: true, passing: 6, total: 8 });
-    expect(validateClipChecks(openingMiss, 0.52).accepted).toBe(false);
+  it("requires the face at the opening and for at least 52 percent of the clip", () => {
+    const offsets = createClipCheckOffsets(5);
+    const intermittentMisses = offsets.map((offset, index) => sample(10 + offset, [5, 7].includes(index) ? { similarity: 0.2, referenceHits: 0 } : {}));
+    const openingMiss = intermittentMisses.map((item, index) => index === 0 ? sample(item.timestamp, { similarity: 0.2, referenceHits: 0 }) : item);
+    const validation = validateClipChecks(intermittentMisses, 0.52, 10, 5);
+    expect(validation.accepted).toBe(true);
+    expect(validation.passingSeconds).toBeGreaterThanOrEqual(2.6);
+    expect(validateClipChecks(openingMiss, 0.52, 10, 5).accepted).toBe(false);
+  });
+
+  it("rejects a five-second clip when the target appears only at the start", () => {
+    const offsets = createClipCheckOffsets(5);
+    const briefAppearance = offsets.map((offset, index) => sample(
+      10 + offset,
+      index < 3 ? {} : { similarity: 0.2, weakestSimilarity: 0.2, referenceHits: 0 },
+    ));
+    const validation = validateClipChecks(briefAppearance, 0.52, 10, 5);
+    expect(validation.accepted).toBe(false);
+    expect(validation.passingSeconds).toBeLessThan(2.6);
   });
 
   it("does not let tolerated missed checks poison an otherwise verified clip", () => {
-    const checks = Array.from({ length: 8 }, (_, index) => sample(
-      10 + index,
-      [4, 7].includes(index)
+    const offsets = createClipCheckOffsets(5);
+    const checks = offsets.map((offset, index) => sample(
+      10 + offset,
+      [5, 7].includes(index)
         ? { similarity: 0, weakestSimilarity: 0, referenceHits: 0, faceQuality: 0 }
         : {},
     ));
-    const verified = createVerifiedClipSample(checks, 0.52, 10);
+    const verified = createVerifiedClipSample(checks, 0.52, 10, 5);
     expect(verified).not.toBeNull();
     expect(verified?.weakestSimilarity).toBe(0.6);
     expect(verified?.faceQuality).toBe(0.8);
@@ -90,13 +106,13 @@ describe("strict clip validation", () => {
   });
 
   it("searches for a complete clip window around a coarse candidate", () => {
-    expect(createCandidateClipStarts(20, 5, 60)).toEqual([16.25, 17.5, 18.75, 20]);
+    expect(createCandidateClipStarts(20, 5, 60)).toEqual([20, 18.75, 17.5, 16.25]);
   });
 
-  it("calibrates a fixed threshold against the actual reference set", () => {
-    expect(calibrateIdentityThreshold(0.52, 0.46)).toBeCloseTo(0.32);
+  it("never lowers the identity threshold when references disagree", () => {
+    expect(calibrateIdentityThreshold(0.52, 0.46)).toBe(0.52);
     expect(calibrateIdentityThreshold(0.52, 0.9)).toBe(0.52);
-    expect(calibrateIdentityThreshold(0.4, 0.32)).toBe(0.26);
+    expect(calibrateIdentityThreshold(0.4, 0.32)).toBe(0.4);
   });
 
   it("removes nearby and visually repeated scenes", () => {

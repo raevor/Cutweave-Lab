@@ -51,6 +51,18 @@ describe("identity matching", () => {
     expect(result.similarity).toBeLessThan(0.4);
   });
 
+  it("does not let one weak or occluded reference destabilize two agreeing references", () => {
+    const occludedReference = descriptor({ 0: -0.45, 3: 0.6, 8: -0.35 });
+    const result = evaluateIdentityCandidate(
+      [references[0], references[1], occludedReference],
+      descriptor({ 0: 0.11, 1: -0.035, 9: 0.025 }),
+      0.4,
+    );
+    expect(result.referenceHits).toBe(2);
+    expect(result.similarity).toBeGreaterThan(0.95);
+    expect(result.weakestSimilarity).toBe(result.similarity);
+  });
+
   it("reports low agreement when the reference set contains different identities", () => {
     expect(calculateReferenceAgreement(references)).toBeGreaterThan(0.95);
     expect(calculateReferenceAgreement([

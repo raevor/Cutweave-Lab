@@ -520,9 +520,10 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
             checks.push(check);
             verifiedFrames += 1;
             updateProgress(verifiedFrames, plannedVerificationFrames);
-            if (checkIndex < 2 && !samplePassesIdentity(check, calibratedThreshold)) break;
+            if (checkIndex === 0 && !samplePassesIdentity(check, calibratedThreshold)) break;
+            if (checkIndex === 2 && checks.filter((sample) => samplePassesIdentity(sample, calibratedThreshold)).length < 2) break;
           }
-          const verifiedSample = createVerifiedClipSample(checks, calibratedThreshold, clipStart);
+          const verifiedSample = createVerifiedClipSample(checks, calibratedThreshold, clipStart, clipLength);
           if (verifiedSample) {
             verified.push({
               ...verifiedSample,
