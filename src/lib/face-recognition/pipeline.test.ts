@@ -3,8 +3,10 @@ import {
   createClipCheckOffsets,
   createCandidateClipStarts,
   calibrateIdentityThreshold,
+  createProposalThreshold,
   createSampleTimes,
   createVerifiedClipSample,
+  createVisualContext,
   selectSceneMatches,
   validateClipChecks,
   visualFingerprintDistance,
@@ -99,20 +101,37 @@ describe("strict clip validation", () => {
     expect(selectSceneMatches([verified!], 1, 5, 60, 0.52)).toHaveLength(1);
   });
 
-  it("samples a forty-minute source frequently without exceeding the memory bound", () => {
+  it("samples long sources densely enough to catch ordinary TV shots without exceeding the bound", () => {
     const times = createSampleTimes(40 * 60, 5);
-    expect(times.length).toBeGreaterThanOrEqual(900);
-    expect(times.length).toBeLessThanOrEqual(2400);
+    const featureLengthTimes = createSampleTimes(2 * 60 * 60 + 18 * 60, 5);
+    expect(times.length).toBeGreaterThanOrEqual(1400);
+    expect(featureLengthTimes.length).toBeGreaterThanOrEqual(4800);
+    expect(featureLengthTimes.length).toBeLessThanOrEqual(5400);
   });
 
   it("searches for a complete clip window around a coarse candidate", () => {
-    expect(createCandidateClipStarts(20, 5, 60)).toEqual([20, 18.75, 17.5, 16.25]);
+    expect(createCandidateClipStarts(20, 5, 60)).toEqual([20, 19.2, 18.4, 17.6, 16.8, 16]);
   });
 
   it("never lowers the identity threshold when references disagree", () => {
     expect(calibrateIdentityThreshold(0.52, 0.46)).toBe(0.52);
     expect(calibrateIdentityThreshold(0.52, 0.9)).toBe(0.52);
     expect(calibrateIdentityThreshold(0.4, 0.32)).toBe(0.4);
+  });
+
+  it("uses a recall margin only for candidate proposals", () => {
+    expect(createProposalThreshold(0.38)).toBeCloseTo(0.3);
+    expect(createProposalThreshold(0.3)).toBe(0.28);
+    expect(createProposalThreshold(0.52)).toBeCloseTo(0.44);
+  });
+
+  it("keeps an eight-hundred-candidate plan bounded on a long source", () => {
+    const candidates = Array.from({ length: 1_200 }, (_, index) => sample(index * 6));
+    const scenes = selectSceneMatches(candidates, 800, 5, 3 * 60 * 60, 0.38, {
+      minimumGapSeconds: 5,
+      maximumVisualHashDistance: -1,
+    });
+    expect(scenes).toHaveLength(800);
   });
 
   it("removes nearby and visually repeated scenes", () => {
@@ -190,8 +209,38 @@ describe("strict clip validation", () => {
       { minimumGapSeconds: 5, contentDiversity: true },
     );
     expect(scenes.length).toBeLessThan(12);
-    expect(scenes.filter((scene) => scene.start >= 60 && scene.start <= 305)).toHaveLength(1);
+    expect(scenes.filter((scene) => scene.start >= 60 && scene.start <= 305).length).toBeLessThanOrEqual(2);
     expect(scenes.filter((scene) => scene.start >= 500)).toHaveLength(5);
+  });
+
+  it("does not let shared neighboring context collapse eighty distinct shots in a long episode", () => {
+    const distinctShots = Array.from({ length: 100 }, (_, index) => visualSample(
+      120 + index * 22,
+      index + 1,
+      [200, index + 1, 201],
+    ));
+    const scenes = selectSceneMatches(
+      distinctShots,
+      80,
+      5,
+      2 * 60 * 60 + 18 * 60,
+      0.38,
+      { minimumGapSeconds: 4.75, contentDiversity: true },
+    );
+    expect(scenes).toHaveLength(80);
+  });
+
+  it("keeps visual context inside the nearest detected shot boundary", () => {
+    const firstShot = fingerprint(2);
+    const secondShot = fingerprint(19);
+    const context = createVisualContext(12, [
+      sample(10, { visualFingerprint: firstShot }),
+      sample(12, { visualFingerprint: fingerprint(2, 1) }),
+      sample(14, { visualFingerprint: secondShot }),
+      sample(16, { visualFingerprint: fingerprint(19, 1) }),
+    ]);
+    expect(context).toHaveLength(2);
+    expect(context).not.toContain(secondShot);
   });
 
   it("uses surrounding context to distinguish matching compositions from different scenes", () => {
@@ -199,7 +248,7 @@ describe("strict clip validation", () => {
     const first = sample(30, { visualFingerprint: sharedComposition, visualContext: [fingerprint(4), fingerprint(5)] });
     const second = sample(70, { visualFingerprint: sharedComposition, visualContext: [fingerprint(14), fingerprint(15)] });
     expect(visualFingerprintDistance(sharedComposition, sharedComposition)).toBeCloseTo(0);
-    expect(visualSceneDistance(first, second)).toBeGreaterThan(0.22);
+    expect(visualSceneDistance(first, second)).toBeGreaterThan(0.12);
     expect(selectSceneMatches([first, second], 2, 5, 120, 0.52, {
       minimumGapSeconds: 5,
       contentDiversity: true,

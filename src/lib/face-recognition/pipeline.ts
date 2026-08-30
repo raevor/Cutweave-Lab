@@ -1,7 +1,8 @@
 import type { ScanSample, SceneMatch, VisualFingerprint } from "./types";
 
 export const MAX_VIDEO_DURATION_SECONDS = 3 * 60 * 60;
-export const MAX_SCAN_SAMPLES = 2400;
+export const MAX_SCAN_SAMPLES = 5400;
+const SHOT_BOUNDARY_DISTANCE = 0.3;
 
 type SceneSelectionOptions = {
   excludedTimestamps?: number[];
@@ -22,20 +23,16 @@ export function formatTimecode(seconds: number) {
 }
 
 export function createSampleTimes(duration: number, clipDuration: number) {
-  const coverageInterval = Math.max(1.25, Math.min(2.5, clipDuration * 0.5));
+  // A fixed 2400-frame ceiling left gaps of 3.4+ seconds in feature-length
+  // sources. A 1.5-1.8 second proposal cadence catches ordinary TV cuts while
+  // keeping the three-hour path bounded.
+  const coverageInterval = Math.max(1.1, Math.min(1.8, clipDuration * 0.34));
   const boundedInterval = Math.max(coverageInterval, duration / MAX_SCAN_SAMPLES);
   const times: number[] = [];
   for (let timestamp = 0; timestamp < duration; timestamp += boundedInterval) {
     times.push(Math.min(duration - 0.05, timestamp + Math.min(0.35, boundedInterval / 3)));
   }
   return times;
-}
-
-type TimelinePlan = { samples: ScanSample[]; quality: number };
-
-function isBetterPlan(candidate: TimelinePlan, current: TimelinePlan) {
-  return candidate.samples.length > current.samples.length
-    || (candidate.samples.length === current.samples.length && candidate.quality > current.quality);
 }
 
 function sampleSelectionQuality(sample: ScanSample) {
@@ -143,8 +140,10 @@ function measureVisualSceneDistance(first: ScanSample, second: ScanSample, dista
   const clipDistance = distance(first.visualFingerprint, second.visualFingerprint);
   if (!first.visualContext?.length || !second.visualContext?.length) return clipDistance;
   const contextDistance = visualContextDistance(first.visualContext, second.visualContext, distance);
-  const contextBoundClipDistance = Math.min(clipDistance, contextDistance + 0.1);
-  return contextBoundClipDistance * 0.2 + contextDistance * 0.8;
+  // The selected frame represents the shot. Context only stabilizes camera
+  // motion inside that shot; it must not merge neighboring cuts which happen
+  // to share the same +/- 15 second neighborhood.
+  return clipDistance * 0.72 + contextDistance * 0.28;
 }
 
 export function visualSceneDistance(first: ScanSample, second: ScanSample) {
@@ -195,7 +194,7 @@ function chooseContentDiversePlan(samples: ScanSample[], desiredCount: number, m
       distanceMatrix[second][first] = measured;
     }
   }
-  const duplicateThreshold = adaptiveDuplicateThreshold(distanceMatrix);
+  const duplicateThreshold = Math.max(0.045, adaptiveDuplicateThreshold(distanceMatrix) * 0.62);
   const qualities = samples.map(sampleSelectionQuality);
   const minimumQuality = Math.min(...qualities);
   const maximumQuality = Math.max(...qualities);
@@ -209,9 +208,12 @@ function chooseContentDiversePlan(samples: ScanSample[], desiredCount: number, m
       if (selected.includes(index)) continue;
       if (selected.some((selectedIndex) => Math.abs(samples[index].timestamp - samples[selectedIndex].timestamp) < minimumGap)) continue;
       const novelty = Math.min(...selected.map((selectedIndex) => distanceMatrix[index][selectedIndex]));
+      // Only near-identical shots are hard duplicates. Everything else remains
+      // eligible and is re-ranked with MMR, so diversity cannot silently cap a
+      // long episode at a few dozen results.
       if (novelty < duplicateThreshold) continue;
       const normalizedQuality = (qualities[index] - minimumQuality) / qualityRange;
-      const score = normalizedQuality * 0.58 + novelty * 0.42;
+      const score = normalizedQuality * 0.72 + novelty * 0.28;
       if (score > bestScore) {
         bestScore = score;
         bestIndex = index;
@@ -223,17 +225,36 @@ function chooseContentDiversePlan(samples: ScanSample[], desiredCount: number, m
   return selected.map((index) => samples[index]);
 }
 
-export function createVisualContext(timestamp: number, samples: ScanSample[], windowSeconds = 15, maximumFrames = 9) {
+export function createVisualContext(timestamp: number, samples: ScanSample[], windowSeconds = 15, maximumFrames = 7) {
   const nearby = samples
     .filter((sample) => Math.abs(sample.timestamp - timestamp) <= windowSeconds && sample.visualFingerprint)
     .sort((a, b) => a.timestamp - b.timestamp);
-  if (nearby.length <= maximumFrames) return nearby.map((sample) => sample.visualFingerprint!);
-  const step = (nearby.length - 1) / (maximumFrames - 1);
-  return Array.from({ length: maximumFrames }, (_, index) => nearby[Math.round(index * step)].visualFingerprint!);
+  if (!nearby.length) return [];
+  let center = 0;
+  for (let index = 1; index < nearby.length; index += 1) {
+    if (Math.abs(nearby[index].timestamp - timestamp) < Math.abs(nearby[center].timestamp - timestamp)) center = index;
+  }
+  let left = center;
+  while (left > 0) {
+    const distance = visualFingerprintDistance(nearby[left - 1].visualFingerprint!, nearby[left].visualFingerprint!);
+    if (distance >= SHOT_BOUNDARY_DISTANCE) break;
+    left -= 1;
+  }
+  let right = center;
+  while (right < nearby.length - 1) {
+    const distance = visualFingerprintDistance(nearby[right].visualFingerprint!, nearby[right + 1].visualFingerprint!);
+    if (distance >= SHOT_BOUNDARY_DISTANCE) break;
+    right += 1;
+  }
+  const shotFrames = nearby.slice(left, right + 1);
+  if (shotFrames.length <= maximumFrames) return shotFrames.map((sample) => sample.visualFingerprint!);
+  const step = (shotFrames.length - 1) / (maximumFrames - 1);
+  return Array.from({ length: maximumFrames }, (_, index) => shotFrames[Math.round(index * step)].visualFingerprint!);
 }
 
 function chooseTimelinePlan(samples: ScanSample[], desiredCount: number, minimumGap: number) {
   const ordered = [...samples].sort((a, b) => a.timestamp - b.timestamp);
+  if (!ordered.length || desiredCount <= 0) return [];
   const previousCompatible = ordered.map((sample, index) => {
     let low = 0;
     let high = index - 1;
@@ -249,24 +270,48 @@ function chooseTimelinePlan(samples: ScanSample[], desiredCount: number, minimum
     }
     return compatible;
   });
-  const plans = Array.from({ length: ordered.length + 1 }, () => Array.from(
-    { length: desiredCount + 1 },
-    (): TimelinePlan => ({ samples: [], quality: 0 }),
-  ));
-
+  // Weighted interval scheduling without copying scene arrays into every DP
+  // cell. At 5,400 samples and an 800-candidate recall pool this remains
+  // bounded to compact numeric tables instead of millions of growing arrays.
+  const maximumCount = Math.min(desiredCount, ordered.length);
+  const width = maximumCount + 1;
+  const rows = ordered.length + 1;
+  const qualities = new Float64Array(rows * width);
+  qualities.fill(Number.NEGATIVE_INFINITY);
+  const tookSample = new Uint8Array(rows * width);
+  for (let row = 0; row < rows; row += 1) qualities[row * width] = 0;
   for (let index = 1; index <= ordered.length; index += 1) {
     const sample = ordered[index - 1];
-    for (let count = 1; count <= desiredCount; count += 1) {
-      const skipped = plans[index - 1][count];
-      const base = plans[previousCompatible[index - 1] + 1][count - 1];
-      const included = {
-        samples: [...base.samples, sample],
-        quality: base.quality + sampleSelectionQuality(sample),
-      };
-      plans[index][count] = isBetterPlan(included, skipped) ? included : skipped;
+    const sampleQuality = sampleSelectionQuality(sample);
+    const compatibleRow = previousCompatible[index - 1] + 1;
+    for (let count = 1; count <= Math.min(index, maximumCount); count += 1) {
+      const cell = index * width + count;
+      const skipped = qualities[(index - 1) * width + count];
+      const base = qualities[compatibleRow * width + count - 1];
+      const included = Number.isFinite(base) ? base + sampleQuality : Number.NEGATIVE_INFINITY;
+      if (included > skipped) {
+        qualities[cell] = included;
+        tookSample[cell] = 1;
+      } else {
+        qualities[cell] = skipped;
+      }
     }
   }
-  return plans[ordered.length][desiredCount].samples;
+  let selectedCount = maximumCount;
+  while (selectedCount > 0 && !Number.isFinite(qualities[ordered.length * width + selectedCount])) selectedCount -= 1;
+  const selected: ScanSample[] = [];
+  let row = ordered.length;
+  let count = selectedCount;
+  while (row > 0 && count > 0) {
+    if (tookSample[row * width + count]) {
+      selected.push(ordered[row - 1]);
+      row = previousCompatible[row - 1] + 1;
+      count -= 1;
+    } else {
+      row -= 1;
+    }
+  }
+  return selected.reverse();
 }
 
 function chooseDistinctTimelinePlan(
@@ -372,7 +417,7 @@ export function createClipCheckOffsets(clipDuration: number) {
 
 export function createCandidateClipStarts(candidateTimestamp: number, clipDuration: number, videoDuration: number) {
   const maximumStart = Math.max(0, videoDuration - clipDuration);
-  return [...new Set([0, 0.25, 0.5, 0.75].map((fraction) => {
+  return [...new Set([0, 0.16, 0.32, 0.48, 0.64, 0.8].map((fraction) => {
     const start = Math.max(0, Math.min(maximumStart, candidateTimestamp - clipDuration * fraction));
     return Math.round(start * 1000) / 1000;
   }))];
@@ -383,6 +428,13 @@ export function calibrateIdentityThreshold(requestedThreshold: number, reference
   // more permissive; the robust 2-of-3 template handles one weak reference.
   const uncertaintyFloor = Number.isFinite(referenceAgreement) && referenceAgreement >= 0.28 ? 0.26 : 0.28;
   return Math.max(uncertaintyFloor, Math.min(0.62, requestedThreshold));
+}
+
+export function createProposalThreshold(verificationThreshold: number) {
+  // Candidate generation gets a narrow recall margin; it is never used to
+  // approve a clip. Full-duration verification still uses the requested
+  // identity threshold, which prevents recall work from lowering precision.
+  return Math.max(0.28, verificationThreshold - 0.08);
 }
 
 export function samplePassesIdentity(sample: ScanSample, threshold: number) {

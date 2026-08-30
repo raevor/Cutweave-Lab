@@ -12,6 +12,7 @@ import {
   captureVideoFrame,
   createCandidateClipStarts,
   createClipCheckOffsets,
+  createProposalThreshold,
   createSampleTimes,
   createVisualContext,
   createVerifiedClipSample,
@@ -51,7 +52,7 @@ type Phase = "idle" | "source-ready" | "engine-loading" | "analyzing" | "post-pr
 
 const subscribeToCapabilities = () => () => undefined;
 const MAX_SCENE_COUNT = 100;
-const MAX_PRELIMINARY_SCENE_COUNT = MAX_SCENE_COUNT * 3;
+const MAX_PRELIMINARY_SCENE_COUNT = MAX_SCENE_COUNT * 8;
 
 function getCapabilityMask() {
   const navigatorWithGpu = navigator as Navigator & { gpu?: unknown };
@@ -467,6 +468,9 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
       await ensureWorker(engine);
       if (activeJobRef.current !== jobId || cancelledRef.current) return;
       const calibratedThreshold = calibrateIdentityThreshold(threshold, references.at(-1)?.agreement ?? 1);
+      // Proposal scans deliberately favor recall. Every exported clip is still
+      // re-checked at the user's full threshold across its opening and duration.
+      const proposalThreshold = createProposalThreshold(calibratedThreshold);
       const sampleTimes = createSampleTimes(videoDuration, clipLength);
       const samples: ScanSample[] = [];
       setPhase("analyzing");
@@ -476,16 +480,15 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
       for (let index = 0; index < sampleTimes.length; index += 1) {
         if (cancelledRef.current || activeJobRef.current !== jobId) throw new DOMException("Analysis cancelled", "AbortError");
         const timestamp = sampleTimes[index];
-        samples.push(await scanAt(timestamp, jobId, calibratedThreshold, "coarse"));
+        samples.push(await scanAt(timestamp, jobId, proposalThreshold, "coarse"));
         updateProgress(index + 1, sampleTimes.length, index + 1 === sampleTimes.length);
       }
 
       if (activeJobRef.current !== jobId || cancelledRef.current) return;
       allSamplesRef.current = samples;
       setPhase("post-processing");
-      const preliminaryThreshold = Math.max(0.22, calibratedThreshold - 0.04);
-      const preliminaryCount = Math.min(Math.ceil(sceneCount * 3), MAX_PRELIMINARY_SCENE_COUNT);
-      const preliminaryWindow = Math.max(clipLength, videoDuration / Math.max(1, preliminaryCount));
+      const preliminaryThreshold = proposalThreshold;
+      const preliminaryCount = Math.min(Math.ceil(sceneCount * 8), MAX_PRELIMINARY_SCENE_COUNT);
       const preliminary = selectSceneMatches(
         samples,
         preliminaryCount,
@@ -493,11 +496,9 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
         videoDuration,
         preliminaryThreshold,
         {
-          minimumGapSeconds: Math.max(4, clipLength, preliminaryWindow * 0.35),
-          maximumVisualHashDistance: 14,
-          visualDuplicateWindowSeconds: Math.max(90, preliminaryWindow * 3),
-          timelineBucketSeconds: preliminaryWindow,
-          maximumMatchesPerTimelineBucket: 1,
+          minimumGapSeconds: Math.max(1.5, clipLength * 0.45),
+          maximumVisualHashDistance: 8,
+          visualDuplicateWindowSeconds: Math.max(8, clipLength * 2),
         },
       );
       const verified: ScanSample[] = [];
