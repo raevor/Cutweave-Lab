@@ -2,15 +2,16 @@ import { describe, expect, it } from "vitest";
 import {
   createClipCheckOffsets,
   createCandidateClipStarts,
-  calculateSceneIsolationSeconds,
   calibrateIdentityThreshold,
   createSampleTimes,
   createVerifiedClipSample,
   selectSceneMatches,
   validateClipChecks,
+  visualFingerprintDistance,
   visualHashDistance,
+  visualSceneDistance,
 } from "./pipeline";
-import type { ScanSample } from "./types";
+import type { ScanSample, VisualFingerprint } from "./types";
 
 function sample(timestamp: number, overrides: Partial<ScanSample> = {}): ScanSample {
   return {
@@ -22,6 +23,28 @@ function sample(timestamp: number, overrides: Partial<ScanSample> = {}): ScanSam
     faceQuality: 0.8,
     ...overrides,
   };
+}
+
+function fingerprint(seed: number, variation = 0): VisualFingerprint {
+  const luma = Array.from({ length: 24 * 14 }, (_, index) => (
+    ((index * (seed * 2 + 3) + seed * 11) % 31) / 30 + variation * 0.002
+  ));
+  const histogram = Array.from({ length: 24 }, () => 0);
+  histogram[seed % 12] = 1;
+  histogram[12 + seed % 6] = 1;
+  histogram[18 + (seed * 3) % 6] = 1;
+  const layout = Array.from({ length: 36 }, (_, index) => (
+    ((index * (seed + 5) + seed * 7) % 23) / 22 + variation * 0.002
+  ));
+  const hash = Array.from({ length: 64 }, (_, index) => ((index * (seed + 1) + seed) % 5 < 2 ? "1" : "0")).join("");
+  return { luma, histogram, layout, hash };
+}
+
+function visualSample(timestamp: number, seed: number, contextSeeds = [seed]): ScanSample {
+  return sample(timestamp, {
+    visualFingerprint: fingerprint(seed),
+    visualContext: contextSeeds.map((contextSeed) => fingerprint(contextSeed)),
+  });
 }
 
 describe("strict clip validation", () => {
@@ -113,26 +136,58 @@ describe("strict clip validation", () => {
     expect(scenes.map((scene) => scene.start)).toEqual(expect.arrayContaining([100, 900, 1800]));
   });
 
-  it("returns fewer clips instead of filling a long-form request with the same dramatic scene", () => {
-    const isolation = calculateSceneIsolationSeconds(40 * 60, 17, 5);
-    const denseMatches = Array.from({ length: 17 }, (_, index) => sample(120 + index * 20, {
-      similarity: 0.9 - index * 0.002,
-    }));
-    const separateScenes = [600, 900, 1200, 1500, 1800, 2100]
-      .map((timestamp) => sample(timestamp, { similarity: 0.7 }));
+  it("keeps twenty-five visually distinct scenes even when many occur inside three minutes", () => {
+    const denseDistinctScenes = Array.from({ length: 30 }, (_, index) => visualSample(
+      30 + index * 18,
+      index + 1,
+      [index + 1, index + 31],
+    ));
     const scenes = selectSceneMatches(
-      [...denseMatches, ...separateScenes],
-      17,
+      denseDistinctScenes,
+      25,
       5,
-      40 * 60,
+      35 * 60,
       0.52,
-      { minimumGapSeconds: isolation },
+      { minimumGapSeconds: 5, contentDiversity: true },
     );
+    expect(scenes).toHaveLength(25);
+    expect(scenes.filter((scene) => scene.start < 180).length).toBeGreaterThanOrEqual(5);
+  });
 
-    expect(isolation).toBeGreaterThanOrEqual(180);
-    expect(scenes.length).toBeLessThan(17);
-    expect(scenes.filter((scene) => scene.start >= 120 && scene.start <= 440)).toHaveLength(2);
-    expect(scenes.every((scene, index) => index === 0 || scene.start - scenes[index - 1].start >= isolation)).toBe(true);
+  it("collapses repeated moments by visual context rather than elapsed time", () => {
+    const repeatedScene = Array.from({ length: 8 }, (_, index) => visualSample(
+      60 + index * 35,
+      index % 2 ? 4 : 2,
+      [20, 21, 20, 21],
+    ));
+    const distinctScenes = [8, 9, 10, 11, 12].map((seed, index) => visualSample(
+      500 + index * 40,
+      seed,
+      [seed, seed + 20],
+    ));
+    const scenes = selectSceneMatches(
+      [...repeatedScene, ...distinctScenes],
+      12,
+      5,
+      900,
+      0.52,
+      { minimumGapSeconds: 5, contentDiversity: true },
+    );
+    expect(scenes.length).toBeLessThan(12);
+    expect(scenes.filter((scene) => scene.start >= 60 && scene.start <= 305)).toHaveLength(1);
+    expect(scenes.filter((scene) => scene.start >= 500)).toHaveLength(5);
+  });
+
+  it("uses surrounding context to distinguish matching compositions from different scenes", () => {
+    const sharedComposition = fingerprint(3);
+    const first = sample(30, { visualFingerprint: sharedComposition, visualContext: [fingerprint(4), fingerprint(5)] });
+    const second = sample(70, { visualFingerprint: sharedComposition, visualContext: [fingerprint(14), fingerprint(15)] });
+    expect(visualFingerprintDistance(sharedComposition, sharedComposition)).toBeCloseTo(0);
+    expect(visualSceneDistance(first, second)).toBeGreaterThan(0.22);
+    expect(selectSceneMatches([first, second], 2, 5, 120, 0.52, {
+      minimumGapSeconds: 5,
+      contentDiversity: true,
+    })).toHaveLength(2);
   });
 
   it("chooses the highest-quality globally spaced plan instead of a greedy local maximum", () => {

@@ -8,12 +8,12 @@ import { useLanguage } from "@/i18n/language-provider";
 import { canRenderSceneClips, exportScenePackage, preferredClipFormat } from "@/lib/face-recognition/export-clips";
 import {
   MAX_VIDEO_DURATION_SECONDS,
-  calculateSceneIsolationSeconds,
   calibrateIdentityThreshold,
   captureVideoFrame,
   createCandidateClipStarts,
   createClipCheckOffsets,
   createSampleTimes,
+  createVisualContext,
   createVerifiedClipSample,
   formatTimecode,
   seekVideo,
@@ -412,7 +412,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     if (!video) throw new Error("The video preview is no longer available.");
     await seekVideo(video, timestamp);
     const maximumWidth = mode === "coarse" ? 800 : 960;
-    const { bitmap, visualHash } = await captureVideoFrame(video, false, maximumWidth);
+    const { bitmap, visualHash, visualFingerprint } = await captureVideoFrame(video, false, maximumWidth);
     const requestId = ++requestIdRef.current;
     const response = await sendWorker({ type: "scan", requestId, jobId, timestamp, threshold: identityThreshold, mode, bitmap }, [bitmap]);
     if (response.type !== "scan-result" || response.jobId !== jobId) throw new Error("A stale face result was rejected.");
@@ -424,6 +424,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
       faceCount: response.faceCount,
       faceQuality: response.faceQuality,
       visualHash,
+      visualFingerprint,
     } satisfies ScanSample;
   }
 
@@ -523,17 +524,17 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
           }
           const verifiedSample = createVerifiedClipSample(checks, calibratedThreshold, clipStart);
           if (verifiedSample) {
-            verified.push(verifiedSample);
+            verified.push({
+              ...verifiedSample,
+              visualContext: createVisualContext(clipStart + clipLength / 2, samples),
+            });
             break;
           }
         }
       }
-      const timelineWindow = Math.max(30, videoDuration / Math.max(1, sceneCount));
-      const sceneIsolation = calculateSceneIsolationSeconds(videoDuration, sceneCount, clipLength);
       const selected = selectSceneMatches(verified, sceneCount, clipLength, videoDuration, calibratedThreshold, {
-        minimumGapSeconds: sceneIsolation,
-        maximumVisualHashDistance: 18,
-        visualDuplicateWindowSeconds: Math.max(180, timelineWindow * 2),
+        minimumGapSeconds: Math.max(1, clipLength * 0.95),
+        contentDiversity: true,
       });
       updateProgress(0, selected.length, true);
       const withThumbnails = await createThumbnails(selected, jobId);
@@ -572,7 +573,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     setPhase("exporting");
     setProgress({ completed: 0, total: matches.length });
     try {
-      const blob = await exportScenePackage(file, mediaUrl, file.name, matches, () => cancelledRef.current, (completed, total) => {
+      const blob = await exportScenePackage(file, mediaUrl, matches, () => cancelledRef.current, (completed, total) => {
         setProgress({ completed, total });
       });
       if (cancelledRef.current) throw new DOMException("Export cancelled", "AbortError");

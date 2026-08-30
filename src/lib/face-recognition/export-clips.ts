@@ -1,9 +1,14 @@
-import { Zip, ZipPassThrough, strToU8 } from "fflate";
+import { Zip, ZipPassThrough } from "fflate";
 import type { SceneMatch } from "./types";
-import { formatTimecode, seekVideo, waitForVideoEvent } from "./pipeline";
+import { seekVideo, waitForVideoEvent } from "./pipeline";
 
 type CaptureVideo = HTMLVideoElement & { captureStream?: () => MediaStream };
 type RenderedClip = { bytes: Uint8Array; extension: "mp4" | "webm" };
+type SceneCover = { data: Uint8Array; mimeType: string };
+
+export function sceneClipFilename(index: number, extension: RenderedClip["extension"]) {
+  return `Scene${String(index + 1).padStart(2, "0")}.${extension}`;
+}
 
 function hasWebCodecs() {
   return typeof VideoDecoder !== "undefined"
@@ -28,7 +33,12 @@ export function preferredClipFormat() {
   return hasWebCodecs() ? "MP4" : "WebM";
 }
 
-async function renderMp4Scene(source: File, scene: SceneMatch, isCancelled: () => boolean): Promise<RenderedClip> {
+async function renderMp4Scene(
+  source: File,
+  scene: SceneMatch,
+  isCancelled: () => boolean,
+  cover?: SceneCover,
+): Promise<RenderedClip> {
   const {
     ALL_FORMATS,
     BlobSource,
@@ -50,6 +60,15 @@ async function renderMp4Scene(source: File, scene: SceneMatch, isCancelled: () =
     trim: { start: scene.start, end: scene.end },
     video: { codec: "avc", hardwareAcceleration: "prefer-hardware" },
     audio: { codec: "aac" },
+    tags: cover ? {
+      images: [{
+        data: cover.data,
+        mimeType: cover.mimeType,
+        kind: "coverFront",
+        name: "Scene cover",
+        description: "First frame of this Cutweave scene",
+      }],
+    } : {},
     showWarnings: false,
   });
   if (!conversion.isValid) {
@@ -71,6 +90,21 @@ async function renderMp4Scene(source: File, scene: SceneMatch, isCancelled: () =
   }
   if (!target.buffer) throw new Error("The local MP4 encoder produced no output.");
   return { bytes: new Uint8Array(target.buffer), extension: "mp4" };
+}
+
+async function loadSceneCover(scene: SceneMatch): Promise<SceneCover | undefined> {
+  if (!scene.thumbnailUrl) return undefined;
+  try {
+    const response = await fetch(scene.thumbnailUrl);
+    if (!response.ok) return undefined;
+    const blob = await response.blob();
+    return {
+      data: new Uint8Array(await blob.arrayBuffer()),
+      mimeType: blob.type || "image/jpeg",
+    };
+  } catch {
+    return undefined;
+  }
 }
 
 async function renderLegacyScene(
@@ -130,7 +164,6 @@ async function renderLegacyScene(
 export async function exportScenePackage(
   source: File,
   mediaUrl: string,
-  sourceName: string,
   scenes: SceneMatch[],
   isCancelled: () => boolean,
   onProgress: (completed: number, total: number) => void,
@@ -153,39 +186,13 @@ export async function exportScenePackage(
     if (final) resolveZip(new Blob(outputChunks, { type: "application/zip" }));
   });
 
-  const plan = {
-    version: 1,
-    source: sourceName,
-    generatedAt: new Date().toISOString(),
-    privacy: "Generated locally. No face crop or embedding is included.",
-    scenes: scenes.map((scene) => ({
-      id: scene.id,
-      start: scene.start,
-      end: scene.end,
-      center: scene.center,
-      similarity: scene.similarity,
-      verificationCount: scene.verificationCount,
-      verificationTotal: scene.verificationTotal,
-    })),
-  };
-  const json = new ZipPassThrough("cut-plan.json");
-  zip.add(json);
-  json.push(strToU8(JSON.stringify(plan, null, 2)), true);
-
-  const csvText = [
-    "scene,start,end,similarity,face_checks",
-    ...scenes.map((scene, index) => `${index + 1},${formatTimecode(scene.start)},${formatTimecode(scene.end)},${scene.similarity.toFixed(4)},${scene.verificationCount ?? 0}/${scene.verificationTotal ?? 0}`),
-  ].join("\n");
-  const csv = new ZipPassThrough("cut-plan.csv");
-  zip.add(csv);
-  csv.push(strToU8(csvText), true);
-
   for (let index = 0; index < scenes.length; index += 1) {
     if (isCancelled()) throw new DOMException("Export cancelled", "AbortError");
     let clip: RenderedClip;
     if (hasWebCodecs()) {
       try {
-        clip = await renderMp4Scene(source, scenes[index], isCancelled);
+        const cover = await loadSceneCover(scenes[index]);
+        clip = await renderMp4Scene(source, scenes[index], isCancelled, cover);
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") throw error;
         clip = await renderLegacyScene(mediaUrl, scenes[index], isCancelled);
@@ -193,7 +200,7 @@ export async function exportScenePackage(
     } else {
       clip = await renderLegacyScene(mediaUrl, scenes[index], isCancelled);
     }
-    const filename = `scene-${String(index + 1).padStart(2, "0")}_${formatTimecode(scenes[index].start).replaceAll(":", "-")}.${clip.extension}`;
+    const filename = sceneClipFilename(index, clip.extension);
     const entry = new ZipPassThrough(filename);
     zip.add(entry);
     entry.push(clip.bytes, true);

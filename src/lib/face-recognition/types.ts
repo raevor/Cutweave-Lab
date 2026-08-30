@@ -1,6 +1,13 @@
 export type FaceEngine = "gpu" | "cpu";
 export type FaceScanMode = "coarse" | "verify";
 
+export type VisualFingerprint = {
+  luma: number[];
+  histogram: number[];
+  layout: number[];
+  hash?: string;
+};
+
 export type FaceWorkerRequest =
   | { type: "init"; requestId: number; engine: FaceEngine; origin: string }
   | { type: "reference"; requestId: number; slot: number; bitmap: ImageBitmap }
@@ -24,6 +31,8 @@ export type ScanSample = {
   faceCount: number;
   faceQuality: number;
   visualHash?: string;
+  visualFingerprint?: VisualFingerprint;
+  visualContext?: VisualFingerprint[];
   verificationCount?: number;
   verificationTotal?: number;
 };
