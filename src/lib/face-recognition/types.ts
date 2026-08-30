@@ -33,6 +33,7 @@ export type ScanSample = {
   visualHash?: string;
   visualFingerprint?: VisualFingerprint;
   visualContext?: VisualFingerprint[];
+  narrativeScene?: number;
   verificationCount?: number;
   verificationTotal?: number;
 };

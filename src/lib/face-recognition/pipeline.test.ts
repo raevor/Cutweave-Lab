@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   createClipCheckOffsets,
   createCandidateClipStarts,
+  createBalancedCandidateOrder,
   calibrateIdentityThreshold,
   createProposalThreshold,
+  createNarrativeCandidateOrder,
   createSampleTimes,
   createVerifiedClipSample,
   createVisualContext,
+  createVerificationClipStarts,
   selectSceneMatches,
   validateClipChecks,
   visualFingerprintDistance,
@@ -111,6 +114,90 @@ describe("strict clip validation", () => {
 
   it("searches for a complete clip window around a coarse candidate", () => {
     expect(createCandidateClipStarts(20, 5, 60)).toEqual([20, 19.2, 18.4, 17.6, 16.8, 16]);
+  });
+
+  it("anchors verification at the beginning of a continuous positive face run", () => {
+    const samples = [
+      sample(8, { similarity: 0.1, weakestSimilarity: 0.1, referenceHits: 0 }),
+      sample(10),
+      sample(11.7),
+      sample(13.4),
+      sample(15.1, { similarity: 0.1, weakestSimilarity: 0.1, referenceHits: 0 }),
+    ];
+    const starts = createVerificationClipStarts(13.4, 5, 60, samples, 0.3);
+    expect(starts[0]).toBe(10);
+    expect(starts).toHaveLength(3);
+    expect(starts.at(-1)).toBeLessThanOrEqual(13.4);
+  });
+
+  it("front-loads one high-quality candidate from each timeline region", () => {
+    const candidates = [
+      sample(10, { similarity: 0.6 }), sample(20, { similarity: 0.8 }),
+      sample(110, { similarity: 0.61 }), sample(120, { similarity: 0.81 }),
+      sample(210, { similarity: 0.62 }), sample(220, { similarity: 0.82 }),
+    ];
+    const ordered = createBalancedCandidateOrder(candidates, 300, 3);
+    expect(ordered.slice(0, 3).map((candidate) => candidate.timestamp)).toEqual([20, 120, 220]);
+    expect(ordered).toHaveLength(candidates.length);
+  });
+
+  it("groups a continuous dialogue with recurring camera setups into one narrative scene", () => {
+    const dialogue = [0, 28, 61, 104, 158, 221, 287, 344].map((offset, index) => visualSample(
+      60 + offset,
+      index % 2 ? 7 : 3,
+      [index % 2 ? 7 : 3],
+    ));
+    const nextScene = [460, 492].map((timestamp, index) => visualSample(timestamp, 20 + index));
+    const laterReturn = visualSample(760, 3, [3]);
+    const ordered = createNarrativeCandidateOrder([...dialogue, ...nextScene, laterReturn], 900, 10);
+    const dialogueGroups = new Set(ordered.filter((sample) => sample.timestamp < 450).map((sample) => sample.narrativeScene));
+    expect(dialogueGroups.size).toBe(1);
+    expect(ordered.filter((sample) => sample.timestamp < 450)).toHaveLength(8);
+    expect(ordered.find((sample) => sample.timestamp === 760)?.narrativeScene)
+      .not.toBe(ordered.find((sample) => sample.timestamp === 60)?.narrativeScene);
+  });
+
+  it("returns only the strongest verified clip from each narrative scene", () => {
+    const scenes = selectSceneMatches([
+      visualSample(10, 3, [3]),
+      visualSample(40, 3, [3]),
+      visualSample(80, 3, [3]),
+      visualSample(200, 11, [11]),
+    ].map((candidate, index) => ({
+      ...candidate,
+      narrativeScene: index < 3 ? 0 : 1,
+      similarity: index === 1 ? 0.9 : candidate.similarity,
+    })), 10, 5, 300, 0.38, { minimumGapSeconds: 5, contentDiversity: true });
+    expect(scenes).toHaveLength(2);
+    expect(scenes.map((scene) => scene.start)).toEqual([40, 200]);
+  });
+
+  it("allows additional distinct shots from one scene after other scenes are covered", () => {
+    const scenes = selectSceneMatches([
+      { ...visualSample(10, 3, [3]), narrativeScene: 0 },
+      { ...visualSample(40, 7, [7]), narrativeScene: 0 },
+      { ...visualSample(200, 11, [11]), narrativeScene: 1 },
+    ], 3, 5, 300, 0.38, { minimumGapSeconds: 5, contentDiversity: true });
+    expect(scenes).toHaveLength(3);
+    expect(scenes.map((scene) => scene.start)).toEqual([10, 40, 200]);
+  });
+
+  it("never lets narrative grouping cap a one-hundred-result request", () => {
+    const candidates = Array.from({ length: 120 }, (_, index) => visualSample(index * 10, 3, [3]));
+    const ordered = createNarrativeCandidateOrder(candidates, 1_200, 100);
+    expect(ordered).toHaveLength(120);
+  });
+
+  it("fills one hundred visually distinct clips even when they share one narrative scene", () => {
+    const candidates = Array.from({ length: 120 }, (_, index) => ({
+      ...visualSample(index * 10, index + 1, [index + 1, index + 121]),
+      narrativeScene: 0,
+    }));
+    const scenes = selectSceneMatches(candidates, 100, 5, 1_200, 0.38, {
+      minimumGapSeconds: 5,
+      contentDiversity: true,
+    });
+    expect(scenes).toHaveLength(100);
   });
 
   it("never lowers the identity threshold when references disagree", () => {

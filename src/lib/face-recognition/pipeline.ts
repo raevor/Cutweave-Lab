@@ -195,6 +195,7 @@ function chooseContentDiversePlan(samples: ScanSample[], desiredCount: number, m
     }
   }
   const duplicateThreshold = Math.max(0.045, adaptiveDuplicateThreshold(distanceMatrix) * 0.62);
+  const absoluteDuplicateFloor = 0.012;
   const qualities = samples.map(sampleSelectionQuality);
   const minimumQuality = Math.min(...qualities);
   const maximumQuality = Math.max(...qualities);
@@ -208,12 +209,21 @@ function chooseContentDiversePlan(samples: ScanSample[], desiredCount: number, m
       if (selected.includes(index)) continue;
       if (selected.some((selectedIndex) => Math.abs(samples[index].timestamp - samples[selectedIndex].timestamp) < minimumGap)) continue;
       const novelty = Math.min(...selected.map((selectedIndex) => distanceMatrix[index][selectedIndex]));
-      // Only near-identical shots are hard duplicates. Everything else remains
-      // eligible and is re-ranked with MMR, so diversity cannot silently cap a
-      // long episode at a few dozen results.
-      if (novelty < duplicateThreshold) continue;
+      // Only effectively identical frames are hard duplicates. Softer visual
+      // repeats are penalized, not removed, so a high requested count can still
+      // be filled after all distinct material is exhausted.
+      if (novelty < absoluteDuplicateFloor) continue;
       const normalizedQuality = (qualities[index] - minimumQuality) / qualityRange;
-      const score = normalizedQuality * 0.72 + novelty * 0.28;
+      const sceneReuseCount = samples[index].narrativeScene === undefined
+        ? 0
+        : selected.filter((selectedIndex) => samples[selectedIndex].narrativeScene === samples[index].narrativeScene).length;
+      // Cover every narrative section first, then allow genuinely different
+      // shots from the same section when the requested count still has room.
+      const sceneReusePenalty = Math.min(0.24, sceneReuseCount * 0.08);
+      const visualRepeatPenalty = novelty < duplicateThreshold
+        ? ((duplicateThreshold - novelty) / duplicateThreshold) * 0.22
+        : 0;
+      const score = normalizedQuality * 0.72 + novelty * 0.28 - sceneReusePenalty - visualRepeatPenalty;
       if (score > bestScore) {
         bestScore = score;
         bestIndex = index;
@@ -421,6 +431,122 @@ export function createCandidateClipStarts(candidateTimestamp: number, clipDurati
     const start = Math.max(0, Math.min(maximumStart, candidateTimestamp - clipDuration * fraction));
     return Math.round(start * 1000) / 1000;
   }))];
+}
+
+export function createVerificationClipStarts(
+  candidateTimestamp: number,
+  clipDuration: number,
+  videoDuration: number,
+  samples: ScanSample[],
+  proposalThreshold: number,
+) {
+  if (!samples.length) return createCandidateClipStarts(candidateTimestamp, clipDuration, videoDuration);
+  let low = 0;
+  let high = samples.length - 1;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    if (samples[middle].timestamp < candidateTimestamp) low = middle + 1;
+    else high = middle;
+  }
+  let closest = low;
+  if (closest > 0
+    && Math.abs(samples[closest - 1].timestamp - candidateTimestamp) < Math.abs(samples[closest].timestamp - candidateTimestamp)) {
+    closest -= 1;
+  }
+  let runStart = closest;
+  while (runStart > 0) {
+    const previous = samples[runStart - 1];
+    const current = samples[runStart];
+    if (current.timestamp - previous.timestamp > 2.6 || !samplePassesIdentity(previous, proposalThreshold)) break;
+    if (previous.visualFingerprint && current.visualFingerprint
+      && visualFingerprintDistance(previous.visualFingerprint, current.visualFingerprint) >= SHOT_BOUNDARY_DISTANCE) break;
+    runStart -= 1;
+  }
+  const maximumStart = Math.max(0, videoDuration - clipDuration);
+  const anchor = Math.max(0, Math.min(maximumStart, samples[runStart].timestamp));
+  const candidate = Math.max(0, Math.min(maximumStart, candidateTimestamp));
+  const middle = anchor + (candidate - anchor) / 2;
+  const smallForwardCorrection = Math.min(maximumStart, anchor + Math.min(0.55, clipDuration * 0.1));
+  return [...new Set([anchor, middle, candidate, smallForwardCorrection]
+    .map((timestamp) => Math.round(timestamp * 1000) / 1000))]
+    .sort((first, second) => first - second)
+    .slice(0, 3);
+}
+
+export function createBalancedCandidateOrder(samples: ScanSample[], videoDuration: number, desiredBuckets: number) {
+  if (samples.length < 2 || videoDuration <= 0 || desiredBuckets <= 1) return [...samples];
+  const bucketCount = Math.max(1, Math.min(desiredBuckets, samples.length));
+  const buckets = Array.from({ length: bucketCount }, () => [] as ScanSample[]);
+  for (const sample of samples) {
+    const bucket = Math.min(bucketCount - 1, Math.floor((sample.timestamp / videoDuration) * bucketCount));
+    buckets[bucket].push(sample);
+  }
+  for (const bucket of buckets) bucket.sort((first, second) => sampleSelectionQuality(second) - sampleSelectionQuality(first));
+  const ordered: ScanSample[] = [];
+  const maximumDepth = Math.max(...buckets.map((bucket) => bucket.length));
+  for (let depth = 0; depth < maximumDepth; depth += 1) {
+    for (const bucket of buckets) {
+      if (bucket[depth]) ordered.push(bucket[depth]);
+    }
+  }
+  return ordered;
+}
+
+export function createNarrativeCandidateOrder(samples: ScanSample[], videoDuration: number, desiredBuckets: number) {
+  if (!samples.length) return [];
+  const ordered = [...samples].sort((first, second) => first.timestamp - second.timestamp);
+  const groups: ScanSample[][] = [[]];
+  let pending: ScanSample[] = [];
+  for (const sample of ordered) {
+    const current = groups.at(-1);
+    const lastObserved = pending.at(-1) ?? current?.at(-1);
+    if (lastObserved && sample.timestamp - lastObserved.timestamp > 150) {
+      if (pending.length) groups.push(pending);
+      groups.push([sample]);
+      pending = [];
+      continue;
+    }
+    let continuesCurrentScene = false;
+    if (current?.length && sample.visualFingerprint) {
+      const recent = current
+        .filter((candidate) => sample.timestamp - candidate.timestamp <= 150 && candidate.visualFingerprint)
+        .slice(-8);
+      const distances = recent
+        .map((candidate) => visualSceneDistance(sample, candidate))
+        .sort((first, second) => first - second);
+      const closest = distances[0] ?? 1;
+      continuesCurrentScene = closest <= 0.26;
+    }
+    if (continuesCurrentScene) {
+      current!.push(...pending, sample);
+      pending = [];
+      continue;
+    }
+    pending.push(sample);
+    const pendingSpan = pending.at(-1)!.timestamp - pending[0].timestamp;
+    // A single unfamiliar POV is not a boundary. Three consecutive unmatched
+    // candidates (or a sustained unmatched run) form a new narrative scene.
+    if (pending.length >= 3 || pendingSpan >= 75) {
+      groups.push(pending);
+      pending = [];
+    }
+  }
+  if (pending.length) groups.push(pending);
+  if (!groups[0].length) groups.shift();
+  const rankedGroups = groups.map((group, narrativeScene) => group
+    .map((sample) => ({ ...sample, narrativeScene }))
+    .sort((first, second) => sampleSelectionQuality(second) - sampleSelectionQuality(first)));
+  const leaders = rankedGroups.map((group) => group[0]);
+  const balancedLeaders = createBalancedCandidateOrder(leaders, videoDuration, Math.min(desiredBuckets, leaders.length));
+  const groupOrder = balancedLeaders.map((leader) => leader.narrativeScene!);
+  const result: ScanSample[] = [];
+  const maximumDepth = Math.max(...rankedGroups.map((group) => group.length));
+  for (let depth = 0; depth < maximumDepth; depth += 1) {
+    for (const groupIndex of groupOrder) {
+      if (rankedGroups[groupIndex][depth]) result.push(rankedGroups[groupIndex][depth]);
+    }
+  }
+  return result;
 }
 
 export function calibrateIdentityThreshold(requestedThreshold: number, referenceAgreement: number) {
@@ -646,14 +772,21 @@ function createVisualFingerprint(source: HTMLCanvasElement, hash?: string): Visu
   return { luma, histogram, layout, hash };
 }
 
-export async function captureVideoFrame(video: HTMLVideoElement, includePreview = false, maximumWidth = 960) {
-  const { width, height } = frameSize(video, maximumWidth);
+async function captureFrameSource(
+  source: CanvasImageSource,
+  sourceWidth: number,
+  sourceHeight: number,
+  includePreview: boolean,
+  maximumWidth: number,
+) {
+  const width = Math.min(maximumWidth, Math.max(1, sourceWidth));
+  const height = Math.max(1, Math.round(width * (Math.max(1, sourceHeight) / Math.max(1, sourceWidth))));
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
   const context = canvas.getContext("2d", { alpha: false });
   if (!context) throw new Error("This browser could not prepare a local video frame.");
-  context.drawImage(video, 0, 0, width, height);
+  context.drawImage(source, 0, 0, width, height);
   const visualHash = createVisualHash(canvas);
   const visualFingerprint = createVisualFingerprint(canvas, visualHash);
   const previewBlob = includePreview
@@ -663,4 +796,17 @@ export async function captureVideoFrame(video: HTMLVideoElement, includePreview 
   canvas.width = 1;
   canvas.height = 1;
   return { bitmap, previewBlob, visualHash, visualFingerprint };
+}
+
+export async function captureVideoFrame(video: HTMLVideoElement, includePreview = false, maximumWidth = 960) {
+  const { width, height } = frameSize(video, maximumWidth);
+  return captureFrameSource(video, width, height, includePreview, maximumWidth);
+}
+
+export async function captureCanvasFrame(
+  source: HTMLCanvasElement | OffscreenCanvas,
+  includePreview = false,
+  maximumWidth = 960,
+) {
+  return captureFrameSource(source, source.width, source.height, includePreview, maximumWidth);
 }

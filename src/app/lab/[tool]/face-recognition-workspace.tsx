@@ -9,13 +9,15 @@ import { canRenderSceneClips, exportScenePackage, preferredClipFormat } from "@/
 import {
   MAX_VIDEO_DURATION_SECONDS,
   calibrateIdentityThreshold,
+  captureCanvasFrame,
   captureVideoFrame,
-  createCandidateClipStarts,
   createClipCheckOffsets,
   createProposalThreshold,
+  createNarrativeCandidateOrder,
   createSampleTimes,
   createVisualContext,
   createVerifiedClipSample,
+  createVerificationClipStarts,
   formatTimecode,
   seekVideo,
   selectSceneMatches,
@@ -48,11 +50,44 @@ type PendingWorkerCall = {
   reject: (error: Error) => void;
 };
 
+type DecodedFrame = { canvas: HTMLCanvasElement | OffscreenCanvas; timestamp: number; duration: number };
+type DecodedFrameScanner = {
+  canvasesAtTimestamps: (timestamps: number[]) => AsyncGenerator<DecodedFrame | null, void, unknown>;
+  getCanvas: (timestamp: number) => Promise<DecodedFrame | null>;
+  dispose: () => void;
+};
+
 type Phase = "idle" | "source-ready" | "engine-loading" | "analyzing" | "post-processing" | "results" | "exporting" | "cancelled" | "error";
 
 const subscribeToCapabilities = () => () => undefined;
 const MAX_SCENE_COUNT = 100;
 const MAX_PRELIMINARY_SCENE_COUNT = MAX_SCENE_COUNT * 8;
+
+async function createDecodedFrameScanner(file: File): Promise<DecodedFrameScanner | null> {
+  if (typeof VideoDecoder === "undefined") return null;
+  let input: { dispose: () => void } | null = null;
+  try {
+    const { ALL_FORMATS, BlobSource, CanvasSink, Input } = await import("mediabunny");
+    const nextInput = new Input({ formats: ALL_FORMATS, source: new BlobSource(file) });
+    input = nextInput;
+    const track = await nextInput.getPrimaryVideoTrack();
+    if (!track || !await track.canDecode()) {
+      nextInput.dispose();
+      return null;
+    }
+    const displayWidth = await track.getDisplayWidth();
+    const coarseSink = new CanvasSink(track, { width: Math.min(800, displayWidth), poolSize: 3 });
+    const verificationSink = new CanvasSink(track, { width: Math.min(960, displayWidth), poolSize: 2 });
+    return {
+      canvasesAtTimestamps: (timestamps) => coarseSink.canvasesAtTimestamps(timestamps),
+      getCanvas: (timestamp) => verificationSink.getCanvas(timestamp),
+      dispose: () => nextInput.dispose(),
+    };
+  } catch {
+    input?.dispose();
+    return null;
+  }
+}
 
 function getCapabilityMask() {
   const navigatorWithGpu = navigator as Navigator & { gpu?: unknown };
@@ -410,12 +445,14 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     }
   }
 
-  async function scanAt(timestamp: number, jobId: string, identityThreshold: number, mode: FaceScanMode) {
-    const video = videoRef.current;
-    if (!video) throw new Error("The video preview is no longer available.");
-    await seekVideo(video, timestamp);
-    const maximumWidth = mode === "coarse" ? 800 : 960;
-    const { bitmap, visualHash, visualFingerprint } = await captureVideoFrame(video, false, maximumWidth);
+  async function submitScan(
+    timestamp: number,
+    jobId: string,
+    identityThreshold: number,
+    mode: FaceScanMode,
+    captured: Awaited<ReturnType<typeof captureVideoFrame>>,
+  ) {
+    const { bitmap, visualHash, visualFingerprint } = captured;
     const requestId = ++requestIdRef.current;
     const response = await sendWorker({ type: "scan", requestId, jobId, timestamp, threshold: identityThreshold, mode, bitmap }, [bitmap]);
     if (response.type !== "scan-result" || response.jobId !== jobId) throw new Error("A stale face result was rejected.");
@@ -431,14 +468,47 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     } satisfies ScanSample;
   }
 
-  async function createThumbnails(scenes: SceneMatch[], jobId: string) {
+  async function scanAt(timestamp: number, jobId: string, identityThreshold: number, mode: FaceScanMode) {
+    const video = videoRef.current;
+    if (!video) throw new Error("The video preview is no longer available.");
+    await seekVideo(video, timestamp);
+    const maximumWidth = mode === "coarse" ? 800 : 960;
+    return submitScan(
+      timestamp,
+      jobId,
+      identityThreshold,
+      mode,
+      await captureVideoFrame(video, false, maximumWidth),
+    );
+  }
+
+  async function scanDecodedCanvasAt(
+    canvas: HTMLCanvasElement | OffscreenCanvas,
+    timestamp: number,
+    jobId: string,
+    identityThreshold: number,
+    mode: FaceScanMode,
+  ) {
+    const maximumWidth = mode === "coarse" ? 800 : 960;
+    return submitScan(
+      timestamp,
+      jobId,
+      identityThreshold,
+      mode,
+      await captureCanvasFrame(canvas, false, maximumWidth),
+    );
+  }
+
+  async function createThumbnails(scenes: SceneMatch[], jobId: string, decodedScanner?: DecodedFrameScanner | null) {
     const video = videoRef.current;
     if (!video) return scenes;
     const completed: SceneMatch[] = [];
-    for (const scene of scenes) {
-      if (cancelledRef.current || activeJobRef.current !== jobId) return completed;
-      await seekVideo(video, scene.center);
-      const { bitmap, previewBlob } = await captureVideoFrame(video, true);
+    const appendThumbnail = async (scene: SceneMatch, canvas?: HTMLCanvasElement | OffscreenCanvas) => {
+      if (cancelledRef.current || activeJobRef.current !== jobId) throw new DOMException("Analysis cancelled", "AbortError");
+      if (!canvas) await seekVideo(video, scene.center);
+      const { bitmap, previewBlob } = canvas
+        ? await captureCanvasFrame(canvas, true)
+        : await captureVideoFrame(video, true);
       bitmap.close();
       if (previewBlob) {
         const thumbnailUrl = URL.createObjectURL(previewBlob);
@@ -448,13 +518,31 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
         completed.push(scene);
       }
       updateProgress(completed.length, scenes.length, completed.length === scenes.length);
+    };
+    let sceneIndex = 0;
+    if (decodedScanner) {
+      const decodedFrames = decodedScanner.canvasesAtTimestamps(scenes.map((scene) => scene.center));
+      while (sceneIndex < scenes.length) {
+        let decoded: IteratorResult<DecodedFrame | null, void>;
+        try {
+          decoded = await decodedFrames.next();
+        } catch {
+          break;
+        }
+        if (decoded.done) break;
+        await appendThumbnail(scenes[sceneIndex], decoded.value?.canvas);
+        sceneIndex += 1;
+      }
+    }
+    for (; sceneIndex < scenes.length; sceneIndex += 1) {
+      await appendThumbnail(scenes[sceneIndex]);
     }
     return completed;
   }
 
   async function analyzeVideo() {
     const video = videoRef.current;
-    if (!video || references.length !== 3 || !videoDuration || videoDuration > MAX_VIDEO_DURATION_SECONDS) return;
+    if (!video || !file || references.length !== 3 || !videoDuration || videoDuration > MAX_VIDEO_DURATION_SECONDS) return;
     matches.forEach((match) => revokeUrl(match.thumbnailUrl ?? null));
     revokeUrl(exportUrl);
     setExportUrl(null);
@@ -463,6 +551,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     cancelledRef.current = false;
     const jobId = makeJobId();
     activeJobRef.current = jobId;
+    let decodedScanner: DecodedFrameScanner | null = null;
 
     try {
       await ensureWorker(engine);
@@ -477,7 +566,30 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
       updateProgress(0, sampleTimes.length, true);
       video.pause();
 
-      for (let index = 0; index < sampleTimes.length; index += 1) {
+      decodedScanner = await createDecodedFrameScanner(file);
+      let coarseIndex = 0;
+      if (decodedScanner) {
+        const decodedFrames = decodedScanner.canvasesAtTimestamps(sampleTimes);
+        while (coarseIndex < sampleTimes.length) {
+          let decoded: IteratorResult<DecodedFrame | null, void>;
+          try {
+            decoded = await decodedFrames.next();
+          } catch {
+            decodedScanner.dispose();
+            decodedScanner = null;
+            break;
+          }
+          if (decoded.done) break;
+          if (cancelledRef.current || activeJobRef.current !== jobId) throw new DOMException("Analysis cancelled", "AbortError");
+          const timestamp = sampleTimes[coarseIndex];
+          samples.push(decoded.value
+            ? await scanDecodedCanvasAt(decoded.value.canvas, timestamp, jobId, proposalThreshold, "coarse")
+            : await scanAt(timestamp, jobId, proposalThreshold, "coarse"));
+          coarseIndex += 1;
+          updateProgress(coarseIndex, sampleTimes.length, coarseIndex === sampleTimes.length);
+        }
+      }
+      for (let index = coarseIndex; index < sampleTimes.length; index += 1) {
         if (cancelledRef.current || activeJobRef.current !== jobId) throw new DOMException("Analysis cancelled", "AbortError");
         const timestamp = sampleTimes[index];
         samples.push(await scanAt(timestamp, jobId, proposalThreshold, "coarse"));
@@ -501,14 +613,39 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
           visualDuplicateWindowSeconds: Math.max(8, clipLength * 2),
         },
       );
+      const verificationCandidates = createNarrativeCandidateOrder(
+        preliminary.map((candidate) => samples.find((sample) => Math.abs(sample.timestamp - candidate.start) < 0.03) ?? {
+          timestamp: candidate.start,
+          similarity: candidate.similarity,
+          weakestSimilarity: candidate.similarity,
+          referenceHits: 2,
+          faceCount: 1,
+          faceQuality: 0.5,
+          visualHash: candidate.visualHash,
+        }).map((candidate) => ({
+          ...candidate,
+          visualContext: createVisualContext(candidate.timestamp, samples),
+        })),
+        videoDuration,
+        Math.min(sceneCount, preliminary.length),
+      );
       const verified: ScanSample[] = [];
       const checkOffsets = createClipCheckOffsets(clipLength);
-      const candidateStarts = preliminary.map((candidate) => createCandidateClipStarts(candidate.start, clipLength, videoDuration));
+      const candidateStarts = verificationCandidates.map((candidate) => createVerificationClipStarts(
+        candidate.timestamp,
+        clipLength,
+        videoDuration,
+        samples,
+        proposalThreshold,
+      ));
       const plannedVerificationFrames = candidateStarts.reduce((total, starts) => total + starts.length * checkOffsets.length, 0);
       updateProgress(0, plannedVerificationFrames, true);
       let verifiedFrames = 0;
+      const verificationTarget = Math.min(preliminary.length, sceneCount);
+      let nextDiversityCheck = verificationTarget;
+      let enoughDiverseMatches = false;
       const verificationCache = new Map<number, ScanSample>();
-      for (let candidateIndex = 0; candidateIndex < preliminary.length; candidateIndex += 1) {
+      for (let candidateIndex = 0; candidateIndex < verificationCandidates.length && !enoughDiverseMatches; candidateIndex += 1) {
         for (const clipStart of candidateStarts[candidateIndex]) {
           const checkTimes = checkOffsets.map((offset) => Math.max(0, Math.min(videoDuration - 0.05, clipStart + offset)));
           const checks: ScanSample[] = [];
@@ -517,7 +654,19 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
             const cacheKey = Math.round(checkTimes[checkIndex] * 50);
             let check = verificationCache.get(cacheKey);
             if (!check) {
-              check = await scanAt(checkTimes[checkIndex], jobId, calibratedThreshold, "verify");
+              if (decodedScanner) {
+                let frame: DecodedFrame | null = null;
+                try {
+                  frame = await decodedScanner.getCanvas(checkTimes[checkIndex]);
+                } catch {
+                  decodedScanner.dispose();
+                  decodedScanner = null;
+                }
+                if (frame) {
+                  check = await scanDecodedCanvasAt(frame.canvas, checkTimes[checkIndex], jobId, calibratedThreshold, "verify");
+                }
+              }
+              check ??= await scanAt(checkTimes[checkIndex], jobId, calibratedThreshold, "verify");
               verificationCache.set(cacheKey, check);
             }
             checks.push(check);
@@ -531,7 +680,16 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
             verified.push({
               ...verifiedSample,
               visualContext: createVisualContext(clipStart + clipLength / 2, samples),
+              narrativeScene: verificationCandidates[candidateIndex].narrativeScene,
             });
+            if (verified.length >= nextDiversityCheck) {
+              const diversified = selectSceneMatches(verified, verificationTarget, clipLength, videoDuration, calibratedThreshold, {
+                minimumGapSeconds: Math.max(1, clipLength * 0.95),
+                contentDiversity: true,
+              });
+              enoughDiverseMatches = diversified.length >= verificationTarget;
+              nextDiversityCheck += 4;
+            }
             break;
           }
         }
@@ -541,7 +699,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
         contentDiversity: true,
       });
       updateProgress(0, selected.length, true);
-      const withThumbnails = await createThumbnails(selected, jobId);
+      const withThumbnails = await createThumbnails(selected, jobId, decodedScanner);
       if (activeJobRef.current !== jobId || cancelledRef.current) return;
       setMatches(withThumbnails);
       setPhase("results");
@@ -553,6 +711,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
         setPhase("error");
       }
     } finally {
+      decodedScanner?.dispose();
       if (activeJobRef.current === jobId) activeJobRef.current = null;
     }
   }
