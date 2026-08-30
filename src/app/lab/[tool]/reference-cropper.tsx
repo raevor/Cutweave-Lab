@@ -1,13 +1,43 @@
 "use client";
 
-import { PointerEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, type PointerEvent } from "react";
 
 export type NormalizedCrop = { x: number; y: number; width: number; height: number };
 
 type Point = { x: number; y: number };
+type DragMode = "draw" | "move" | "nw" | "ne" | "se" | "sw";
+type DragState = { mode: DragMode; pointerId: number; start: Point; origin: NormalizedCrop };
+
+const DEFAULT_CROP: NormalizedCrop = { x: 0.24, y: 0.08, width: 0.52, height: 0.84 };
+const MINIMUM_CROP_SIZE = 0.08;
 
 function clamp(value: number, minimum = 0, maximum = 1) {
   return Math.max(minimum, Math.min(maximum, value));
+}
+
+function resizedCrop(mode: DragMode, origin: NormalizedCrop, current: Point): NormalizedCrop {
+  const left = origin.x;
+  const top = origin.y;
+  const right = origin.x + origin.width;
+  const bottom = origin.y + origin.height;
+  if (mode === "nw") {
+    const nextLeft = clamp(current.x, 0, right - MINIMUM_CROP_SIZE);
+    const nextTop = clamp(current.y, 0, bottom - MINIMUM_CROP_SIZE);
+    return { x: nextLeft, y: nextTop, width: right - nextLeft, height: bottom - nextTop };
+  }
+  if (mode === "ne") {
+    const nextRight = clamp(current.x, left + MINIMUM_CROP_SIZE, 1);
+    const nextTop = clamp(current.y, 0, bottom - MINIMUM_CROP_SIZE);
+    return { x: left, y: nextTop, width: nextRight - left, height: bottom - nextTop };
+  }
+  if (mode === "se") {
+    const nextRight = clamp(current.x, left + MINIMUM_CROP_SIZE, 1);
+    const nextBottom = clamp(current.y, top + MINIMUM_CROP_SIZE, 1);
+    return { x: left, y: top, width: nextRight - left, height: nextBottom - top };
+  }
+  const nextLeft = clamp(current.x, 0, right - MINIMUM_CROP_SIZE);
+  const nextBottom = clamp(current.y, top + MINIMUM_CROP_SIZE, 1);
+  return { x: nextLeft, y: top, width: right - nextLeft, height: nextBottom - top };
 }
 
 export function ReferenceCropper({
@@ -30,15 +60,50 @@ export function ReferenceCropper({
   onCancel: () => void;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
-  const dragStartRef = useRef<Point | null>(null);
-  const [crop, setCrop] = useState<NormalizedCrop>({ x: 0.24, y: 0.08, width: 0.52, height: 0.84 });
+  const selectionRef = useRef<HTMLDivElement>(null);
+  const cropRef = useRef<NormalizedCrop>(DEFAULT_CROP);
+  const dragRef = useRef<DragState | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const pendingCropRef = useRef<NormalizedCrop | null>(null);
+
+  function renderCrop(next: NormalizedCrop) {
+    cropRef.current = next;
+    const selection = selectionRef.current;
+    const stage = stageRef.current;
+    if (selection) {
+      selection.style.left = `${next.x * 100}%`;
+      selection.style.top = `${next.y * 100}%`;
+      selection.style.width = `${next.width * 100}%`;
+      selection.style.height = `${next.height * 100}%`;
+    }
+    if (stage) {
+      stage.style.setProperty("--crop-x", `${next.x * 100}%`);
+      stage.style.setProperty("--crop-y", `${next.y * 100}%`);
+      stage.style.setProperty("--crop-width", `${next.width * 100}%`);
+      stage.style.setProperty("--crop-height", `${next.height * 100}%`);
+    }
+  }
+
+  function scheduleCrop(next: NormalizedCrop) {
+    pendingCropRef.current = next;
+    if (animationFrameRef.current !== null) return;
+    animationFrameRef.current = requestAnimationFrame(() => {
+      animationFrameRef.current = null;
+      if (pendingCropRef.current) renderCrop(pendingCropRef.current);
+      pendingCropRef.current = null;
+    });
+  }
 
   useEffect(() => {
+    renderCrop(DEFAULT_CROP);
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") onCancel();
     };
     window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
+    return () => {
+      window.removeEventListener("keydown", closeOnEscape);
+      if (animationFrameRef.current !== null) cancelAnimationFrame(animationFrameRef.current);
+    };
   }, [onCancel]);
 
   function pointFromEvent(event: PointerEvent<HTMLDivElement>) {
@@ -52,31 +117,56 @@ export function ReferenceCropper({
 
   function beginCrop(event: PointerEvent<HTMLDivElement>) {
     if (event.button !== 0) return;
+    event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
+    const target = event.target as HTMLElement;
+    const handle = target.closest<HTMLElement>("[data-crop-handle]")?.dataset.cropHandle as DragMode | undefined;
+    const mode: DragMode = handle ?? (target.closest(".crop-selection") ? "move" : "draw");
     const start = pointFromEvent(event);
-    dragStartRef.current = start;
-    setCrop({ x: start.x, y: start.y, width: 0.01, height: 0.01 });
+    const origin = cropRef.current;
+    dragRef.current = { mode, pointerId: event.pointerId, start, origin };
+    if (mode === "draw") scheduleCrop({ x: start.x, y: start.y, width: 0.01, height: 0.01 });
   }
 
   function updateCrop(event: PointerEvent<HTMLDivElement>) {
-    const start = dragStartRef.current;
-    if (!start) return;
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    event.preventDefault();
     const current = pointFromEvent(event);
-    setCrop({
-      x: Math.min(start.x, current.x),
-      y: Math.min(start.y, current.y),
-      width: Math.max(0.01, Math.abs(current.x - start.x)),
-      height: Math.max(0.01, Math.abs(current.y - start.y)),
-    });
+    if (drag.mode === "draw") {
+      scheduleCrop({
+        x: Math.min(drag.start.x, current.x),
+        y: Math.min(drag.start.y, current.y),
+        width: Math.max(0.01, Math.abs(current.x - drag.start.x)),
+        height: Math.max(0.01, Math.abs(current.y - drag.start.y)),
+      });
+      return;
+    }
+    if (drag.mode === "move") {
+      scheduleCrop({
+        ...drag.origin,
+        x: clamp(drag.origin.x + current.x - drag.start.x, 0, 1 - drag.origin.width),
+        y: clamp(drag.origin.y + current.y - drag.start.y, 0, 1 - drag.origin.height),
+      });
+      return;
+    }
+    scheduleCrop(resizedCrop(drag.mode, drag.origin, current));
   }
 
   function finishCrop(event: PointerEvent<HTMLDivElement>) {
-    if (!dragStartRef.current) return;
-    event.currentTarget.releasePointerCapture(event.pointerId);
-    dragStartRef.current = null;
-    setCrop((current) => current.width < 0.08 || current.height < 0.08
-      ? { x: 0.24, y: 0.08, width: 0.52, height: 0.84 }
-      : current);
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    if (pendingCropRef.current) renderCrop(pendingCropRef.current);
+    pendingCropRef.current = null;
+    dragRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    const current = cropRef.current;
+    const next = current.width < MINIMUM_CROP_SIZE || current.height < MINIMUM_CROP_SIZE ? DEFAULT_CROP : current;
+    renderCrop(next);
   }
 
   function changeCropWithKeyboard(event: React.KeyboardEvent<HTMLDivElement>) {
@@ -86,18 +176,18 @@ export function ReferenceCropper({
     if (!direction) return;
     event.preventDefault();
     const amount = event.ctrlKey ? 0.03 : 0.01;
-    setCrop((current) => {
-      if (event.shiftKey) {
-        if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-          return { ...current, width: clamp(current.width + direction * amount, 0.08, 1 - current.x) };
-        }
-        return { ...current, height: clamp(current.height + direction * amount, 0.08, 1 - current.y) };
-      }
-      if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-        return { ...current, x: clamp(current.x + direction * amount, 0, 1 - current.width) };
-      }
-      return { ...current, y: clamp(current.y + direction * amount, 0, 1 - current.height) };
-    });
+    const current = cropRef.current;
+    let next: NormalizedCrop;
+    if (event.shiftKey) {
+      next = event.key === "ArrowLeft" || event.key === "ArrowRight"
+        ? { ...current, width: clamp(current.width + direction * amount, MINIMUM_CROP_SIZE, 1 - current.x) }
+        : { ...current, height: clamp(current.height + direction * amount, MINIMUM_CROP_SIZE, 1 - current.y) };
+    } else {
+      next = event.key === "ArrowLeft" || event.key === "ArrowRight"
+        ? { ...current, x: clamp(current.x + direction * amount, 0, 1 - current.width) }
+        : { ...current, y: clamp(current.y + direction * amount, 0, 1 - current.height) };
+    }
+    renderCrop(next);
   }
 
   return (
@@ -115,16 +205,23 @@ export function ReferenceCropper({
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={imageUrl} alt="" draggable={false} />
+          <span className="crop-shade crop-shade--top" /><span className="crop-shade crop-shade--right" />
+          <span className="crop-shade crop-shade--bottom" /><span className="crop-shade crop-shade--left" />
           <div
+            ref={selectionRef}
             className="crop-selection"
-            style={{ left: `${crop.x * 100}%`, top: `${crop.y * 100}%`, width: `${crop.width * 100}%`, height: `${crop.height * 100}%` }}
+            style={{ left: "24%", top: "8%", width: "52%", height: "84%" }}
             tabIndex={0}
             onKeyDown={changeCropWithKeyboard}
             aria-label={keyboardHint}
-          ><i /><i /><i /><i /></div>
+          >
+            {(["nw", "ne", "se", "sw"] as const).map((handle) => (
+              <button key={handle} type="button" data-crop-handle={handle} aria-label={`Resize crop from ${handle} corner`} />
+            ))}
+          </div>
         </div>
         <p className="crop-keyboard-hint">{keyboardHint}</p>
-        <footer><button type="button" className="face-text-action" onClick={onCancel}>{cancelLabel}</button><button type="button" className="face-action" onClick={() => onConfirm(crop)}>{confirmLabel}</button></footer>
+        <footer><button type="button" className="face-text-action" onClick={onCancel}>{cancelLabel}</button><button type="button" className="face-action" onClick={() => onConfirm(cropRef.current)}>{confirmLabel}</button></footer>
       </section>
     </div>
   );

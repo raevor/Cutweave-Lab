@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createClipCheckOffsets,
   createCandidateClipStarts,
+  calculateSceneIsolationSeconds,
   calibrateIdentityThreshold,
   createSampleTimes,
   createVerifiedClipSample,
@@ -61,7 +62,7 @@ describe("strict clip validation", () => {
 
   it("samples a forty-minute source frequently without exceeding the memory bound", () => {
     const times = createSampleTimes(40 * 60, 5);
-    expect(times.length).toBeGreaterThanOrEqual(1500);
+    expect(times.length).toBeGreaterThanOrEqual(900);
     expect(times.length).toBeLessThanOrEqual(2400);
   });
 
@@ -110,6 +111,37 @@ describe("strict clip validation", () => {
     expect(scenes.filter((scene) => scene.start >= 600 && scene.start < 780)).toHaveLength(3);
     expect(scenes.filter((scene) => scene.start < 600 || scene.start >= 780)).toHaveLength(7);
     expect(scenes.map((scene) => scene.start)).toEqual(expect.arrayContaining([100, 900, 1800]));
+  });
+
+  it("returns fewer clips instead of filling a long-form request with the same dramatic scene", () => {
+    const isolation = calculateSceneIsolationSeconds(40 * 60, 17, 5);
+    const denseMatches = Array.from({ length: 17 }, (_, index) => sample(120 + index * 20, {
+      similarity: 0.9 - index * 0.002,
+    }));
+    const separateScenes = [600, 900, 1200, 1500, 1800, 2100]
+      .map((timestamp) => sample(timestamp, { similarity: 0.7 }));
+    const scenes = selectSceneMatches(
+      [...denseMatches, ...separateScenes],
+      17,
+      5,
+      40 * 60,
+      0.52,
+      { minimumGapSeconds: isolation },
+    );
+
+    expect(isolation).toBeGreaterThanOrEqual(180);
+    expect(scenes.length).toBeLessThan(17);
+    expect(scenes.filter((scene) => scene.start >= 120 && scene.start <= 440)).toHaveLength(2);
+    expect(scenes.every((scene, index) => index === 0 || scene.start - scenes[index - 1].start >= isolation)).toBe(true);
+  });
+
+  it("chooses the highest-quality globally spaced plan instead of a greedy local maximum", () => {
+    const scenes = selectSceneMatches([
+      sample(0, { similarity: 0.81 }),
+      sample(60, { similarity: 0.99 }),
+      sample(120, { similarity: 0.8 }),
+    ], 2, 5, 180, 0.52, { minimumGapSeconds: 100 });
+    expect(scenes.map((scene) => scene.start)).toEqual([0, 120]);
   });
 
   it("allows the same view again when it belongs to a much later scene", () => {

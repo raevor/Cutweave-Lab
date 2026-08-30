@@ -1,9 +1,10 @@
 export type FaceEngine = "gpu" | "cpu";
+export type FaceScanMode = "coarse" | "verify";
 
 export type FaceWorkerRequest =
   | { type: "init"; requestId: number; engine: FaceEngine; origin: string }
   | { type: "reference"; requestId: number; slot: number; bitmap: ImageBitmap }
-  | { type: "scan"; requestId: number; jobId: string; timestamp: number; threshold: number; bitmap: ImageBitmap }
+  | { type: "scan"; requestId: number; jobId: string; timestamp: number; threshold: number; mode: FaceScanMode; bitmap: ImageBitmap }
   | { type: "cancel"; jobId: string }
   | { type: "clear-references"; requestId: number };
 

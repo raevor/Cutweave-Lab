@@ -5,9 +5,10 @@ import { ChangeEvent, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { BrandMark } from "@/components/brand-mark";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useLanguage } from "@/i18n/language-provider";
-import { canRenderSceneClips, exportScenePackage } from "@/lib/face-recognition/export-clips";
+import { canRenderSceneClips, exportScenePackage, preferredClipFormat } from "@/lib/face-recognition/export-clips";
 import {
   MAX_VIDEO_DURATION_SECONDS,
+  calculateSceneIsolationSeconds,
   calibrateIdentityThreshold,
   captureVideoFrame,
   createCandidateClipStarts,
@@ -21,6 +22,7 @@ import {
 } from "@/lib/face-recognition/pipeline";
 import type {
   FaceEngine,
+  FaceScanMode,
   FaceWorkerRequest,
   FaceWorkerResponse,
   ScanSample,
@@ -106,11 +108,11 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     faceFound: "yüz · referans uyumu", settingsTitle: "ADIM 04 / SONUÇ AYARLARI",
     sceneCount: "İstenen sahne", clipLength: "Klip süresi", threshold: "Kimlik skoru eşiği", auto: "otomatik",
     seconds: "saniye", run: "Yüzü videoda bul", cancel: "Analizi durdur", preparing: "Yerel yüz motoru hazırlanıyor",
-    analyzing: "Video cihazında daha sık aralıklarla taranıyor", post: "Hedef yüzle başlayan klipler doğrulanıyor; tekrarlar eleniyor", processed: "işlenen kare",
+    analyzing: "Video cihazında optimize edilmiş aralıklarla taranıyor", post: "Hedef yüzle başlayan klipler doğrulanıyor; tekrarlar eleniyor", processed: "işlenen kare",
     noResults: "Bu eşikte yeterli eşleşme bulunamadı. Daha net referans kareler seç veya eşleşme eşiğini düşür.",
-    resultsTitle: "BULUNAN SAHNELER", resultsBody: "Her klip hedef yüz görünürken başlar; sonuçlar videonun farklı bölümlerine dağıtıldı ve yakın tekrarlar elendi.",
-    match: "kimlik skoru", checks: "yüz kontrolü", strong: "güçlü", likely: "olası", review: "kontrol et", removeScene: "Sahneyi çıkar", export: "Klipleri ZIP olarak hazırla", exportFallback: "Bu tarayıcı klip üretemiyor; Chrome veya Edge kullan.",
-    exporting: "Klipler gerçek zamanlı hazırlanıyor", exportCancel: "Dışa aktarmayı durdur", downloadAgain: "ZIP'i yeniden indir",
+    resultsTitle: "BULUNAN SAHNELER", resultsBody: "Her klip hedef yüz görünürken başlar. Aynı uzun sahne tekrar sayılmaz; yeterince ayrı sahne yoksa istenenden daha az sonuç döner.",
+    match: "kimlik skoru", checks: "yüz kontrolü", strong: "güçlü", likely: "olası", review: "kontrol et", removeScene: "Sahneyi çıkar", export: "MP4 klip ZIP'ini hazırla", exportFallback: "Bu tarayıcı klip üretemiyor; Chrome veya Edge kullan.",
+    exporting: "MP4 klipler cihazında hızlandırılmış olarak hazırlanıyor", exportCancel: "Dışa aktarmayı durdur", downloadAgain: "ZIP'i yeniden indir",
     localProof: "SUNUCUYA GÖNDERİLEN MEDYA", zero: "0 B", identityNote: "Cutweave kişinin kimliğini araştırmaz. Yalnızca seçtiğin yüzü bu videonun içinde yeniden bulmaya çalışır.",
     cropTitle: "Yalnız istediğin yüzü çerçevele", cropInstructions: "Yüzü ve baş çevresini içine alan bir dikdörtgen çiz. Arka plandaki diğer kişileri çerçevenin dışında bırak.", cropKeyboard: "Seçimi ok tuşlarıyla taşı; Shift + ok tuşlarıyla boyutlandır.", cropConfirm: "Bu kırpmayı kullan", cropCancel: "İptal",
   } : {
@@ -128,11 +130,11 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     faceFound: "face · reference agreement", settingsTitle: "STEP 04 / RESULT SETTINGS",
     sceneCount: "Scenes wanted", clipLength: "Clip length", threshold: "Identity score threshold", auto: "automatic",
     seconds: "seconds", run: "Find this face", cancel: "Stop analysis", preparing: "Preparing the local face engine",
-    analyzing: "Scanning the video more frequently on this device", post: "Verifying clips that open on the target face and removing repeats", processed: "frames processed",
+    analyzing: "Scanning the video at optimized intervals on this device", post: "Verifying clips that open on the target face and removing repeats", processed: "frames processed",
     noResults: "No reliable matches were found at this threshold. Choose clearer references or lower the match threshold.",
-    resultsTitle: "MATCHED SCENES", resultsBody: "Every clip opens with the target face; results were spread across the timeline and nearby repeats were removed.",
-    match: "identity score", checks: "face checks", strong: "strong", likely: "likely", review: "review", removeScene: "Remove scene", export: "Build clip ZIP", exportFallback: "This browser cannot render clips; use Chrome or Edge.",
-    exporting: "Rendering clips in real time", exportCancel: "Stop export", downloadAgain: "Download ZIP again",
+    resultsTitle: "MATCHED SCENES", resultsBody: "Every clip opens with the target face. One long scene is counted once; when there are not enough distinct scenes, fewer results are returned.",
+    match: "identity score", checks: "face checks", strong: "strong", likely: "likely", review: "review", removeScene: "Remove scene", export: "Build MP4 clip ZIP", exportFallback: "This browser cannot render clips; use Chrome or Edge.",
+    exporting: "Building accelerated MP4 clips on this device", exportCancel: "Stop export", downloadAgain: "Download ZIP again",
     localProof: "MEDIA SENT TO SERVER", zero: "0 B", identityNote: "Cutweave does not research identity. It only tries to find the selected face again inside this video.",
     cropTitle: "Frame only the face you want", cropInstructions: "Draw a rectangle around the face and nearby head area. Keep other people in the background outside the selection.", cropKeyboard: "Move with the arrow keys; resize with Shift + arrow keys.", cropConfirm: "Use this crop", cropCancel: "Cancel",
   }, [isTurkish]);
@@ -147,6 +149,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
   const cancelledRef = useRef(false);
   const objectUrls = useRef(new Set<string>());
   const allSamplesRef = useRef<ScanSample[]>([]);
+  const lastProgressUpdateRef = useRef(0);
 
   const [file, setFile] = useState<File | null>(null);
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
@@ -166,11 +169,19 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
   const capabilityMask = useSyncExternalStore(subscribeToCapabilities, getCapabilityMask, () => 0);
   const gpuAvailable = Boolean(capabilityMask & 1);
   const clipExportAvailable = Boolean(capabilityMask & 2);
+  const clipFormat = clipExportAvailable ? preferredClipFormat() : "MP4";
 
   const isBusy = phase === "engine-loading" || phase === "analyzing" || phase === "post-processing" || phase === "exporting";
   const progressPercent = progress.total ? Math.min(100, Math.round((progress.completed / progress.total) * 100)) : 0;
   const referenceAgreement = references.at(-1)?.agreement ?? 1;
   const effectiveThreshold = calibrateIdentityThreshold(threshold, referenceAgreement);
+
+  function updateProgress(completed: number, total: number, force = false) {
+    const now = performance.now();
+    if (!force && completed < total && now - lastProgressUpdateRef.current < 100) return;
+    lastProgressUpdateRef.current = now;
+    setProgress({ completed, total });
+  }
 
   useEffect(() => {
     const urls = objectUrls.current;
@@ -396,13 +407,14 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     }
   }
 
-  async function scanAt(timestamp: number, jobId: string, identityThreshold: number) {
+  async function scanAt(timestamp: number, jobId: string, identityThreshold: number, mode: FaceScanMode) {
     const video = videoRef.current;
     if (!video) throw new Error("The video preview is no longer available.");
     await seekVideo(video, timestamp);
-    const { bitmap, visualHash } = await captureVideoFrame(video, false, 1280);
+    const maximumWidth = mode === "coarse" ? 800 : 960;
+    const { bitmap, visualHash } = await captureVideoFrame(video, false, maximumWidth);
     const requestId = ++requestIdRef.current;
-    const response = await sendWorker({ type: "scan", requestId, jobId, timestamp, threshold: identityThreshold, bitmap }, [bitmap]);
+    const response = await sendWorker({ type: "scan", requestId, jobId, timestamp, threshold: identityThreshold, mode, bitmap }, [bitmap]);
     if (response.type !== "scan-result" || response.jobId !== jobId) throw new Error("A stale face result was rejected.");
     return {
       timestamp: response.timestamp,
@@ -431,7 +443,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
       } else {
         completed.push(scene);
       }
-      setProgress({ completed: completed.length, total: scenes.length });
+      updateProgress(completed.length, scenes.length, completed.length === scenes.length);
     }
     return completed;
   }
@@ -455,21 +467,21 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
       const sampleTimes = createSampleTimes(videoDuration, clipLength);
       const samples: ScanSample[] = [];
       setPhase("analyzing");
-      setProgress({ completed: 0, total: sampleTimes.length });
+      updateProgress(0, sampleTimes.length, true);
       video.pause();
 
       for (let index = 0; index < sampleTimes.length; index += 1) {
         if (cancelledRef.current || activeJobRef.current !== jobId) throw new DOMException("Analysis cancelled", "AbortError");
         const timestamp = sampleTimes[index];
-        samples.push(await scanAt(timestamp, jobId, calibratedThreshold));
-        setProgress({ completed: index + 1, total: sampleTimes.length });
+        samples.push(await scanAt(timestamp, jobId, calibratedThreshold, "coarse"));
+        updateProgress(index + 1, sampleTimes.length, index + 1 === sampleTimes.length);
       }
 
       if (activeJobRef.current !== jobId || cancelledRef.current) return;
       allSamplesRef.current = samples;
       setPhase("post-processing");
       const preliminaryThreshold = Math.max(0.22, calibratedThreshold - 0.04);
-      const preliminaryCount = Math.min(Math.ceil(sceneCount * 6), 120);
+      const preliminaryCount = Math.min(Math.ceil(sceneCount * 3), 60);
       const preliminaryWindow = Math.max(15, videoDuration / Math.max(1, preliminaryCount));
       const preliminary = selectSceneMatches(
         samples,
@@ -489,18 +501,24 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
       const checkOffsets = createClipCheckOffsets(clipLength);
       const candidateStarts = preliminary.map((candidate) => createCandidateClipStarts(candidate.start, clipLength, videoDuration));
       const plannedVerificationFrames = candidateStarts.reduce((total, starts) => total + starts.length * checkOffsets.length, 0);
-      setProgress({ completed: 0, total: plannedVerificationFrames });
+      updateProgress(0, plannedVerificationFrames, true);
       let verifiedFrames = 0;
+      const verificationCache = new Map<number, ScanSample>();
       for (let candidateIndex = 0; candidateIndex < preliminary.length; candidateIndex += 1) {
         for (const clipStart of candidateStarts[candidateIndex]) {
           const checkTimes = checkOffsets.map((offset) => Math.max(0, Math.min(videoDuration - 0.05, clipStart + offset)));
           const checks: ScanSample[] = [];
           for (let checkIndex = 0; checkIndex < checkTimes.length; checkIndex += 1) {
             if (cancelledRef.current || activeJobRef.current !== jobId) throw new DOMException("Analysis cancelled", "AbortError");
-            const check = await scanAt(checkTimes[checkIndex], jobId, calibratedThreshold);
+            const cacheKey = Math.round(checkTimes[checkIndex] * 50);
+            let check = verificationCache.get(cacheKey);
+            if (!check) {
+              check = await scanAt(checkTimes[checkIndex], jobId, calibratedThreshold, "verify");
+              verificationCache.set(cacheKey, check);
+            }
             checks.push(check);
             verifiedFrames += 1;
-            setProgress({ completed: verifiedFrames, total: plannedVerificationFrames });
+            updateProgress(verifiedFrames, plannedVerificationFrames);
             if (checkIndex < 2 && !samplePassesIdentity(check, calibratedThreshold)) break;
           }
           const verifiedSample = createVerifiedClipSample(checks, calibratedThreshold, clipStart);
@@ -511,14 +529,13 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
         }
       }
       const timelineWindow = Math.max(30, videoDuration / Math.max(1, sceneCount));
+      const sceneIsolation = calculateSceneIsolationSeconds(videoDuration, sceneCount, clipLength);
       const selected = selectSceneMatches(verified, sceneCount, clipLength, videoDuration, calibratedThreshold, {
-        minimumGapSeconds: Math.max(12, clipLength * 2.4, timelineWindow * 0.55),
+        minimumGapSeconds: sceneIsolation,
         maximumVisualHashDistance: 18,
         visualDuplicateWindowSeconds: Math.max(180, timelineWindow * 2),
-        timelineBucketSeconds: timelineWindow,
-        maximumMatchesPerTimelineBucket: 1,
       });
-      setProgress({ completed: 0, total: selected.length });
+      updateProgress(0, selected.length, true);
       const withThumbnails = await createThumbnails(selected, jobId);
       if (activeJobRef.current !== jobId || cancelledRef.current) return;
       setMatches(withThumbnails);
@@ -555,7 +572,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     setPhase("exporting");
     setProgress({ completed: 0, total: matches.length });
     try {
-      const blob = await exportScenePackage(mediaUrl, file.name, matches, () => cancelledRef.current, (completed, total) => {
+      const blob = await exportScenePackage(file, mediaUrl, file.name, matches, () => cancelledRef.current, (completed, total) => {
         setProgress({ completed, total });
       });
       if (cancelledRef.current) throw new DOMException("Export cancelled", "AbortError");
@@ -602,7 +619,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
       <section className="focused-tool-layout face-tool-layout">
         <aside className="tool-brief">
           <div className="tool-brief-block"><small>{copy.input}</small><strong>{text.tools[tool.slug].input}</strong></div>
-          <div className="tool-brief-block"><small>{copy.output}</small><strong>{isTurkish ? "Klip ZIP + zaman kodları" : "Clip ZIP + timecodes"}</strong></div>
+          <div className="tool-brief-block"><small>{copy.output}</small><strong>{isTurkish ? `${clipFormat} klip ZIP + zaman kodları` : `${clipFormat} clip ZIP + timecodes`}</strong></div>
           <div className="tool-brief-block tool-brief-status"><small>{copy.boundary}</small><strong><i /> {copy.stays}</strong><p>{copy.noUpload}</p></div>
           <div className="tool-capability"><span>{copy.preflight}</span><strong>{engine === "gpu" ? "WEBGPU" : "WASM"}</strong></div>
           <div className="face-privacy-proof"><small>{copy.localProof}</small><strong>{copy.zero}</strong></div>

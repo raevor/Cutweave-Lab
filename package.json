@@ -17,6 +17,7 @@
     "@tensorflow/tfjs-backend-webgpu": "^4.22.0",
     "@vladmandic/face-api": "^1.7.15",
     "fflate": "^0.8.2",
+    "mediabunny": "^1.55.4",
     "next": "16.3.3",
     "react": "19.2.8",
     "react-dom": "19.2.8"

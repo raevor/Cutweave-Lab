@@ -3,6 +3,14 @@ import type { SceneMatch } from "./types";
 import { formatTimecode, seekVideo, waitForVideoEvent } from "./pipeline";
 
 type CaptureVideo = HTMLVideoElement & { captureStream?: () => MediaStream };
+type RenderedClip = { bytes: Uint8Array; extension: "mp4" | "webm" };
+
+function hasWebCodecs() {
+  return typeof VideoDecoder !== "undefined"
+    && typeof VideoEncoder !== "undefined"
+    && typeof AudioDecoder !== "undefined"
+    && typeof AudioEncoder !== "undefined";
+}
 
 function supportedRecorderType() {
   if (!("MediaRecorder" in window)) return null;
@@ -11,16 +19,65 @@ function supportedRecorderType() {
 }
 
 export function canRenderSceneClips() {
-  return "MediaRecorder" in window
+  return hasWebCodecs() || ("MediaRecorder" in window
     && typeof (document.createElement("video") as CaptureVideo).captureStream === "function"
-    && Boolean(supportedRecorderType());
+    && Boolean(supportedRecorderType()));
 }
 
-async function renderScene(
+export function preferredClipFormat() {
+  return hasWebCodecs() ? "MP4" : "WebM";
+}
+
+async function renderMp4Scene(source: File, scene: SceneMatch, isCancelled: () => boolean): Promise<RenderedClip> {
+  const {
+    ALL_FORMATS,
+    BlobSource,
+    BufferTarget,
+    Conversion,
+    ConversionCanceledError,
+    Input,
+    Mp4OutputFormat,
+    Output,
+  } = await import("mediabunny");
+  if (isCancelled()) throw new DOMException("Export cancelled", "AbortError");
+  const input = new Input({ formats: ALL_FORMATS, source: new BlobSource(source) });
+  const target = new BufferTarget();
+  const output = new Output({ format: new Mp4OutputFormat({ fastStart: "in-memory" }), target });
+  const conversion = await Conversion.init({
+    input,
+    output,
+    tracks: "primary",
+    trim: { start: scene.start, end: scene.end },
+    video: { codec: "avc", hardwareAcceleration: "prefer-hardware" },
+    audio: { codec: "aac" },
+    showWarnings: false,
+  });
+  if (!conversion.isValid) {
+    input.dispose();
+    throw new Error("This browser cannot create a compatible local MP4 clip.");
+  }
+  conversion.onProgress = () => {
+    if (isCancelled()) void conversion.cancel();
+  };
+  try {
+    await conversion.execute();
+  } catch (error) {
+    if (error instanceof ConversionCanceledError || isCancelled()) {
+      throw new DOMException("Export cancelled", "AbortError");
+    }
+    throw error;
+  } finally {
+    input.dispose();
+  }
+  if (!target.buffer) throw new Error("The local MP4 encoder produced no output.");
+  return { bytes: new Uint8Array(target.buffer), extension: "mp4" };
+}
+
+async function renderLegacyScene(
   mediaUrl: string,
   scene: SceneMatch,
   isCancelled: () => boolean,
-) {
+): Promise<RenderedClip> {
   const video = document.createElement("video") as CaptureVideo;
   video.src = mediaUrl;
   video.preload = "auto";
@@ -67,10 +124,11 @@ async function renderScene(
   video.removeAttribute("src");
   video.load();
   if (isCancelled()) throw new DOMException("Export cancelled", "AbortError");
-  return new Uint8Array(await new Blob(chunks, { type: mimeType }).arrayBuffer());
+  return { bytes: new Uint8Array(await new Blob(chunks, { type: mimeType }).arrayBuffer()), extension: "webm" };
 }
 
 export async function exportScenePackage(
+  source: File,
   mediaUrl: string,
   sourceName: string,
   scenes: SceneMatch[],
@@ -124,11 +182,21 @@ export async function exportScenePackage(
 
   for (let index = 0; index < scenes.length; index += 1) {
     if (isCancelled()) throw new DOMException("Export cancelled", "AbortError");
-    const clip = await renderScene(mediaUrl, scenes[index], isCancelled);
-    const filename = `scene-${String(index + 1).padStart(2, "0")}_${formatTimecode(scenes[index].start).replaceAll(":", "-")}.webm`;
+    let clip: RenderedClip;
+    if (hasWebCodecs()) {
+      try {
+        clip = await renderMp4Scene(source, scenes[index], isCancelled);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") throw error;
+        clip = await renderLegacyScene(mediaUrl, scenes[index], isCancelled);
+      }
+    } else {
+      clip = await renderLegacyScene(mediaUrl, scenes[index], isCancelled);
+    }
+    const filename = `scene-${String(index + 1).padStart(2, "0")}_${formatTimecode(scenes[index].start).replaceAll(":", "-")}.${clip.extension}`;
     const entry = new ZipPassThrough(filename);
     zip.add(entry);
-    entry.push(clip, true);
+    entry.push(clip.bytes, true);
     onProgress(index + 1, scenes.length);
   }
   zip.end();

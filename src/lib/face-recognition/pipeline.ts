@@ -21,13 +21,101 @@ export function formatTimecode(seconds: number) {
 }
 
 export function createSampleTimes(duration: number, clipDuration: number) {
-  const coverageInterval = Math.max(0.85, Math.min(1.5, clipDuration * 0.3));
+  const coverageInterval = Math.max(1.25, Math.min(2.5, clipDuration * 0.5));
   const boundedInterval = Math.max(coverageInterval, duration / MAX_SCAN_SAMPLES);
   const times: number[] = [];
   for (let timestamp = 0; timestamp < duration; timestamp += boundedInterval) {
     times.push(Math.min(duration - 0.05, timestamp + Math.min(0.35, boundedInterval / 3)));
   }
   return times;
+}
+
+export function calculateSceneIsolationSeconds(videoDuration: number, desiredCount: number, clipDuration: number) {
+  const safeCount = Math.max(1, desiredCount);
+  const durationBased = videoDuration / safeCount * 1.3;
+  const longFormFloor = videoDuration >= 30 * 60 ? 150
+    : videoDuration >= 15 * 60 ? 90
+      : 45;
+  return Math.min(180, Math.max(longFormFloor, durationBased, clipDuration * 4));
+}
+
+type TimelinePlan = { samples: ScanSample[]; quality: number };
+
+function isBetterPlan(candidate: TimelinePlan, current: TimelinePlan) {
+  return candidate.samples.length > current.samples.length
+    || (candidate.samples.length === current.samples.length && candidate.quality > current.quality);
+}
+
+function sampleSelectionQuality(sample: ScanSample) {
+  return sample.similarity * 0.65 + sample.weakestSimilarity * 0.2 + sample.faceQuality * 0.15;
+}
+
+function chooseTimelinePlan(samples: ScanSample[], desiredCount: number, minimumGap: number) {
+  const ordered = [...samples].sort((a, b) => a.timestamp - b.timestamp);
+  const previousCompatible = ordered.map((sample, index) => {
+    let low = 0;
+    let high = index - 1;
+    let compatible = -1;
+    while (low <= high) {
+      const middle = Math.floor((low + high) / 2);
+      if (sample.timestamp - ordered[middle].timestamp >= minimumGap) {
+        compatible = middle;
+        low = middle + 1;
+      } else {
+        high = middle - 1;
+      }
+    }
+    return compatible;
+  });
+  const plans = Array.from({ length: ordered.length + 1 }, () => Array.from(
+    { length: desiredCount + 1 },
+    (): TimelinePlan => ({ samples: [], quality: 0 }),
+  ));
+
+  for (let index = 1; index <= ordered.length; index += 1) {
+    const sample = ordered[index - 1];
+    for (let count = 1; count <= desiredCount; count += 1) {
+      const skipped = plans[index - 1][count];
+      const base = plans[previousCompatible[index - 1] + 1][count - 1];
+      const included = {
+        samples: [...base.samples, sample],
+        quality: base.quality + sampleSelectionQuality(sample),
+      };
+      plans[index][count] = isBetterPlan(included, skipped) ? included : skipped;
+    }
+  }
+  return plans[ordered.length][desiredCount].samples;
+}
+
+function chooseDistinctTimelinePlan(
+  samples: ScanSample[],
+  desiredCount: number,
+  minimumGap: number,
+  maximumVisualHashDistance: number,
+  visualDuplicateWindowSeconds: number,
+) {
+  const candidates = [...samples];
+  while (candidates.length) {
+    const plan = chooseTimelinePlan(candidates, desiredCount, minimumGap);
+    let duplicate: [ScanSample, ScanSample] | null = null;
+    for (let first = 0; first < plan.length && !duplicate; first += 1) {
+      for (let second = first + 1; second < plan.length; second += 1) {
+        const firstHash = plan[first].visualHash;
+        const secondHash = plan[second].visualHash;
+        if (!firstHash || !secondHash) continue;
+        if (plan[second].timestamp - plan[first].timestamp > visualDuplicateWindowSeconds) break;
+        if (visualHashDistance(firstHash, secondHash) <= maximumVisualHashDistance) {
+          duplicate = [plan[first], plan[second]];
+          break;
+        }
+      }
+    }
+    if (!duplicate) return plan;
+    const [first, second] = duplicate;
+    const lowerQuality = sampleSelectionQuality(first) < sampleSelectionQuality(second) ? first : second;
+    candidates.splice(candidates.indexOf(lowerQuality), 1);
+  }
+  return [];
 }
 
 export function selectSceneMatches(
@@ -47,7 +135,7 @@ export function selectSceneMatches(
       && (options.excludedTimestamps ?? []).every((timestamp) => Math.abs(timestamp - sample.timestamp) >= exclusionRadius))
     .sort((a, b) => (b.similarity - a.similarity) || (b.faceQuality - a.faceQuality));
 
-  const selected: ScanSample[] = [];
+  const timelineCandidates: ScanSample[] = [];
   const bucketCounts = new Map<number, number>();
   const minimumGap = options.minimumGapSeconds ?? Math.max(clipDuration * 0.85, 1);
   for (const sample of ranked) {
@@ -56,21 +144,19 @@ export function selectSceneMatches(
       : null;
     const bucketHasSpace = bucket === null
       || (bucketCounts.get(bucket) ?? 0) < (options.maximumMatchesPerTimelineBucket ?? Number.POSITIVE_INFINITY);
-    const isFarEnough = selected.every((current) => Math.abs(current.timestamp - sample.timestamp) >= minimumGap);
-    const isVisuallyDistinct = selected.every((current) => {
-      if (!current.visualHash || !sample.visualHash) return true;
-      const isInsideDuplicateWindow = Math.abs(current.timestamp - sample.timestamp)
-        <= (options.visualDuplicateWindowSeconds ?? Number.POSITIVE_INFINITY);
-      const isRepeatedView = visualHashDistance(current.visualHash, sample.visualHash)
-        <= (options.maximumVisualHashDistance ?? -1);
-      return !(isInsideDuplicateWindow && isRepeatedView);
-    });
-    if (bucketHasSpace && isFarEnough && isVisuallyDistinct) {
-      selected.push(sample);
+    if (bucketHasSpace) {
+      timelineCandidates.push(sample);
       if (bucket !== null) bucketCounts.set(bucket, (bucketCounts.get(bucket) ?? 0) + 1);
     }
-    if (selected.length >= desiredCount) break;
   }
+
+  const selected = chooseDistinctTimelinePlan(
+    timelineCandidates,
+    desiredCount,
+    minimumGap,
+    options.maximumVisualHashDistance ?? -1,
+    options.visualDuplicateWindowSeconds ?? Number.POSITIVE_INFINITY,
+  );
 
   return selected
     .sort((a, b) => a.timestamp - b.timestamp)

@@ -5,12 +5,16 @@ import {
   evaluateIdentityCandidate,
   prepareFaceEmbedding,
 } from "@/lib/face-recognition/identity-matching";
-import type { FaceEngine, FaceWorkerRequest, FaceWorkerResponse } from "@/lib/face-recognition/types";
+import type { FaceEngine, FaceScanMode, FaceWorkerRequest, FaceWorkerResponse } from "@/lib/face-recognition/types";
 
 let activeEngine: FaceEngine | null = null;
 const referenceEmbeddings = new Map<number, number[]>();
 const cancelledJobs = new Set<string>();
-const detectorOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 608, scoreThreshold: 0.2 });
+const detectorOptions: Record<FaceScanMode | "reference", faceapi.TinyFaceDetectorOptions> = {
+  coarse: new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.2 }),
+  verify: new faceapi.TinyFaceDetectorOptions({ inputSize: 608, scoreThreshold: 0.2 }),
+  reference: new faceapi.TinyFaceDetectorOptions({ inputSize: 608, scoreThreshold: 0.2 }),
+};
 const tfRuntime = faceapi.tf as typeof faceapi.tf & {
   setWasmPaths: (path: string) => void;
   setBackend: (backend: string) => Promise<boolean>;
@@ -78,11 +82,11 @@ async function initialize(engine: FaceEngine, origin: string) {
   return tfRuntime.getBackend();
 }
 
-async function detect(bitmap: ImageBitmap) {
+async function detect(bitmap: ImageBitmap, mode: FaceScanMode | "reference") {
   let tensor: ReturnType<typeof faceapi.tf.browser.fromPixels> | null = null;
   try {
     tensor = faceapi.tf.browser.fromPixels(bitmap);
-    return await faceapi.detectAllFaces(tensor, detectorOptions)
+    return await faceapi.detectAllFaces(tensor, detectorOptions[mode])
       .withFaceLandmarks(true)
       .withFaceDescriptors();
   } finally {
@@ -115,7 +119,7 @@ self.onmessage = async (event: MessageEvent<FaceWorkerRequest>) => {
     }
 
     if (message.type === "reference") {
-      const faces = await detect(message.bitmap);
+      const faces = await detect(message.bitmap, "reference");
       const selected = [...faces].sort((first, second) => {
         const firstBox = first.detection.box;
         const secondBox = second.detection.box;
@@ -146,7 +150,7 @@ self.onmessage = async (event: MessageEvent<FaceWorkerRequest>) => {
         send({ type: "cancelled", jobId: message.jobId });
         return;
       }
-      const faces = await detect(message.bitmap);
+      const faces = await detect(message.bitmap, message.mode);
       if (cancelledJobs.has(message.jobId)) {
         send({ type: "cancelled", jobId: message.jobId });
         return;
