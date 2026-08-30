@@ -50,6 +50,8 @@ type PendingWorkerCall = {
 type Phase = "idle" | "source-ready" | "engine-loading" | "analyzing" | "post-processing" | "results" | "exporting" | "cancelled" | "error";
 
 const subscribeToCapabilities = () => () => undefined;
+const MAX_SCENE_COUNT = 100;
+const MAX_PRELIMINARY_SCENE_COUNT = MAX_SCENE_COUNT * 3;
 
 function getCapabilityMask() {
   const navigatorWithGpu = navigator as Navigator & { gpu?: unknown };
@@ -482,8 +484,8 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
       allSamplesRef.current = samples;
       setPhase("post-processing");
       const preliminaryThreshold = Math.max(0.22, calibratedThreshold - 0.04);
-      const preliminaryCount = Math.min(Math.ceil(sceneCount * 3), 60);
-      const preliminaryWindow = Math.max(15, videoDuration / Math.max(1, preliminaryCount));
+      const preliminaryCount = Math.min(Math.ceil(sceneCount * 3), MAX_PRELIMINARY_SCENE_COUNT);
+      const preliminaryWindow = Math.max(clipLength, videoDuration / Math.max(1, preliminaryCount));
       const preliminary = selectSceneMatches(
         samples,
         preliminaryCount,
@@ -684,7 +686,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
 
                 <section className="face-step face-settings" aria-labelledby="settings-title">
                   <p id="settings-title">{copy.settingsTitle}</p>
-                  <label><span>{copy.sceneCount}</span><input type="number" min="1" max="30" value={sceneCount} disabled={isBusy} onChange={(event) => setSceneCount(Math.max(1, Math.min(30, Number(event.target.value))))} /></label>
+                  <label><span>{copy.sceneCount}</span><input type="number" min="1" max={MAX_SCENE_COUNT} value={sceneCount} disabled={isBusy} onChange={(event) => setSceneCount(Math.max(1, Math.min(MAX_SCENE_COUNT, Number(event.target.value))))} /></label>
                   <label><span>{copy.clipLength}</span><div><input type="range" min="3" max="10" step="1" value={clipLength} disabled={isBusy} onChange={(event) => setClipLength(Number(event.target.value))} /><b>{clipLength} {copy.seconds}</b></div></label>
                   <label><span>{copy.threshold}</span><div><input type="range" min="0.26" max="0.62" step="0.01" value={threshold} disabled={isBusy} onChange={(event) => setThreshold(Number(event.target.value))} /><b>{effectiveThreshold.toFixed(2)} <small>{copy.auto}</small></b></div></label>
                 </section>

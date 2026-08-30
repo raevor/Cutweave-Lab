@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type PointerEvent } from "react";
+import { useCallback, useEffect, useRef, type PointerEvent } from "react";
 
 export type NormalizedCrop = { x: number; y: number; width: number; height: number };
 
@@ -65,8 +65,9 @@ export function ReferenceCropper({
   const dragRef = useRef<DragState | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const pendingCropRef = useRef<NormalizedCrop | null>(null);
+  const onCancelRef = useRef(onCancel);
 
-  function renderCrop(next: NormalizedCrop) {
+  const renderCrop = useCallback((next: NormalizedCrop) => {
     cropRef.current = next;
     const selection = selectionRef.current;
     const stage = stageRef.current;
@@ -82,7 +83,7 @@ export function ReferenceCropper({
       stage.style.setProperty("--crop-width", `${next.width * 100}%`);
       stage.style.setProperty("--crop-height", `${next.height * 100}%`);
     }
-  }
+  }, []);
 
   function scheduleCrop(next: NormalizedCrop) {
     pendingCropRef.current = next;
@@ -95,16 +96,33 @@ export function ReferenceCropper({
   }
 
   useEffect(() => {
+    onCancelRef.current = onCancel;
+  }, [onCancel]);
+
+  useEffect(() => {
     renderCrop(DEFAULT_CROP);
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onCancel();
+      if (event.key === "Escape") onCancelRef.current();
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => {
       window.removeEventListener("keydown", closeOnEscape);
       if (animationFrameRef.current !== null) cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+      pendingCropRef.current = null;
+      dragRef.current = null;
     };
-  }, [onCancel]);
+  }, [imageUrl, renderCrop]);
+
+  function confirmCrop() {
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    if (pendingCropRef.current) renderCrop(pendingCropRef.current);
+    pendingCropRef.current = null;
+    onConfirm(cropRef.current);
+  }
 
   function pointFromEvent(event: PointerEvent<HTMLDivElement>) {
     const bounds = stageRef.current?.getBoundingClientRect();
@@ -221,7 +239,7 @@ export function ReferenceCropper({
           </div>
         </div>
         <p className="crop-keyboard-hint">{keyboardHint}</p>
-        <footer><button type="button" className="face-text-action" onClick={onCancel}>{cancelLabel}</button><button type="button" className="face-action" onClick={() => onConfirm(cropRef.current)}>{confirmLabel}</button></footer>
+        <footer><button type="button" className="face-text-action" onClick={onCancel}>{cancelLabel}</button><button type="button" className="face-action" onClick={confirmCrop}>{confirmLabel}</button></footer>
       </section>
     </div>
   );
