@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, type PointerEvent } from "react";
+import styles from "./reference-cropper.module.css";
 
 export type NormalizedCrop = { x: number; y: number; width: number; height: number };
 
@@ -139,7 +140,7 @@ export function ReferenceCropper({
     event.currentTarget.setPointerCapture(event.pointerId);
     const target = event.target as HTMLElement;
     const handle = target.closest<HTMLElement>("[data-crop-handle]")?.dataset.cropHandle as DragMode | undefined;
-    const mode: DragMode = handle ?? (target.closest(".crop-selection") ? "move" : "draw");
+    const mode: DragMode = handle ?? (target.closest("[data-crop-selection]") ? "move" : "draw");
     const start = pointFromEvent(event);
     const origin = cropRef.current;
     dragRef.current = { mode, pointerId: event.pointerId, start, origin };
@@ -209,13 +210,13 @@ export function ReferenceCropper({
   }
 
   return (
-    <div className="crop-dialog-backdrop" role="presentation">
-      <section className="crop-dialog" role="dialog" aria-modal="true" aria-labelledby="crop-dialog-title">
-        <header><div><p>REFERENCE CROP</p><h2 id="crop-dialog-title">{title}</h2></div><button type="button" onClick={onCancel} aria-label={cancelLabel}>×</button></header>
-        <p className="crop-dialog-copy">{instructions}</p>
+    <div className={styles.backdrop} role="presentation">
+      <section className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="crop-dialog-title">
+        <header className={styles.header}><div><p>REFERENCE CROP</p><h2 id="crop-dialog-title">{title}</h2></div><button type="button" onClick={onCancel} aria-label={cancelLabel}>×</button></header>
+        <p className={styles.copy}>{instructions}</p>
         <div
           ref={stageRef}
-          className="crop-stage"
+          className={styles.stage}
           onPointerDown={beginCrop}
           onPointerMove={updateCrop}
           onPointerUp={finishCrop}
@@ -223,11 +224,12 @@ export function ReferenceCropper({
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={imageUrl} alt="" draggable={false} />
-          <span className="crop-shade crop-shade--top" /><span className="crop-shade crop-shade--right" />
-          <span className="crop-shade crop-shade--bottom" /><span className="crop-shade crop-shade--left" />
+          <span className={`${styles.shade} ${styles.shadeTop}`} /><span className={`${styles.shade} ${styles.shadeRight}`} />
+          <span className={`${styles.shade} ${styles.shadeBottom}`} /><span className={`${styles.shade} ${styles.shadeLeft}`} />
           <div
             ref={selectionRef}
-            className="crop-selection"
+            className={styles.selection}
+            data-crop-selection
             style={{ left: "24%", top: "8%", width: "52%", height: "84%" }}
             tabIndex={0}
             onKeyDown={changeCropWithKeyboard}
@@ -238,8 +240,8 @@ export function ReferenceCropper({
             ))}
           </div>
         </div>
-        <p className="crop-keyboard-hint">{keyboardHint}</p>
-        <footer><button type="button" className="face-text-action" onClick={onCancel}>{cancelLabel}</button><button type="button" className="face-action" onClick={confirmCrop}>{confirmLabel}</button></footer>
+        <p className={styles.keyboardHint}>{keyboardHint}</p>
+        <footer className={styles.footer}><button type="button" className={styles.cancel} onClick={onCancel}>{cancelLabel}</button><button type="button" className={styles.confirm} onClick={confirmCrop}>{confirmLabel}</button></footer>
       </section>
     </div>
   );

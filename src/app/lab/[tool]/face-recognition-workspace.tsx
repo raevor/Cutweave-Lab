@@ -33,6 +33,7 @@ import type {
 } from "@/lib/face-recognition/types";
 import type { ToolDefinition } from "@/lib/tool-catalog";
 import { ReferenceCropper, type NormalizedCrop } from "./reference-cropper";
+import styles from "./face-recognition-workspace.module.css";
 
 type ReferenceFrame = {
   slot: number;
@@ -128,6 +129,116 @@ async function cropReferenceImage(source: Blob, crop: NormalizedCrop) {
   return { previewBlob, bitmap };
 }
 
+function SceneClipPlayer({
+  source,
+  scene,
+  label,
+  poster,
+}: {
+  source: string;
+  scene: SceneMatch;
+  label: string;
+  poster?: string;
+}) {
+  const playerRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const duration = Math.max(0, scene.end - scene.start);
+
+  useEffect(() => {
+    const player = playerRef.current;
+    if (!player) return;
+    const positionAtStart = () => {
+      player.pause();
+      player.currentTime = scene.start;
+      setIsPlaying(false);
+      setElapsed(0);
+    };
+    if (player.readyState >= 1) positionAtStart();
+    else player.addEventListener("loadedmetadata", positionAtStart, { once: true });
+    return () => player.removeEventListener("loadedmetadata", positionAtStart);
+  }, [scene.id, scene.start]);
+
+  useEffect(() => {
+    const pauseWhenAnotherClipStarts = (event: Event) => {
+      const activeId = (event as CustomEvent<string>).detail;
+      if (activeId === scene.id) return;
+      playerRef.current?.pause();
+    };
+    window.addEventListener("cutweave:clip-play", pauseWhenAnotherClipStarts);
+    return () => window.removeEventListener("cutweave:clip-play", pauseWhenAnotherClipStarts);
+  }, [scene.id]);
+
+  async function togglePlayback() {
+    const player = playerRef.current;
+    if (!player) return;
+    if (!player.paused) {
+      player.pause();
+      return;
+    }
+    if (player.currentTime < scene.start || player.currentTime >= scene.end - 0.04) {
+      player.currentTime = scene.start;
+      setElapsed(0);
+    }
+    window.dispatchEvent(new CustomEvent("cutweave:clip-play", { detail: scene.id }));
+    await player.play().catch(() => undefined);
+  }
+
+  function updateClipProgress() {
+    const player = playerRef.current;
+    if (!player) return;
+    const nextElapsed = Math.max(0, Math.min(duration, player.currentTime - scene.start));
+    setElapsed(nextElapsed);
+    if (player.currentTime < scene.end - 0.025) return;
+    player.pause();
+    player.currentTime = scene.start;
+    setElapsed(0);
+  }
+
+  function seekInsideClip(nextElapsed: number) {
+    const player = playerRef.current;
+    if (!player) return;
+    const boundedElapsed = Math.max(0, Math.min(duration, nextElapsed));
+    player.currentTime = Math.min(scene.end - 0.001, scene.start + boundedElapsed);
+    setElapsed(boundedElapsed);
+  }
+
+  return (
+    <div className={styles.clipPlayer}>
+      <video
+        ref={playerRef}
+        src={source}
+        poster={poster}
+        playsInline
+        preload="metadata"
+        aria-label={label}
+        onClick={togglePlayback}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onTimeUpdate={updateClipProgress}
+      />
+      {!isPlaying && (
+        <button type="button" className={styles.clipToggle} onClick={togglePlayback} aria-label={label}>
+          <span>▶</span>
+        </button>
+      )}
+      <div className={styles.clipTimeline}>
+        <button type="button" onClick={togglePlayback} aria-label={label}>{isPlaying ? "Ⅱ" : "▶"}</button>
+        <input
+          type="range"
+          min="0"
+          max={duration || 0.1}
+          step="0.01"
+          value={elapsed}
+          onChange={(event) => seekInsideClip(Number(event.target.value))}
+          aria-label={label}
+        />
+        <strong>{Math.floor(elapsed / 60)}:{String(Math.floor(elapsed % 60)).padStart(2, "0")} / {Math.floor(duration / 60)}:{String(Math.round(duration % 60)).padStart(2, "0")}</strong>
+      </div>
+    </div>
+  );
+}
+
 export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
   const { locale, text } = useLanguage();
   const isTurkish = locale === "tr";
@@ -139,19 +250,25 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     chooseTitle: "Videonu burada aç", chooseBody: "En fazla 3 saatlik bir video seç. Dosya bu sekmede açılır; Cutweave'e yüklenmez.",
     chooseButton: "Bir video seç", file: "DOSYA", size: "BOYUT", duration: "SÜRE", remove: "Dosyayı kaldır",
     limitError: "Bu sürüm en fazla 3 saatlik videoları işler. Lütfen videoyu bölüp yeniden seç.",
-    engineTitle: "ADIM 02 / İŞLEME MOTORU", gpu: "GPU / WebGPU", cpu: "CPU / WASM", fast: "Daha hızlı",
-    compatible: "Daha uyumlu, daha yavaş", gpuMissing: "Bu tarayıcıda WebGPU bulunamadı.",
-    refsTitle: "ADIM 03 / ÜÇ REFERANS KARE", refsBody: "Yüzün net göründüğü bir ana git, kareyi yakala ve ekran alıntısı gibi yalnız istediğin kişiyi kırp.",
-    capture: "Kareyi yakala ve kırp", resetRefs: "Referansları sıfırla", emptyRef: "REFERANS",
-    faceFound: "yüz · referans uyumu", settingsTitle: "ADIM 04 / SONUÇ AYARLARI",
-    sceneCount: "İstenen sahne", clipLength: "Klip süresi", threshold: "Kimlik skoru eşiği", auto: "otomatik",
-    seconds: "saniye", run: "Yüzü videoda bul", cancel: "Analizi durdur", preparing: "Yerel yüz motoru hazırlanıyor",
+    engineTitle: "İŞLEME MODU", gpu: "GPU", cpu: "CPU", fast: "En hızlı seçenek",
+    compatible: "Daha geniş cihaz uyumluluğu", gpuMissing: "Bu cihazda hızlı mod kullanılamıyor.",
+    refsTitle: "ÜÇ REFERANS SEÇ", refsBody: "Videoda yüzün net göründüğü bir ana git. Kareyi yakalayıp yalnızca aradığın kişiyi çerçevele.",
+    capture: "Bu kareden referans ekle", resetRefs: "Tümünü temizle", emptyRef: "REFERANS",
+    faceFound: "yüz · referans uyumu", settingsTitle: "TARAMA AYARLARI",
+    sceneCount: "Sahne sayısı", clipLength: "Her klibin süresi", threshold: "Eşleşme hassasiyeti", auto: "otomatik",
+    seconds: "saniye", run: "Taramayı başlat", cancel: "Analizi durdur", preparing: "Yerel yüz motoru hazırlanıyor",
     analyzing: "Video cihazında optimize edilmiş aralıklarla taranıyor", post: "Hedef yüzle başlayan klipler doğrulanıyor; tekrarlar eleniyor", processed: "işlenen kare",
     noResults: "Bu eşikte yeterli eşleşme bulunamadı. Daha net referans kareler seç veya eşleşme eşiğini düşür.",
     resultsTitle: "BULUNAN SAHNELER", resultsBody: "Her klip hedef yüz görünürken başlar. Aynı uzun sahne tekrar sayılmaz; yeterince ayrı sahne yoksa istenenden daha az sonuç döner.",
     match: "kimlik skoru", checks: "yüz kontrolü", strong: "güçlü", likely: "olası", review: "kontrol et", removeScene: "Sahneyi çıkar", export: "MP4 klip ZIP'ini hazırla", exportFallback: "Bu tarayıcı klip üretemiyor; Chrome veya Edge kullan.",
     exporting: "MP4 klipler cihazında hızlandırılmış olarak hazırlanıyor", exportCancel: "Dışa aktarmayı durdur", downloadAgain: "ZIP'i yeniden indir",
     localProof: "SUNUCUYA GÖNDERİLEN MEDYA", zero: "0 B", identityNote: "Cutweave kişinin kimliğini araştırmaz. Yalnızca seçtiğin yüzü bu videonun içinde yeniden bulmaya çalışır.",
+    workflowSource: "Video", workflowRefs: "Referanslar", workflowSettings: "Ayarlar", workflowScan: "Tarama", workflowReview: "İnceleme",
+    intakeKicker: "YEREL VİDEO KAYNAĞI", intakeTitle: "Aramak istediğin videoyu seç", intakePrivacy: "Dosya bu sekmede açılır. Yüklenmez, kopyalanmaz ve cihazından çıkmaz.",
+    sourceReady: "VİDEO HAZIR", referencesReady: "REFERANSLAR HAZIR", settingsBody: "Kaç sahne istediğini, klip uzunluğunu ve eşleşme hassasiyetini belirle.",
+    removeReference: "Referansı kaldır", referenceHint: "Videoyu istediğin ana getir, sonra referans ekle.",
+    scanKicker: "YEREL YÜZ TARAMASI", scanTitle: "Seçtiğin yüz videoda aranıyor", scanKeep: "İptal edersen video, referanslar ve bütün ayarların korunur.", scanCancel: "Taramayı iptal et ve ayarlara dön",
+    included: "ZIP'e dahil", excluded: "ZIP'ten çıkarıldı", includeScene: "Sahneyi ZIP'e dahil et", excludeScene: "ZIP'ten çıkar", previewScene: "Klibi oynat veya duraklat", exportSummary: "indirilecek klip", backToSettings: "Ayarları değiştir",
     cropTitle: "Yalnız istediğin yüzü çerçevele", cropInstructions: "Yüzü ve baş çevresini içine alan bir dikdörtgen çiz. Arka plandaki diğer kişileri çerçevenin dışında bırak.", cropKeyboard: "Seçimi ok tuşlarıyla taşı; Shift + ok tuşlarıyla boyutlandır.", cropConfirm: "Bu kırpmayı kullan", cropCancel: "İptal",
   } : {
     nav: "Tool navigation", allTools: "All tools", privacy: "Your files", local: "Runs on this device",
@@ -161,19 +278,25 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     chooseTitle: "Open your video here", chooseBody: "Choose a video up to 3 hours long. It opens in this tab and is never uploaded to Cutweave.",
     chooseButton: "Choose a video", file: "FILE", size: "SIZE", duration: "DURATION", remove: "Remove video",
     limitError: "This build processes videos up to 3 hours. Split this file and choose it again.",
-    engineTitle: "STEP 02 / PROCESSING ENGINE", gpu: "GPU / WebGPU", cpu: "CPU / WASM", fast: "Faster",
-    compatible: "More compatible, slower", gpuMissing: "WebGPU is not available in this browser.",
-    refsTitle: "STEP 03 / THREE REFERENCE FRAMES", refsBody: "Seek to a clear view, capture the frame, then crop only the intended person like a screenshot selection.",
-    capture: "Capture and crop frame", resetRefs: "Reset references", emptyRef: "REFERENCE",
-    faceFound: "face · reference agreement", settingsTitle: "STEP 04 / RESULT SETTINGS",
-    sceneCount: "Scenes wanted", clipLength: "Clip length", threshold: "Identity score threshold", auto: "automatic",
-    seconds: "seconds", run: "Find this face", cancel: "Stop analysis", preparing: "Preparing the local face engine",
+    engineTitle: "PROCESSING MODE", gpu: "GPU", cpu: "CPU", fast: "Fastest option",
+    compatible: "Broader device compatibility", gpuMissing: "Fast mode is not available on this device.",
+    refsTitle: "CHOOSE THREE REFERENCES", refsBody: "Seek to a clear view of the face. Capture the frame, then crop only the person you want to find.",
+    capture: "Add reference from this frame", resetRefs: "Clear all", emptyRef: "REFERENCE",
+    faceFound: "face · reference agreement", settingsTitle: "SCAN SETTINGS",
+    sceneCount: "Scene count", clipLength: "Length of each clip", threshold: "Match sensitivity", auto: "automatic",
+    seconds: "seconds", run: "Start scan", cancel: "Stop analysis", preparing: "Preparing the local face engine",
     analyzing: "Scanning the video at optimized intervals on this device", post: "Verifying clips that open on the target face and removing repeats", processed: "frames processed",
     noResults: "No reliable matches were found at this threshold. Choose clearer references or lower the match threshold.",
     resultsTitle: "MATCHED SCENES", resultsBody: "Every clip opens with the target face. One long scene is counted once; when there are not enough distinct scenes, fewer results are returned.",
     match: "identity score", checks: "face checks", strong: "strong", likely: "likely", review: "review", removeScene: "Remove scene", export: "Build MP4 clip ZIP", exportFallback: "This browser cannot render clips; use Chrome or Edge.",
     exporting: "Building accelerated MP4 clips on this device", exportCancel: "Stop export", downloadAgain: "Download ZIP again",
     localProof: "MEDIA SENT TO SERVER", zero: "0 B", identityNote: "Cutweave does not research identity. It only tries to find the selected face again inside this video.",
+    workflowSource: "Video", workflowRefs: "References", workflowSettings: "Settings", workflowScan: "Scan", workflowReview: "Review",
+    intakeKicker: "LOCAL VIDEO SOURCE", intakeTitle: "Choose the video you want to search", intakePrivacy: "The file opens in this tab. It is not uploaded, copied or sent off your device.",
+    sourceReady: "VIDEO READY", referencesReady: "REFERENCES READY", settingsBody: "Choose the scene count, clip length and matching sensitivity before you scan.",
+    removeReference: "Remove reference", referenceHint: "Move the video to the moment you want, then add a reference.",
+    scanKicker: "LOCAL FACE SCAN", scanTitle: "Searching the video for your selected face", scanKeep: "If you cancel, the video, references and every setting are preserved.", scanCancel: "Cancel scan and return to settings",
+    included: "Included in ZIP", excluded: "Excluded from ZIP", includeScene: "Include scene in ZIP", excludeScene: "Exclude from ZIP", previewScene: "Play or pause clip", exportSummary: "clips to download", backToSettings: "Change settings",
     cropTitle: "Frame only the face you want", cropInstructions: "Draw a rectangle around the face and nearby head area. Keep other people in the background outside the selection.", cropKeyboard: "Move with the arrow keys; resize with Shift + arrow keys.", cropConfirm: "Use this crop", cropCancel: "Cancel",
   }, [isTurkish]);
 
@@ -194,6 +317,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
   const [videoDuration, setVideoDuration] = useState(0);
   const [engine, setEngine] = useState<FaceEngine>("cpu");
   const [references, setReferences] = useState<ReferenceFrame[]>([]);
+  const [referencesUpdating, setReferencesUpdating] = useState(false);
   const [cropDraft, setCropDraft] = useState<CropDraft | null>(null);
   const [sceneCount, setSceneCount] = useState(25);
   const [clipLength, setClipLength] = useState(5);
@@ -201,6 +325,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [progress, setProgress] = useState({ completed: 0, total: 0 });
   const [matches, setMatches] = useState<SceneMatch[]>([]);
+  const [excludedMatchIds, setExcludedMatchIds] = useState<Set<string>>(() => new Set());
   const [error, setError] = useState<string | null>(null);
   const [exportUrl, setExportUrl] = useState<string | null>(null);
   const [engineBackend, setEngineBackend] = useState<string | null>(null);
@@ -211,8 +336,10 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
 
   const isBusy = phase === "engine-loading" || phase === "analyzing" || phase === "post-processing" || phase === "exporting";
   const progressPercent = progress.total ? Math.min(100, Math.round((progress.completed / progress.total) * 100)) : 0;
-  const referenceAgreement = references.at(-1)?.agreement ?? 1;
-  const effectiveThreshold = calibrateIdentityThreshold(threshold, referenceAgreement);
+  const includedMatches = useMemo(
+    () => matches.filter((match) => !excludedMatchIds.has(match.id)),
+    [excludedMatchIds, matches],
+  );
 
   function updateProgress(completed: number, total: number, force = false) {
     const now = performance.now();
@@ -293,6 +420,20 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     return response.backend;
   }
 
+  async function syncWorkerReferences(savedReferences: ReferenceFrame[]) {
+    const clearRequestId = ++requestIdRef.current;
+    const cleared = await sendWorker({ type: "clear-references", requestId: clearRequestId });
+    if (cleared.type !== "references-cleared") throw new Error("The saved references could not be synchronized.");
+
+    for (const reference of savedReferences) {
+      if (cancelledRef.current) throw new DOMException("Analysis cancelled", "AbortError");
+      const bitmap = await createImageBitmap(reference.previewBlob);
+      const requestId = ++requestIdRef.current;
+      const response = await sendWorker({ type: "reference", requestId, slot: reference.slot, bitmap }, [bitmap]);
+      if (response.type !== "reference-ready") throw new Error("A saved reference could not be restored before scanning.");
+    }
+  }
+
   function clearReferencesLocally() {
     references.forEach((reference) => revokeUrl(reference.previewUrl));
     setReferences([]);
@@ -308,6 +449,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     closeCropDraft();
     matches.forEach((match) => revokeUrl(match.thumbnailUrl ?? null));
     setMatches([]);
+    setExcludedMatchIds(new Set());
     allSamplesRef.current = [];
     if (workerRef.current) {
       const requestId = ++requestIdRef.current;
@@ -315,6 +457,47 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     }
     setPhase(file ? "source-ready" : "idle");
     setError(null);
+  }
+
+  async function removeReference(slot: number) {
+    if (isBusy || referencesUpdating) return;
+    const removed = references[slot];
+    if (!removed) return;
+    const remaining = references
+      .filter((_, index) => index !== slot)
+      .map((reference, index) => ({ ...reference, slot: index }));
+
+    setReferencesUpdating(true);
+    setError(null);
+    revokeUrl(removed.previewUrl);
+    matches.forEach((match) => revokeUrl(match.thumbnailUrl ?? null));
+    revokeUrl(exportUrl);
+    setMatches([]);
+    setExcludedMatchIds(new Set());
+    setExportUrl(null);
+    setReferences(remaining);
+
+    try {
+      if (workerRef.current) {
+        const clearRequestId = ++requestIdRef.current;
+        await sendWorker({ type: "clear-references", requestId: clearRequestId });
+        const refreshed: ReferenceFrame[] = [];
+        for (const reference of remaining) {
+          const bitmap = await createImageBitmap(reference.previewBlob);
+          const requestId = ++requestIdRef.current;
+          const response = await sendWorker({ type: "reference", requestId, slot: reference.slot, bitmap }, [bitmap]);
+          if (response.type !== "reference-ready") throw new Error("A saved reference could not be restored.");
+          refreshed.push({ ...reference, faceCount: response.faceCount, agreement: response.agreement });
+        }
+        setReferences(refreshed);
+      }
+      setPhase("source-ready");
+    } catch (referenceError) {
+      setError(referenceError instanceof Error ? referenceError.message : "The reference could not be removed safely.");
+      setPhase("error");
+    } finally {
+      setReferencesUpdating(false);
+    }
   }
 
   function clearSource() {
@@ -333,6 +516,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     setMediaUrl(null);
     setVideoDuration(0);
     setMatches([]);
+    setExcludedMatchIds(new Set());
     setExportUrl(null);
     setError(null);
     setPhase("idle");
@@ -371,6 +555,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     matches.forEach((match) => revokeUrl(match.thumbnailUrl ?? null));
     revokeUrl(exportUrl);
     setMatches([]);
+    setExcludedMatchIds(new Set());
     setExportUrl(null);
     workerRef.current?.terminate();
     workerRef.current = null;
@@ -522,16 +707,20 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     let sceneIndex = 0;
     if (decodedScanner) {
       const decodedFrames = decodedScanner.canvasesAtTimestamps(scenes.map((scene) => scene.center));
-      while (sceneIndex < scenes.length) {
-        let decoded: IteratorResult<DecodedFrame | null, void>;
-        try {
-          decoded = await decodedFrames.next();
-        } catch {
-          break;
+      try {
+        while (sceneIndex < scenes.length) {
+          let decoded: IteratorResult<DecodedFrame | null, void>;
+          try {
+            decoded = await decodedFrames.next();
+          } catch {
+            break;
+          }
+          if (decoded.done) break;
+          await appendThumbnail(scenes[sceneIndex], decoded.value?.canvas);
+          sceneIndex += 1;
         }
-        if (decoded.done) break;
-        await appendThumbnail(scenes[sceneIndex], decoded.value?.canvas);
-        sceneIndex += 1;
+      } finally {
+        await decodedFrames.return().catch(() => undefined);
       }
     }
     for (; sceneIndex < scenes.length; sceneIndex += 1) {
@@ -547,6 +736,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     revokeUrl(exportUrl);
     setExportUrl(null);
     setMatches([]);
+    setExcludedMatchIds(new Set());
     setError(null);
     cancelledRef.current = false;
     const jobId = makeJobId();
@@ -555,6 +745,8 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
 
     try {
       await ensureWorker(engine);
+      if (activeJobRef.current !== jobId || cancelledRef.current) return;
+      await syncWorkerReferences(references);
       if (activeJobRef.current !== jobId || cancelledRef.current) return;
       const calibratedThreshold = calibrateIdentityThreshold(threshold, references.at(-1)?.agreement ?? 1);
       // Proposal scans deliberately favor recall. Every exported clip is still
@@ -570,23 +762,33 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
       let coarseIndex = 0;
       if (decodedScanner) {
         const decodedFrames = decodedScanner.canvasesAtTimestamps(sampleTimes);
-        while (coarseIndex < sampleTimes.length) {
-          let decoded: IteratorResult<DecodedFrame | null, void>;
-          try {
-            decoded = await decodedFrames.next();
-          } catch {
+        let decodedFramesFailed = false;
+        try {
+          while (coarseIndex < sampleTimes.length) {
+            let decoded: IteratorResult<DecodedFrame | null, void>;
+            try {
+              decoded = await decodedFrames.next();
+            } catch {
+              decodedFramesFailed = true;
+              break;
+            }
+            if (decoded.done) break;
+            if (cancelledRef.current || activeJobRef.current !== jobId) throw new DOMException("Analysis cancelled", "AbortError");
+            const timestamp = sampleTimes[coarseIndex];
+            samples.push(decoded.value
+              ? await scanDecodedCanvasAt(decoded.value.canvas, timestamp, jobId, proposalThreshold, "coarse")
+              : await scanAt(timestamp, jobId, proposalThreshold, "coarse"));
+            coarseIndex += 1;
+            updateProgress(coarseIndex, sampleTimes.length, coarseIndex === sampleTimes.length);
+          }
+        } finally {
+          await decodedFrames.return().catch(() => undefined);
+        }
+        if (decodedFramesFailed) {
+          if (decodedScanner) {
             decodedScanner.dispose();
             decodedScanner = null;
-            break;
           }
-          if (decoded.done) break;
-          if (cancelledRef.current || activeJobRef.current !== jobId) throw new DOMException("Analysis cancelled", "AbortError");
-          const timestamp = sampleTimes[coarseIndex];
-          samples.push(decoded.value
-            ? await scanDecodedCanvasAt(decoded.value.canvas, timestamp, jobId, proposalThreshold, "coarse")
-            : await scanAt(timestamp, jobId, proposalThreshold, "coarse"));
-          coarseIndex += 1;
-          updateProgress(coarseIndex, sampleTimes.length, coarseIndex === sampleTimes.length);
         }
       }
       for (let index = coarseIndex; index < sampleTimes.length; index += 1) {
@@ -702,9 +904,10 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
       const withThumbnails = await createThumbnails(selected, jobId, decodedScanner);
       if (activeJobRef.current !== jobId || cancelledRef.current) return;
       setMatches(withThumbnails);
+      setExcludedMatchIds(new Set());
       setPhase("results");
     } catch (analysisError) {
-      if (analysisError instanceof DOMException && analysisError.name === "AbortError") {
+      if ((analysisError instanceof Error || analysisError instanceof DOMException) && analysisError.name === "AbortError") {
         setPhase("cancelled");
       } else {
         setError(analysisError instanceof Error ? analysisError.message : "Local analysis stopped unexpectedly.");
@@ -718,25 +921,32 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
 
   function cancelActiveWork() {
     cancelledRef.current = true;
-    if (activeJobRef.current) workerRef.current?.postMessage({ type: "cancel", jobId: activeJobRef.current } satisfies FaceWorkerRequest);
+    if (!activeJobRef.current) return;
+    workerRef.current?.postMessage({ type: "cancel", jobId: activeJobRef.current } satisfies FaceWorkerRequest);
+    const cancellationError = new Error("Analysis cancelled");
+    cancellationError.name = "AbortError";
+    pendingCalls.current.forEach(({ reject }) => reject(cancellationError));
+    pendingCalls.current.clear();
+    if (phase !== "exporting") setPhase("cancelled");
   }
 
-  function removeMatch(id: string) {
-    setMatches((current) => {
-      const removed = current.find((match) => match.id === id);
-      revokeUrl(removed?.thumbnailUrl ?? null);
-      return current.filter((match) => match.id !== id);
+  function setMatchIncluded(id: string, included: boolean) {
+    setExcludedMatchIds((current) => {
+      const next = new Set(current);
+      if (included) next.delete(id);
+      else next.add(id);
+      return next;
     });
   }
 
   async function exportMatches() {
-    if (!mediaUrl || !file || !matches.length || !clipExportAvailable) return;
+    if (!mediaUrl || !file || !includedMatches.length || !clipExportAvailable) return;
     cancelledRef.current = false;
     setError(null);
     setPhase("exporting");
-    setProgress({ completed: 0, total: matches.length });
+    setProgress({ completed: 0, total: includedMatches.length });
     try {
-      const blob = await exportScenePackage(file, mediaUrl, matches, () => cancelledRef.current, (completed, total) => {
+      const blob = await exportScenePackage(file, mediaUrl, includedMatches, () => cancelledRef.current, (completed, total) => {
         setProgress({ completed, total });
       });
       if (cancelledRef.current) throw new DOMException("Export cancelled", "AbortError");
@@ -765,135 +975,241 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
         : phase === "exporting" ? copy.exporting
           : file ? copy.choose : copy.stageIdle;
 
+  const scanInProgress = phase === "engine-loading" || phase === "analyzing" || phase === "post-processing";
+  const controlsDisabled = isBusy || referencesUpdating;
+  const sensitivityPercent = Math.round(((threshold - 0.26) / (0.62 - 0.26)) * 100);
+  const workflowStep = !file ? 0 : phase === "results" || phase === "exporting" ? 4 : scanInProgress ? 3 : references.length < 3 ? 1 : 2;
+  const workflowLabels = [copy.workflowSource, copy.workflowRefs, copy.workflowSettings, copy.workflowScan, copy.workflowReview];
+
   return (
-    <main className="focused-tool focused-tool--rust face-workspace">
-      <header className="focused-tool-header">
+    <main className={styles.workspace}>
+      <header className={styles.header}>
         <BrandMark />
-        <div className="focused-header-actions">
+        <div className={styles.headerActions}>
           <LanguageSwitcher />
-          <nav aria-label={copy.nav}><Link href="/lab">← {copy.allTools}</Link><Link href="/privacy">{copy.privacy}</Link></nav>
+          <nav aria-label={copy.nav}>
+            <Link href="/lab">← {copy.allTools}</Link>
+            <Link href="/privacy">{copy.privacy}</Link>
+          </nav>
         </div>
       </header>
 
-      <section className="focused-tool-title face-tool-title">
-        <div><p className="eyebrow"><span>{tool.index} / {text.tools[tool.slug].eyebrow}</span><span>{copy.local}</span></p><h1>{text.tools[tool.slug].title}</h1></div>
-        <p>{text.tools[tool.slug].promise}</p>
-      </section>
-
-      <section className="focused-tool-layout face-tool-layout">
-        <aside className="tool-brief">
-          <div className="tool-brief-block"><small>{copy.input}</small><strong>{text.tools[tool.slug].input}</strong></div>
-          <div className="tool-brief-block"><small>{copy.output}</small><strong>{isTurkish ? `${clipFormat} klip ZIP + zaman kodları` : `${clipFormat} clip ZIP + timecodes`}</strong></div>
-          <div className="tool-brief-block tool-brief-status"><small>{copy.boundary}</small><strong><i /> {copy.stays}</strong><p>{copy.noUpload}</p></div>
-          <div className="tool-capability"><span>{copy.preflight}</span><strong>{engine === "gpu" ? "WEBGPU" : "WASM"}</strong></div>
-          <div className="face-privacy-proof"><small>{copy.localProof}</small><strong>{copy.zero}</strong></div>
-        </aside>
-
-        <div className="focused-tool-stage">
-          <div className="focused-stage-head"><span>{activeStageLabel}</span><b>{engineBackend ? engineBackend.toUpperCase() : engine.toUpperCase()}</b></div>
-
-          {!file ? (
-            <div className="face-intake">
-              <div className="face-intake-mark" aria-hidden="true"><span>01</span><i /><i /><i /><b>LOCAL<br />FACE<br />THREAD</b></div>
-              <div className="tool-intake-copy">
-                <small>{copy.chooseStep}</small><h2>{copy.chooseTitle}</h2><p>{copy.chooseBody}</p>
-                <input ref={inputRef} className="sr-only" id="face-video-input" type="file" accept="video/*" onChange={chooseFile} />
-                <label className="button button--tool" htmlFor="face-video-input">{copy.chooseButton} <span>↗</span></label>
-              </div>
-            </div>
-          ) : (
-            <div className="face-configurator">
-              <div className="face-video-column">
-                <div className="focused-media-viewer face-media-viewer">
-                  <video ref={videoRef} src={mediaUrl ?? undefined} controls playsInline preload="metadata" onLoadedMetadata={readMetadata} />
-                </div>
-                <div className="face-source-meta">
-                  <div><small>{copy.file}</small><strong>{file.name}</strong></div>
-                  <div><small>{copy.size}</small><strong>{formatBytes(file.size)}</strong></div>
-                  <div><small>{copy.duration}</small><strong>{videoDuration ? formatTimecode(videoDuration) : "--:--:--"}</strong></div>
-                  <button type="button" onClick={clearSource} disabled={isBusy}>{copy.remove}</button>
-                </div>
-              </div>
-
-              <div className="face-control-column">
-                <section className="face-step" aria-labelledby="engine-title">
-                  <p id="engine-title">{copy.engineTitle}</p>
-                  <div className="engine-choice" role="radiogroup" aria-label={copy.engineTitle}>
-                    <button type="button" role="radio" aria-checked={engine === "gpu"} className={engine === "gpu" ? "is-active" : ""} disabled={!gpuAvailable || isBusy} onClick={() => changeEngine("gpu")}><strong>{copy.gpu}</strong><span>{gpuAvailable ? copy.fast : copy.gpuMissing}</span></button>
-                    <button type="button" role="radio" aria-checked={engine === "cpu"} className={engine === "cpu" ? "is-active" : ""} disabled={isBusy} onClick={() => changeEngine("cpu")}><strong>{copy.cpu}</strong><span>{copy.compatible}</span></button>
-                  </div>
-                </section>
-
-                <section className="face-step" aria-labelledby="references-title">
-                  <div className="face-step-heading"><div><p id="references-title">{copy.refsTitle}</p><span>{copy.refsBody}</span></div><b>{references.length}/3</b></div>
-                  <div className="reference-strip">
-                    {[0, 1, 2].map((slot) => {
-                      const reference = references[slot];
-                      return reference ? (
-                        <button type="button" className="reference-frame is-filled" key={reference.previewUrl} onClick={() => videoRef.current && seekVideo(videoRef.current, reference.timestamp)} disabled={isBusy}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={reference.previewUrl} alt={`${copy.emptyRef} ${slot + 1}`} />
-                          <span>{formatTimecode(reference.timestamp)}</span><small>{reference.faceCount} {copy.faceFound} {reference.agreement.toFixed(2)}</small>
-                        </button>
-                      ) : <div className="reference-frame" key={slot}><b>0{slot + 1}</b><span>{copy.emptyRef}</span></div>;
-                    })}
-                  </div>
-                  <div className="reference-actions">
-                    <button type="button" className="face-action" onClick={captureReference} disabled={references.length >= 3 || isBusy || !videoDuration || videoDuration > MAX_VIDEO_DURATION_SECONDS}>{copy.capture}</button>
-                    {references.length > 0 && <button type="button" className="face-text-action" onClick={resetReferences} disabled={isBusy}>{copy.resetRefs}</button>}
-                  </div>
-                </section>
-
-                <section className="face-step face-settings" aria-labelledby="settings-title">
-                  <p id="settings-title">{copy.settingsTitle}</p>
-                  <label><span>{copy.sceneCount}</span><input type="number" min="1" max={MAX_SCENE_COUNT} value={sceneCount} disabled={isBusy} onChange={(event) => setSceneCount(Math.max(1, Math.min(MAX_SCENE_COUNT, Number(event.target.value))))} /></label>
-                  <label><span>{copy.clipLength}</span><div><input type="range" min="3" max="10" step="1" value={clipLength} disabled={isBusy} onChange={(event) => setClipLength(Number(event.target.value))} /><b>{clipLength} {copy.seconds}</b></div></label>
-                  <label><span>{copy.threshold}</span><div><input type="range" min="0.26" max="0.62" step="0.01" value={threshold} disabled={isBusy} onChange={(event) => setThreshold(Number(event.target.value))} /><b>{effectiveThreshold.toFixed(2)} <small>{copy.auto}</small></b></div></label>
-                </section>
-
-                {error && <div className="face-error" role="alert">{error}</div>}
-                <div className="face-run-row">
-                  {phase === "analyzing" || phase === "engine-loading" || phase === "post-processing"
-                    ? <button type="button" className="face-action face-action--stop" onClick={cancelActiveWork}>{copy.cancel}</button>
-                    : <button type="button" className="face-action" onClick={analyzeVideo} disabled={references.length !== 3 || !videoDuration || videoDuration > MAX_VIDEO_DURATION_SECONDS || isBusy}>{copy.run} <span>↗</span></button>}
-                  {(phase === "engine-loading" || phase === "analyzing" || phase === "post-processing") && <div className="face-progress"><div><i style={{ width: `${progressPercent}%` }} /></div><span>{phase === "analyzing" ? `${progress.completed}/${progress.total} ${copy.processed}` : activeStageLabel}</span></div>}
-                </div>
-              </div>
-            </div>
-          )}
+      <section className={styles.hero}>
+        <div>
+          <p className={styles.eyebrow}>{tool.index} / {text.tools[tool.slug].eyebrow}</p>
+          <h1>{text.tools[tool.slug].title}</h1>
+          <p className={styles.heroPromise}>{text.tools[tool.slug].promise}</p>
+        </div>
+        <div className={styles.localStatus}>
+          <span><i /> {copy.local}</span>
+          <strong>{copy.zero}</strong>
+          <small>{copy.localProof}</small>
         </div>
       </section>
 
-      <p className="face-identity-note">{copy.identityNote}</p>
+      <ol className={styles.workflow} aria-label={isTurkish ? "Yüz tarama adımları" : "Face scan steps"}>
+        {workflowLabels.map((label, index) => (
+          <li className={index < workflowStep ? styles.stepComplete : index === workflowStep ? styles.stepCurrent : ""} key={label} aria-current={index === workflowStep ? "step" : undefined}>
+            <span>{index < workflowStep ? "✓" : String(index + 1).padStart(2, "0")}</span>
+            <strong>{label}</strong>
+          </li>
+        ))}
+      </ol>
+
+      {!file ? (
+        <section className={styles.intake} aria-labelledby="face-intake-title">
+          <div className={styles.intakeVisual} aria-hidden="true">
+            <span className={styles.intakeCorner} />
+            <i className={styles.intakeScanline} />
+            <b>01</b>
+          </div>
+          <div className={styles.intakeCopy}>
+            <p>{copy.intakeKicker}</p>
+            <h2 id="face-intake-title">{copy.intakeTitle}</h2>
+            <span>{copy.chooseBody}</span>
+            <input ref={inputRef} className="sr-only" id="face-video-input" type="file" accept="video/*" onChange={chooseFile} />
+            <label className={styles.primaryButton} htmlFor="face-video-input">{copy.chooseButton}<span>↗</span></label>
+            <small>{copy.intakePrivacy}</small>
+          </div>
+          <div className={styles.intakeFacts}>
+            <div><small>{copy.input}</small><strong>{text.tools[tool.slug].input}</strong></div>
+            <div><small>{copy.output}</small><strong>{isTurkish ? `${clipFormat} klipleri ZIP olarak indir` : `Download ${clipFormat} clips as a ZIP`}</strong></div>
+            <div><small>{copy.boundary}</small><strong><i /> {copy.stays}</strong></div>
+          </div>
+        </section>
+      ) : phase !== "results" && phase !== "exporting" ? (
+        <section className={styles.setup} aria-label={isTurkish ? "Video ve tarama ayarları" : "Video and scan settings"}>
+          <div className={styles.videoColumn}>
+            <div className={styles.videoFrame}>
+              <div className={styles.videoFrameTop}><span>{copy.sourceReady}</span><b>{videoDuration ? formatTimecode(videoDuration) : "--:--:--"}</b></div>
+              <video ref={videoRef} src={mediaUrl ?? undefined} controls playsInline preload="metadata" onLoadedMetadata={readMetadata} />
+            </div>
+            <div className={styles.sourceMeta}>
+              <div><small>{copy.file}</small><strong title={file.name}>{file.name}</strong></div>
+              <div><small>{copy.size}</small><strong>{formatBytes(file.size)}</strong></div>
+              <button type="button" onClick={clearSource} disabled={isBusy}>{copy.remove}</button>
+            </div>
+          </div>
+
+          {scanInProgress ? (
+            <section className={styles.scanPanel} aria-live="polite" aria-labelledby="scan-title">
+              <p>{copy.scanKicker}</p>
+              <div className={styles.faceScan} aria-hidden="true">
+                <span /><span /><span /><span />
+                <div className={styles.scanReferences}>
+                  {references.map((reference, index) => (
+                    <figure key={reference.previewUrl}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={reference.previewUrl} alt="" />
+                      <figcaption>REF 0{index + 1}</figcaption>
+                    </figure>
+                  ))}
+                </div>
+                <i style={{ top: `${Math.max(8, Math.min(88, progressPercent))}%` }} />
+                <b>{progressPercent}%</b>
+              </div>
+              <h2 id="scan-title">{copy.scanTitle}</h2>
+              <p className={styles.scanStage}>{activeStageLabel}</p>
+              <div className={styles.progressTrack} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressPercent}>
+                <i style={{ width: `${progressPercent}%` }} />
+              </div>
+              <div className={styles.scanMeta}>
+                <span>{phase === "analyzing" && progress.total ? `${progress.completed}/${progress.total} ${copy.processed}` : activeStageLabel}</span>
+                <strong>{progressPercent}%</strong>
+              </div>
+              <button type="button" className={styles.cancelButton} onClick={cancelActiveWork}>{copy.scanCancel}</button>
+              <small className={styles.preserveNote}>{copy.scanKeep}</small>
+            </section>
+          ) : (
+            <div className={styles.controlColumn}>
+              <section className={styles.panelSection} aria-labelledby="references-title">
+                <div className={styles.sectionHeading}>
+                  <div><p>02 / {copy.workflowRefs}</p><h2 id="references-title">{copy.refsTitle}</h2><span>{copy.refsBody}</span></div>
+                  <b>{references.length}<small>/3</small></b>
+                </div>
+                <div className={styles.referenceGrid}>
+                  {[0, 1, 2].map((slot) => {
+                    const reference = references[slot];
+                    return reference ? (
+                      <article className={styles.referenceFilled} key={reference.previewUrl}>
+                        <button type="button" className={styles.referenceSeek} onClick={() => videoRef.current && seekVideo(videoRef.current, reference.timestamp)} disabled={controlsDisabled}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={reference.previewUrl} alt={`${copy.emptyRef} ${slot + 1}`} />
+                          <span>{formatTimecode(reference.timestamp)}</span>
+                        </button>
+                        <button type="button" className={styles.referenceRemove} aria-label={`${copy.removeReference} ${slot + 1}`} onClick={() => removeReference(slot)} disabled={controlsDisabled}>×</button>
+                        <small>0{slot + 1}</small>
+                      </article>
+                    ) : (
+                      <div className={styles.referenceEmpty} key={slot}><b>0{slot + 1}</b><span>{copy.emptyRef}</span></div>
+                    );
+                  })}
+                </div>
+                <p className={styles.referenceHint}>{copy.referenceHint}</p>
+                <div className={styles.referenceActions}>
+                  <button type="button" className={styles.secondaryButton} onClick={captureReference} disabled={references.length >= 3 || controlsDisabled || !videoDuration || videoDuration > MAX_VIDEO_DURATION_SECONDS}>+ {copy.capture}</button>
+                  {references.length > 0 && <button type="button" className={styles.textButton} onClick={resetReferences} disabled={controlsDisabled}>{copy.resetRefs}</button>}
+                </div>
+              </section>
+
+              {references.length === 3 && (
+                <section className={styles.panelSection} aria-labelledby="settings-title">
+                  <div className={styles.sectionHeadingCompact}>
+                    <div><p>03 / {copy.workflowSettings}</p><h2 id="settings-title">{copy.settingsTitle}</h2><span>{copy.settingsBody}</span></div>
+                    <em>{copy.referencesReady}</em>
+                  </div>
+
+                  <div className={styles.engineChoice} role="radiogroup" aria-label={copy.engineTitle}>
+                    <button type="button" role="radio" aria-checked={engine === "gpu"} className={engine === "gpu" ? styles.engineActive : ""} disabled={!gpuAvailable || controlsDisabled} onClick={() => changeEngine("gpu")}>
+                      <span>{copy.gpu}</span><strong>{gpuAvailable ? copy.fast : copy.gpuMissing}</strong><i />
+                    </button>
+                    <button type="button" role="radio" aria-checked={engine === "cpu"} className={engine === "cpu" ? styles.engineActive : ""} disabled={controlsDisabled} onClick={() => changeEngine("cpu")}>
+                      <span>{copy.cpu}</span><strong>{copy.compatible}</strong><i />
+                    </button>
+                  </div>
+
+                  <div className={styles.settingsGrid}>
+                    <label className={styles.numberSetting}>
+                      <span>{copy.sceneCount}</span>
+                      <input type="number" min="1" max={MAX_SCENE_COUNT} value={sceneCount} disabled={controlsDisabled} onChange={(event) => setSceneCount(Math.max(1, Math.min(MAX_SCENE_COUNT, Number(event.target.value))))} />
+                    </label>
+                    <label className={styles.rangeSetting}>
+                      <span><b>{copy.clipLength}</b><strong>{clipLength} {copy.seconds}</strong></span>
+                      <input type="range" min="3" max="10" step="1" value={clipLength} disabled={controlsDisabled} onChange={(event) => setClipLength(Number(event.target.value))} />
+                    </label>
+                    <label className={styles.rangeSetting}>
+                      <span><b>{copy.threshold}</b><strong>%{sensitivityPercent}</strong></span>
+                      <input type="range" min="0.26" max="0.62" step="0.01" value={threshold} disabled={controlsDisabled} onChange={(event) => setThreshold(Number(event.target.value))} />
+                    </label>
+                  </div>
+                </section>
+              )}
+
+              {error && <div className={styles.error} role="alert">{error}</div>}
+              <button type="button" className={styles.runButton} onClick={analyzeVideo} disabled={references.length !== 3 || !videoDuration || videoDuration > MAX_VIDEO_DURATION_SECONDS || controlsDisabled}>
+                <span>{copy.run}</span><b>04</b><i>↗</i>
+              </button>
+            </div>
+          )}
+        </section>
+      ) : null}
 
       {(phase === "results" || phase === "exporting") && (
-        <section className="face-results" aria-labelledby="face-results-title">
-          <div className="face-results-head"><div><p className="eyebrow">{matches.length}/{sceneCount}</p><h2 id="face-results-title">{copy.resultsTitle}</h2></div><p>{matches.length ? copy.resultsBody : copy.noResults}</p></div>
-          {matches.length > 0 && <div className="scene-grid">{matches.map((match, index) => (
-            <article className="scene-result" key={match.id}>
-              <div className="scene-thumbnail">
-                {match.thumbnailUrl && <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={match.thumbnailUrl} alt="" />
-                  <button type="button" aria-label={`${copy.removeScene} ${index + 1}`} onClick={() => removeMatch(match.id)} disabled={phase === "exporting"}>×</button>
-                </>}
-                <span>#{String(index + 1).padStart(2, "0")}</span>
-              </div>
-              <div className="scene-result-meta"><strong>{formatTimecode(match.start)} → {formatTimecode(match.end)}</strong><span>{match.similarity >= 0.5 ? copy.strong : match.similarity >= 0.38 ? copy.likely : copy.review} · {match.similarity.toFixed(2)} {copy.match} · {match.verificationCount ?? 0}/{match.verificationTotal ?? 0} {copy.checks}</span></div>
-            </article>
-          ))}</div>}
-          {matches.length > 0 && <div className="face-export-row">
+        <section className={styles.results} aria-labelledby="face-results-title">
+          <div className={styles.resultsHeader}>
+            <div><p>05 / {copy.workflowReview}</p><h2 id="face-results-title">{copy.resultsTitle}</h2></div>
+            <div className={styles.resultCount}><strong>{includedMatches.length}</strong><span>/ {matches.length}<small>{copy.exportSummary}</small></span></div>
+            <div className={styles.resultsIntro}>
+              <p>{matches.length ? copy.resultsBody : copy.noResults}</p>
+              <button type="button" onClick={() => setPhase("source-ready")} disabled={phase === "exporting"}>← {copy.backToSettings}</button>
+            </div>
+          </div>
+
+          {matches.length > 0 && mediaUrl && (
+            <div className={styles.sceneGrid}>
+              {matches.map((match, index) => {
+                const isExcluded = excludedMatchIds.has(match.id);
+                const clipDuration = match.end - match.start;
+                return (
+                  <article className={`${styles.sceneCard} ${isExcluded ? styles.sceneExcluded : ""}`} key={match.id}>
+                    <div className={styles.sceneMedia}>
+                      <SceneClipPlayer
+                        source={mediaUrl}
+                        scene={match}
+                        poster={match.thumbnailUrl}
+                        label={`${copy.previewScene} ${index + 1}`}
+                      />
+                      <div className={styles.sceneDecision}>
+                        <button type="button" className={!isExcluded ? styles.decisionActive : ""} aria-pressed={!isExcluded} aria-label={`${copy.includeScene} ${index + 1}`} onClick={() => setMatchIncluded(match.id, true)} disabled={phase === "exporting"}>✓</button>
+                        <button type="button" className={isExcluded ? styles.rejectActive : ""} aria-pressed={isExcluded} aria-label={`${copy.excludeScene} ${index + 1}`} onClick={() => setMatchIncluded(match.id, false)} disabled={phase === "exporting"}>×</button>
+                      </div>
+                    </div>
+                    <div className={styles.sceneCardMeta}>
+                      <div><small>SAHNE #{String(index + 1).padStart(2, "0")}</small><span className={isExcluded ? styles.sceneStatusExcluded : ""}>{isExcluded ? copy.excluded : copy.included}</span></div>
+                      <strong>{formatTimecode(match.start)} → {formatTimecode(match.end)}</strong>
+                      <em>{clipDuration.toFixed(1)} {copy.seconds}</em>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+
+          {matches.length > 0 && <div className={styles.exportRow}>
             {phase === "exporting" ? <>
-              <button type="button" className="face-action face-action--stop" onClick={cancelActiveWork}>{copy.exportCancel}</button>
-              <div className="face-progress"><div><i style={{ width: `${progressPercent}%` }} /></div><span>{progress.completed}/{progress.total} · {copy.exporting}</span></div>
+              <button type="button" className={styles.cancelButton} onClick={cancelActiveWork}>{copy.exportCancel}</button>
+              <div className={styles.exportProgress}><div><i style={{ width: `${progressPercent}%` }} /></div><span>{progress.completed}/{progress.total} · {copy.exporting}</span></div>
             </> : <>
-              <button type="button" className="face-action" onClick={exportMatches} disabled={!clipExportAvailable}>{copy.export} <span>↓</span></button>
+              <div><strong>{includedMatches.length}</strong><span>{copy.exportSummary}</span></div>
+              <button type="button" className={styles.exportButton} onClick={exportMatches} disabled={!clipExportAvailable || !includedMatches.length}>{copy.export} <span>↓</span></button>
               {!clipExportAvailable && <p>{copy.exportFallback}</p>}
-              {exportUrl && <a className="face-download" href={exportUrl} download={`${file?.name.replace(/\.[^.]+$/, "") ?? "cutweave"}-scenes.zip`}>{copy.downloadAgain}</a>}
+              {exportUrl && <a className={styles.downloadLink} href={exportUrl} download={`${file?.name.replace(/\.[^.]+$/, "") ?? "cutweave"}-scenes.zip`}>{copy.downloadAgain}</a>}
             </>}
           </div>}
         </section>
       )}
+
+      <footer className={styles.identityNote}><span>PRIVACY</span><p>{copy.identityNote}</p><strong>{copy.zero}</strong></footer>
 
       {cropDraft && <ReferenceCropper
         imageUrl={cropDraft.previewUrl}
