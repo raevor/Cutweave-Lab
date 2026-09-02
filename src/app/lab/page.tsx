@@ -1,44 +1,95 @@
-"use client";
-
 import Link from "next/link";
+import { ShowcaseHeader } from "@/components/showcase-header";
 import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
-import { ToolVisual } from "@/components/tool-visual";
+import { siteCopy as text } from "@/i18n/messages/en";
 import { primaryTools } from "@/lib/tool-catalog";
-import { useLanguage } from "@/i18n/language-provider";
+import styles from "./lab.module.css";
 
 export default function LabPage() {
-  const { text } = useLanguage();
   const copy = text.library;
+
   return (
-    <main className="tool-library-page">
-      <div className="tool-library-shell">
-        <SiteHeader dark />
-        <section className="tool-library-hero">
+    <main className={styles.page}>
+      <div className={styles.shell}>
+        <ShowcaseHeader />
+
+        <section className={styles.hero} aria-labelledby="lab-title">
           <div>
-            <p className="eyebrow"><span>{copy.eyebrowA}</span><span>{copy.eyebrowB}</span></p>
-            <h1>{copy.titleA}<br /><em>{copy.titleB}</em></h1>
+            <p className={styles.kicker}><span>{copy.eyebrowA}</span><span>{copy.eyebrowB}</span></p>
+            <h1 id="lab-title">{copy.titleA}<br /><em>{copy.titleB}</em></h1>
           </div>
-          <div className="tool-library-intro">
+          <div className={styles.heroIntro}>
             <p>{copy.intro}</p>
-            <div><span className="privacy-pulse" /> {copy.localNote}</div>
+            <div><i aria-hidden="true" />{copy.localNote}</div>
           </div>
         </section>
 
-        <section className="tool-card-grid" aria-label={copy.toolsLabel}>
-          {primaryTools.map((tool) => (
-            <Link className={`tool-card tool-card--${tool.accent}`} href={`/lab/${tool.slug}`} key={tool.slug}>
-              <div className="tool-card-topline"><span>{tool.index} / {copy.cardLabel}</span><b>{copy.openTool} ↗</b></div>
-              <ToolVisual tool={tool.slug} anatomyLabel={text.tools[tool.slug].anatomy} outputLabel={text.focused.output} outputValue={text.tools[tool.slug].anatomyOutput} beforeLabel={text.focused.before} afterLabel={text.focused.after} markerAxisLabel={text.focused.markerAxisLabel} />
-              <div className="tool-card-copy">
-                <div>
-                  <p>{text.tools[tool.slug].eyebrow}</p>
-                  <h2>{text.tools[tool.slug].title}</h2>
+        <section className={styles.launcher} aria-label={copy.toolsLabel}>
+          <header className={styles.launcherHead}>
+            <span>{copy.launcherLabel}</span>
+            <span>{copy.launcherHint}</span>
+            <span>{copy.launcherCount}</span>
+          </header>
+
+          {primaryTools.map((tool) => {
+            const available = tool.slug === "face-recognition";
+            const toolCopy = text.tools[tool.slug];
+            return (
+              <Link
+                className={`${styles.tool} ${styles[`tool_${tool.accent}`]}`}
+                href={`/lab/${tool.slug}`}
+                aria-label={`${available ? copy.startTool : copy.previewTool}: ${toolCopy.title}`}
+                key={tool.slug}
+              >
+                <div className={styles.toolNumber}>
+                  <span>{tool.index}</span>
+                  <i aria-hidden="true" />
                 </div>
-                <p>{text.tools[tool.slug].description}</p>
-              </div>
-            </Link>
-          ))}
+
+                <div className={styles.toolIdentity}>
+                  <p>{toolCopy.eyebrow}</p>
+                  <h2>{toolCopy.title}</h2>
+                  <p>{toolCopy.shortTitle}</p>
+                </div>
+
+                <div className={styles.toolAnatomy} aria-hidden="true">
+                  <div className={styles.anatomyTop}><span>{copy.inputLabel}</span><b>{toolCopy.input}</b></div>
+                  <div className={styles.anatomyRail}>
+                    <i /><i /><i />
+                    <span />
+                  </div>
+                  <div className={styles.anatomyBottom}><span>{copy.outputLabel}</span><b>{toolCopy.output}</b></div>
+                </div>
+
+                <div className={styles.toolAction}>
+                  <span className={available ? styles.ready : styles.building}><i aria-hidden="true" />{available ? copy.available : copy.inBuild}</span>
+                  <strong>{available ? copy.startTool : copy.previewTool}<b aria-hidden="true">↗</b></strong>
+                </div>
+              </Link>
+            );
+          })}
+        </section>
+
+        <section className={styles.guide} aria-labelledby="guide-title">
+          <div className={styles.guideLead}>
+            <p className={styles.kicker}>{copy.guideEyebrow}</p>
+            <h2 id="guide-title">{copy.guideTitle}</h2>
+          </div>
+          <ol>
+            {copy.guideSteps.map((step, index) => (
+              <li key={step.title}>
+                <span>0{index + 1}</span>
+                <strong>{step.title}</strong>
+                <p>{step.copy}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section className={styles.boundary} aria-label={copy.boundaryLabel}>
+          <div><span>{copy.boundaryEyebrow}</span><strong>{copy.boundaryTitle}</strong></div>
+          <p>{copy.boundaryCopy}</p>
+          <Link href="/privacy">{copy.boundaryAction}<span aria-hidden="true">→</span></Link>
         </section>
       </div>
       <SiteFooter />

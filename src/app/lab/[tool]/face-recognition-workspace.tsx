@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { ChangeEvent, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { BrandMark } from "@/components/brand-mark";
-import { LanguageSwitcher } from "@/components/language-switcher";
-import { useLanguage } from "@/i18n/language-provider";
+import { siteCopy as text } from "@/i18n/messages/en";
 import { canRenderSceneClips, exportScenePackage, preferredClipFormat } from "@/lib/face-recognition/export-clips";
 import {
   MAX_VIDEO_DURATION_SECONDS,
@@ -240,38 +239,8 @@ function SceneClipPlayer({
 }
 
 export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
-  const { locale, text } = useLanguage();
-  const isTurkish = locale === "tr";
-  const copy = useMemo(() => isTurkish ? {
-    nav: "Araç menüsü", allTools: "Tüm araçlar", privacy: "Dosyaların", local: "Bu cihazda çalışır",
-    input: "SEN EKLERSİN", output: "SEN ALIRSIN", boundary: "DOSYAN", stays: "BURADA KALIR",
-    noUpload: "Video, kareler, yüz kırpmaları ve yüz verisi cihazından çıkmaz.", preflight: "ÇALIŞMA PLANI",
-    choose: "BAŞLAMAK İÇİN VİDEO SEÇ", stageIdle: "YEREL MOTOR HAZIR", chooseStep: "ADIM 01 / KAYNAK",
-    chooseTitle: "Videonu burada aç", chooseBody: "En fazla 3 saatlik bir video seç. Dosya bu sekmede açılır; Cutweave'e yüklenmez.",
-    chooseButton: "Bir video seç", file: "DOSYA", size: "BOYUT", duration: "SÜRE", remove: "Dosyayı kaldır",
-    limitError: "Bu sürüm en fazla 3 saatlik videoları işler. Lütfen videoyu bölüp yeniden seç.",
-    engineTitle: "İŞLEME MODU", gpu: "GPU", cpu: "CPU", fast: "En hızlı seçenek",
-    compatible: "Daha geniş cihaz uyumluluğu", gpuMissing: "Bu cihazda hızlı mod kullanılamıyor.",
-    refsTitle: "ÜÇ REFERANS SEÇ", refsBody: "Videoda yüzün net göründüğü bir ana git. Kareyi yakalayıp yalnızca aradığın kişiyi çerçevele.",
-    capture: "Bu kareden referans ekle", resetRefs: "Tümünü temizle", emptyRef: "REFERANS",
-    faceFound: "yüz · referans uyumu", settingsTitle: "TARAMA AYARLARI",
-    sceneCount: "Sahne sayısı", clipLength: "Her klibin süresi", threshold: "Eşleşme hassasiyeti", auto: "otomatik",
-    seconds: "saniye", run: "Taramayı başlat", cancel: "Analizi durdur", preparing: "Yerel yüz motoru hazırlanıyor",
-    analyzing: "Video cihazında optimize edilmiş aralıklarla taranıyor", post: "Hedef yüzle başlayan klipler doğrulanıyor; tekrarlar eleniyor", processed: "işlenen kare",
-    noResults: "Bu eşikte yeterli eşleşme bulunamadı. Daha net referans kareler seç veya eşleşme eşiğini düşür.",
-    resultsTitle: "BULUNAN SAHNELER", resultsBody: "Her klip hedef yüz görünürken başlar. Aynı uzun sahne tekrar sayılmaz; yeterince ayrı sahne yoksa istenenden daha az sonuç döner.",
-    match: "kimlik skoru", checks: "yüz kontrolü", strong: "güçlü", likely: "olası", review: "kontrol et", removeScene: "Sahneyi çıkar", export: "MP4 klip ZIP'ini hazırla", exportFallback: "Bu tarayıcı klip üretemiyor; Chrome veya Edge kullan.",
-    exporting: "MP4 klipler cihazında hızlandırılmış olarak hazırlanıyor", exportCancel: "Dışa aktarmayı durdur", downloadAgain: "ZIP'i yeniden indir",
-    localProof: "SUNUCUYA GÖNDERİLEN MEDYA", zero: "0 B", identityNote: "Cutweave kişinin kimliğini araştırmaz. Yalnızca seçtiğin yüzü bu videonun içinde yeniden bulmaya çalışır.",
-    workflowSource: "Video", workflowRefs: "Referanslar", workflowSettings: "Ayarlar", workflowScan: "Tarama", workflowReview: "İnceleme",
-    intakeKicker: "YEREL VİDEO KAYNAĞI", intakeTitle: "Aramak istediğin videoyu seç", intakePrivacy: "Dosya bu sekmede açılır. Yüklenmez, kopyalanmaz ve cihazından çıkmaz.",
-    sourceReady: "VİDEO HAZIR", referencesReady: "REFERANSLAR HAZIR", settingsBody: "Kaç sahne istediğini, klip uzunluğunu ve eşleşme hassasiyetini belirle.",
-    removeReference: "Referansı kaldır", referenceHint: "Videoyu istediğin ana getir, sonra referans ekle.",
-    scanKicker: "YEREL YÜZ TARAMASI", scanTitle: "Seçtiğin yüz videoda aranıyor", scanKeep: "İptal edersen video, referanslar ve bütün ayarların korunur.", scanCancel: "Taramayı iptal et ve ayarlara dön",
-    included: "ZIP'e dahil", excluded: "ZIP'ten çıkarıldı", includeScene: "Sahneyi ZIP'e dahil et", excludeScene: "ZIP'ten çıkar", previewScene: "Klibi oynat veya duraklat", exportSummary: "indirilecek klip", backToSettings: "Ayarları değiştir",
-    cropTitle: "Yalnız istediğin yüzü çerçevele", cropInstructions: "Yüzü ve baş çevresini içine alan bir dikdörtgen çiz. Arka plandaki diğer kişileri çerçevenin dışında bırak.", cropKeyboard: "Seçimi ok tuşlarıyla taşı; Shift + ok tuşlarıyla boyutlandır.", cropConfirm: "Bu kırpmayı kullan", cropCancel: "İptal",
-  } : {
-    nav: "Tool navigation", allTools: "All tools", privacy: "Your files", local: "Runs on this device",
+  const copy = {
+    nav: "Tool navigation", allTools: "All tools", privacy: "Privacy", local: "Runs on this device",
     input: "YOU ADD", output: "YOU GET", boundary: "YOUR FILE", stays: "STAYS HERE",
     noUpload: "Video, frames, face crops and face data never leave your device.", preflight: "EXECUTION PLAN",
     choose: "CHOOSE A VIDEO TO START", stageIdle: "LOCAL ENGINE READY", chooseStep: "STEP 01 / SOURCE",
@@ -298,7 +267,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     scanKicker: "LOCAL FACE SCAN", scanTitle: "Searching the video for your selected face", scanKeep: "If you cancel, the video, references and every setting are preserved.", scanCancel: "Cancel scan and return to settings",
     included: "Included in ZIP", excluded: "Excluded from ZIP", includeScene: "Include scene in ZIP", excludeScene: "Exclude from ZIP", previewScene: "Play or pause clip", exportSummary: "clips to download", backToSettings: "Change settings",
     cropTitle: "Frame only the face you want", cropInstructions: "Draw a rectangle around the face and nearby head area. Keep other people in the background outside the selection.", cropKeyboard: "Move with the arrow keys; resize with Shift + arrow keys.", cropConfirm: "Use this crop", cropCancel: "Cancel",
-  }, [isTurkish]);
+  } as const;
 
   const inputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -986,7 +955,6 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
       <header className={styles.header}>
         <BrandMark />
         <div className={styles.headerActions}>
-          <LanguageSwitcher />
           <nav aria-label={copy.nav}>
             <Link href="/lab">← {copy.allTools}</Link>
             <Link href="/privacy">{copy.privacy}</Link>
@@ -1007,7 +975,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
         </div>
       </section>
 
-      <ol className={styles.workflow} aria-label={isTurkish ? "Yüz tarama adımları" : "Face scan steps"}>
+      <ol className={styles.workflow} aria-label="Face scan steps">
         {workflowLabels.map((label, index) => (
           <li className={index < workflowStep ? styles.stepComplete : index === workflowStep ? styles.stepCurrent : ""} key={label} aria-current={index === workflowStep ? "step" : undefined}>
             <span>{index < workflowStep ? "✓" : String(index + 1).padStart(2, "0")}</span>
@@ -1033,12 +1001,12 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
           </div>
           <div className={styles.intakeFacts}>
             <div><small>{copy.input}</small><strong>{text.tools[tool.slug].input}</strong></div>
-            <div><small>{copy.output}</small><strong>{isTurkish ? `${clipFormat} klipleri ZIP olarak indir` : `Download ${clipFormat} clips as a ZIP`}</strong></div>
+            <div><small>{copy.output}</small><strong>{`Download ${clipFormat} clips as a ZIP`}</strong></div>
             <div><small>{copy.boundary}</small><strong><i /> {copy.stays}</strong></div>
           </div>
         </section>
       ) : phase !== "results" && phase !== "exporting" ? (
-        <section className={styles.setup} aria-label={isTurkish ? "Video ve tarama ayarları" : "Video and scan settings"}>
+        <section className={styles.setup} aria-label="Video and scan settings">
           <div className={styles.videoColumn}>
             <div className={styles.videoFrame}>
               <div className={styles.videoFrameTop}><span>{copy.sourceReady}</span><b>{videoDuration ? formatTimecode(videoDuration) : "--:--:--"}</b></div>

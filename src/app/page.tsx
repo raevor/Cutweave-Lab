@@ -1,150 +1,106 @@
-"use client";
-
 import Link from "next/link";
-import Image from "next/image";
-import { useRef } from "react";
-import faceRecognitionHero from "../../assets/face-recognition-hero.png";
+import { ShowcaseHeader } from "@/components/showcase-header";
 import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
-import { ToolVisual } from "@/components/tool-visual";
-import { useLanguage } from "@/i18n/language-provider";
-import type { ToolSlug } from "@/lib/tool-catalog";
+import { siteCopy as text } from "@/i18n/messages/en";
+import { primaryTools } from "@/lib/tool-catalog";
+import styles from "./home.module.css";
 
-const homeTools: Array<{ slug: ToolSlug; index: string; accent: "rust" | "blue" | "signal" }> = [
-  { slug: "face-recognition", index: "01", accent: "rust" },
-  { slug: "bass-markers", index: "02", accent: "blue" },
-  { slug: "clarity-boost", index: "03", accent: "signal" },
-];
+const toolTracks = {
+  "face-recognition": ["12%", "34%", "58%", "82%"],
+  "bass-markers": ["17%", "43%", "67%", "88%"],
+  "clarity-boost": ["9%", "38%", "72%"],
+} as const;
 
 export default function HomePage() {
-  const { text } = useLanguage();
   const copy = text.home;
-  const previewScrollFrame = useRef<number | null>(null);
-
-  function scrollToFaceRecognition(event: React.MouseEvent<HTMLAnchorElement>) {
-    const target = document.getElementById("face-recognition");
-    if (!target) return;
-
-    event.preventDefault();
-    const targetY = window.scrollY + target.getBoundingClientRect().top - 24;
-    const startY = window.scrollY;
-    const distance = targetY - startY;
-
-    if (previewScrollFrame.current !== null) {
-      window.cancelAnimationFrame(previewScrollFrame.current);
-    }
-
-    const duration = 950;
-    const startedAt = performance.now();
-    const animate = (now: number) => {
-      const progress = Math.min((now - startedAt) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 4);
-      window.scrollTo({ top: startY + distance * eased });
-
-      if (progress < 1) {
-        previewScrollFrame.current = window.requestAnimationFrame(animate);
-      } else {
-        previewScrollFrame.current = null;
-        if (window.location.hash !== "#face-recognition") {
-          window.history.pushState(null, "", "#face-recognition");
-        }
-      }
-    };
-
-    previewScrollFrame.current = window.requestAnimationFrame(animate);
-  }
 
   return (
-    <main>
-      <div className="landing-shell">
-        <SiteHeader />
+    <main className={styles.page}>
+      <div className={styles.shell}>
+        <ShowcaseHeader />
 
-        <section className="hero" aria-labelledby="hero-title">
-          <div className="hero-copy">
-            <p className="eyebrow"><span>{copy.eyebrowA}</span><span>{copy.eyebrowB}</span></p>
-            <h1 id="hero-title">{copy.titleLead}<br /><em>{copy.titleEmphasis}</em></h1>
-            <p className="hero-lede">
-              {copy.lede}
-            </p>
-            <div className="hero-actions">
-              <Link className="button button--primary" href="/lab">{copy.browseTools} <span aria-hidden="true">↗</span></Link>
+        <section className={styles.hero} aria-labelledby="hero-title">
+          <div className={styles.heroCopy}>
+            <p className={styles.kicker}><span>{copy.eyebrowA}</span><span>{copy.eyebrowB}</span></p>
+            <h1 id="hero-title">
+              <span>{copy.titleLine1}</span>
+              <span>{copy.titleLine2}</span>
+              <em>{copy.titleLine3}</em>
+            </h1>
+            <p className={styles.lede}>{copy.lede}</p>
+            <div className={styles.heroActions}>
+              <Link className={styles.primaryAction} href="/lab/face-recognition">
+                {copy.primaryAction}<span aria-hidden="true">↗</span>
+              </Link>
+              <Link className={styles.secondaryAction} href="/lab">
+                {copy.secondaryAction}<span aria-hidden="true">→</span>
+              </Link>
             </div>
-            <p className="privacy-note"><span className="privacy-pulse" aria-hidden="true" /> {copy.privacyNote}</p>
+            <p className={styles.localStatus}><i aria-hidden="true" />{copy.privacyNote}</p>
           </div>
 
-          <a
-            className="hero-instrument"
-            href="#face-recognition"
-            aria-label={copy.previewLinkAria}
-            onClick={scrollToFaceRecognition}
-          >
-            <Image
-              className="hero-instrument-image"
-              src={faceRecognitionHero}
-              alt=""
-              sizes="(max-width: 900px) 100vw, 48vw"
-              preload
-              unoptimized
-            />
-            <span className="hero-instrument-cue">{copy.previewJump} <span aria-hidden="true">↓</span></span>
-          </a>
-        </section>
-
-        <section className="manifesto-strip" aria-label={copy.principlesLabel}>
-          {copy.principles.map((principle) => <span key={principle}>{principle}</span>)}
-        </section>
-
-        <section className="home-tools" aria-labelledby="home-tools-title">
-          <div className="home-tools-heading">
-            <div>
-              <p className="eyebrow">{copy.toolsEyebrow}</p>
-              <h2 id="home-tools-title">{copy.toolsTitleA}<br /><em>{copy.toolsTitleB}</em></h2>
+          <div className={styles.signalMap} role="img" aria-label={copy.heroMapAria}>
+            <div className={styles.mapHead}>
+              <span>{copy.heroMapLabel}</span>
+              <span>{copy.heroMapNote}</span>
             </div>
-            <p>{copy.toolsIntro}</p>
-          </div>
-
-          <div className="home-tool-stack" aria-label={copy.toolsLabel}>
-            {homeTools.map(({ slug, index, accent }) => {
-              const tool = text.tools[slug];
-              return (
-                <article className={`home-tool-panel home-tool-panel--${accent}`} id={slug} key={slug}>
-                  <div className="home-tool-meta">
-                    <span>{index} / {tool.eyebrow}</span>
-                    <span><i aria-hidden="true" /> {copy.localTool}</span>
+            <div className={styles.timeRail} aria-hidden="true">
+              <span>00:00</span><span>12:16</span><span>28:42</span><span>44:08</span>
+            </div>
+            <div className={styles.trackField} aria-hidden="true">
+              <div className={styles.playhead}><i /></div>
+              {primaryTools.map((tool) => (
+                <div className={`${styles.track} ${styles[`track_${tool.accent}`]}`} key={tool.slug}>
+                  <span>{tool.index}</span>
+                  <strong>{text.tools[tool.slug].title}</strong>
+                  <div className={styles.trackLine}>
+                    {toolTracks[tool.slug].map((left, index) => <i style={{ left }} key={`${left}-${index}`} />)}
                   </div>
-                  <div className="home-tool-layout">
-                    <div className="home-tool-copy">
-                      <p>{tool.shortTitle}</p>
-                      <h3>{tool.title}</h3>
-                      <p className="home-tool-description">{tool.description}</p>
-                      <dl>
-                        <div><dt>{copy.inputLabel}</dt><dd>{tool.input}</dd></div>
-                        <div><dt>{copy.outputLabel}</dt><dd>{tool.output}</dd></div>
-                      </dl>
-                      <Link className="home-tool-link" href={`/lab/${slug}`}>{copy.openTool} <span aria-hidden="true">↗</span></Link>
-                    </div>
-                    <div className={`home-tool-visual${slug === "face-recognition" ? " home-tool-visual--feature" : ""}`}>
-                      {slug === "face-recognition" ? (
-                        <Image
-                          className="home-tool-feature-image"
-                          src={faceRecognitionHero}
-                          alt=""
-                          sizes="(max-width: 980px) 100vw, 58vw"
-                          unoptimized
-                        />
-                      ) : (
-                        <ToolVisual
-                          tool={slug}
-                          anatomyLabel={tool.anatomy}
-                          outputLabel={copy.previewOutput}
-                          outputValue={tool.anatomyOutput}
-                          beforeLabel={text.focused.before}
-                          afterLabel={text.focused.after}
-                          markerAxisLabel={text.focused.markerAxisLabel}
-                        />
-                      )}
-                      <span className="interface-note">{copy.interfacePreview}</span>
-                    </div>
+                  <small>{tool.slug === "face-recognition" ? copy.available : copy.inBuild}</small>
+                </div>
+              ))}
+            </div>
+            <div className={styles.mapOutput}>
+              <span>{copy.heroOutput}</span>
+              <strong>{copy.heroOutputValue}</strong>
+              <b aria-hidden="true">/</b>
+            </div>
+          </div>
+        </section>
+
+        <section className={styles.proofStrip} aria-label={copy.principlesLabel}>
+          {copy.facts.map((fact) => (
+            <div key={fact.label}><strong>{fact.value}</strong><span>{fact.label}</span></div>
+          ))}
+        </section>
+
+        <section className={styles.tools} aria-labelledby="home-tools-title">
+          <header className={styles.sectionHead}>
+            <p className={styles.kicker}>{copy.toolsEyebrow}</p>
+            <h2 id="home-tools-title">{copy.toolsTitleA}<br /><em>{copy.toolsTitleB}</em></h2>
+            <p>{copy.toolsIntro}</p>
+          </header>
+
+          <div className={styles.toolList}>
+            {primaryTools.map((tool) => {
+              const available = tool.slug === "face-recognition";
+              return (
+                <article className={`${styles.toolRow} ${styles[`tool_${tool.accent}`]}`} id={tool.slug} key={tool.slug}>
+                  <div className={styles.toolIndex}><span>{tool.index}</span><i aria-hidden="true" /></div>
+                  <div className={styles.toolMain}>
+                    <p>{text.tools[tool.slug].eyebrow}</p>
+                    <h3>{text.tools[tool.slug].title}</h3>
+                    <p>{text.tools[tool.slug].description}</p>
+                  </div>
+                  <dl className={styles.toolContract}>
+                    <div><dt>{copy.inputLabel}</dt><dd>{text.tools[tool.slug].input}</dd></div>
+                    <div><dt>{copy.outputLabel}</dt><dd>{text.tools[tool.slug].output}</dd></div>
+                  </dl>
+                  <div className={styles.toolLaunch}>
+                    <span className={available ? styles.statusReady : styles.statusBuild}><i aria-hidden="true" />{available ? copy.available : copy.inBuild}</span>
+                    <Link href={`/lab/${tool.slug}`} aria-label={`${available ? copy.startTool : copy.previewTool}: ${text.tools[tool.slug].title}`}>
+                      <span>{available ? copy.startTool : copy.previewTool}</span><b aria-hidden="true">↗</b>
+                    </Link>
                   </div>
                 </article>
               );
@@ -152,17 +108,16 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="workflow-section" id="workflow" aria-labelledby="workflow-title">
-          <div className="section-heading">
-            <p className="eyebrow">{copy.workflowEyebrow}</p>
-            <h2 id="workflow-title">{copy.workflowTitleA}<br />{copy.workflowTitleB}</h2>
-            <p>{copy.workflowIntro}</p>
+        <section className={styles.workflow} id="workflow" aria-labelledby="workflow-title">
+          <div className={styles.workflowTitle}>
+            <p className={styles.kicker}>{copy.workflowEyebrow}</p>
+            <h2 id="workflow-title">{copy.workflowTitleA}<br /><em>{copy.workflowTitleB}</em></h2>
           </div>
-          <div className="workflow-list">
+          <div className={styles.workflowSteps}>
             {copy.workflow.map((step, index) => (
-              <article className="workflow-row" key={step.title}>
-                <span className="workflow-index">0{index + 1}</span>
-                <span className="workflow-route" aria-hidden="true"><i /></span>
+              <article key={step.title}>
+                <span>0{index + 1}</span>
+                <div aria-hidden="true"><i /></div>
                 <h3>{step.title}</h3>
                 <p>{step.copy}</p>
               </article>
@@ -170,38 +125,23 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="local-proof" aria-labelledby="local-title">
-          <div className="local-proof-copy">
-            <p className="eyebrow">{copy.localEyebrow}</p>
+        <section className={styles.localProof} aria-labelledby="local-title">
+          <div className={styles.localCopy}>
+            <p className={styles.kicker}>{copy.localEyebrow}</p>
             <h2 id="local-title">{copy.localTitleA}<br /><em>{copy.localTitleB}</em></h2>
             <p>{copy.localCopy}</p>
-            <Link className="text-link" href="/privacy">{copy.localLink} <span aria-hidden="true">→</span></Link>
+            <Link href="/privacy">{copy.localLink}<span aria-hidden="true">→</span></Link>
           </div>
-          <div className="local-route-card">
-            <div className="local-route-head">
-              <span>{copy.routeTitle}</span>
-              <span>{copy.routeStatus}</span>
+          <div className={styles.localDiagram} aria-label={copy.routeAria}>
+            <div className={styles.localDiagramHead}><span>{copy.routeTitle}</span><b>{copy.routeStatus}</b></div>
+            <div className={styles.boundary}>
+              <div><small>01 / {copy.routeDevice}</small><strong>{copy.routeFile}</strong></div>
+              <span aria-hidden="true">→</span>
+              <div className={styles.browserNode}><small>02 / {copy.routeBrowser}</small><strong>{copy.routeWorkspace}</strong></div>
+              <span aria-hidden="true">→</span>
+              <div><small>03 / {copy.routeDevice}</small><strong>{copy.routeExport}</strong></div>
             </div>
-            <div className="local-route-main" aria-label={copy.routeAria}>
-              <div className="local-route-node">
-                <small>01</small><span>{copy.routeDevice}</span><strong>{copy.routeFile}</strong>
-              </div>
-              <span className="local-route-arrow" aria-hidden="true">→</span>
-              <div className="local-route-node local-route-node--active">
-                <small>02</small><span>{copy.routeBrowser}</span><strong>{copy.routeWorkspace}</strong>
-              </div>
-              <span className="local-route-arrow" aria-hidden="true">→</span>
-              <div className="local-route-node">
-                <small>03</small><span>{copy.routeDevice}</span><strong>{copy.routeExport}</strong>
-              </div>
-            </div>
-            <div className="cloud-detour">
-              <span aria-hidden="true">×</span>
-              <div><small>{copy.routeCloud}</small><strong>{copy.routeCloudStatus}</strong></div>
-            </div>
-            <div className="local-facts">
-              {copy.localFacts.map((fact) => <span key={fact}><i aria-hidden="true" /> {fact}</span>)}
-            </div>
+            <div className={styles.blockedRoute}><span aria-hidden="true">×</span><small>{copy.routeCloud}</small><strong>{copy.routeCloudStatus}</strong></div>
           </div>
         </section>
       </div>

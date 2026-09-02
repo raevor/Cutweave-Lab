@@ -1,10 +1,7 @@
-"use client";
-
 import { BrandMark } from "./brand-mark";
-import { useLanguage } from "@/i18n/language-provider";
+import { siteCopy as text } from "@/i18n/messages/en";
 
 export function SiteFooter() {
-  const { text } = useLanguage();
   return (
     <footer className="site-footer">
       <BrandMark />

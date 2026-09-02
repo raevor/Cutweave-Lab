@@ -3,9 +3,8 @@
 import Link from "next/link";
 import { ChangeEvent, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { BrandMark } from "@/components/brand-mark";
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { ToolVisual } from "@/components/tool-visual";
-import { useLanguage } from "@/i18n/language-provider";
+import { siteCopy as text } from "@/i18n/messages/en";
 import type { ToolDefinition } from "@/lib/tool-catalog";
 
 const subscribeToCapabilities = () => () => undefined;
@@ -24,7 +23,6 @@ function formatBytes(bytes: number) {
 }
 
 export function ToolWorkspace({ tool }: { tool: ToolDefinition }) {
-  const { text } = useLanguage();
   const copy = text.focused;
   const toolCopy = text.tools[tool.slug];
   const inputRef = useRef<HTMLInputElement>(null);
@@ -73,7 +71,6 @@ export function ToolWorkspace({ tool }: { tool: ToolDefinition }) {
       <header className="focused-tool-header">
         <BrandMark />
         <div className="focused-header-actions">
-          <LanguageSwitcher />
           <nav aria-label={copy.navLabel}>
             <Link href="/lab">← {copy.allTools}</Link>
             <Link href="/privacy">{copy.privacy}</Link>

@@ -22,7 +22,6 @@
 .workspace :global(.brand-mark) { color: var(--face-text); }
 .workspace :global(.brand-slash) { color: var(--face-signal); }
 .workspace :global(.brand-lab) { color: var(--face-faint); }
-.workspace :global(.language-current) { border-color: var(--face-line); background: var(--face-panel); color: var(--face-text); }
 
 .header {
   min-height: 76px;

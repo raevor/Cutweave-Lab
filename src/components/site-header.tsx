@@ -1,17 +1,12 @@
-"use client";
-
 import Link from "next/link";
-import { useLanguage } from "@/i18n/language-provider";
+import { siteCopy as text } from "@/i18n/messages/en";
 import { BrandMark } from "./brand-mark";
-import { LanguageSwitcher } from "./language-switcher";
 
-export function SiteHeader({ compact = false, dark = false }: { compact?: boolean; dark?: boolean }) {
-  const { text } = useLanguage();
+export function SiteHeader({ compact = false }: { compact?: boolean }) {
   return (
     <header className={compact ? "site-header site-header--compact" : "site-header"}>
       <BrandMark />
       <div className="header-actions">
-        <LanguageSwitcher dark={compact || dark} />
         <nav className="site-nav" aria-label={text.common.nav.label}>
           <Link href="/#workflow">{text.common.nav.workflow}</Link>
           <Link href="/privacy">{text.common.nav.privacy}</Link>

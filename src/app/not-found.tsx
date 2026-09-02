@@ -1,11 +1,8 @@
-"use client";
-
 import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
-import { useLanguage } from "@/i18n/language-provider";
+import { siteCopy as text } from "@/i18n/messages/en";
 
 export default function NotFound() {
-  const { text } = useLanguage();
   const copy = text.notFound;
   return (
     <main className="not-found">
