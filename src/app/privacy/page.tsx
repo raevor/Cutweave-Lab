@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ShowcaseHeader } from "@/components/showcase-header";
-import { SiteFooter } from "@/components/site-footer";
+import { PublicPageFrame } from "@/components/public-page-frame";
 import { siteCopy as text } from "@/i18n/messages/en";
 import styles from "./privacy.module.css";
 
@@ -14,10 +13,8 @@ export default function PrivacyPage() {
   const copy = text.privacy;
 
   return (
-    <main className={styles.page}>
+    <PublicPageFrame activePage="privacy">
       <div className={styles.shell}>
-        <ShowcaseHeader />
-
         <section className={styles.hero} aria-labelledby="privacy-title">
           <div className={styles.heroCopy}>
             <p className={styles.kicker}><span>{copy.eyebrowA}</span><span>{copy.eyebrowB}</span></p>
@@ -119,7 +116,6 @@ export default function PrivacyPage() {
           </div>
         </aside>
       </div>
-      <SiteFooter />
-    </main>
+    </PublicPageFrame>
   );
 }

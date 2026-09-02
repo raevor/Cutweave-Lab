@@ -249,7 +249,7 @@ export function HomeExperience() {
           <BrandMark />
 
           <nav className={styles.nav} aria-label="Primary navigation">
-            <Link href="#tools">Tools</Link>
+            <Link href="/roadmap">Roadmap</Link>
             <Link href="#workflow">How it works</Link>
             <Link href="/privacy">Privacy</Link>
           </nav>
@@ -478,7 +478,7 @@ export function HomeExperience() {
           <BrandMark />
           <p>Focused media tools. Local by design.</p>
           <nav aria-label="Footer navigation">
-            <Link href="/lab">Tools</Link><Link href="/privacy">Privacy</Link><Link href="#top">Back to top ↑</Link>
+            <Link href="/lab">Tools</Link><Link href="/roadmap">Roadmap</Link><Link href="/privacy">Privacy</Link><Link href="#top">Back to top ↑</Link>
           </nav>
         </footer>
       </div>

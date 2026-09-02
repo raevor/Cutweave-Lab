@@ -54,7 +54,7 @@ export const siteCopy = {
     ],
     boundaryLabel: "Cutweave local media boundary", boundaryEyebrow: "LOCAL BY ARCHITECTURE", boundaryTitle: "The source stays yours.",
     boundaryCopy: "Video bytes, decoded frames, thumbnails, face crops and working previews remain on the device running the tool.",
-    boundaryAction: "See your files",
+    boundaryAction: "Read the privacy boundary",
   },
   tools: {
     "face-recognition": {
