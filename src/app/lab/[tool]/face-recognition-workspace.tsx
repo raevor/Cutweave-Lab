@@ -1,7 +1,18 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { ChangeEvent, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import {
+  ChangeEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
+import darkThemeIcon from "../../../../assets/dark-theme.png";
+import lightThemeIcon from "../../../../assets/light-theme.png";
 import { BrandMark } from "@/components/brand-mark";
 import { siteCopy as text } from "@/i18n/messages/en";
 import { canRenderSceneClips, exportScenePackage, preferredClipFormat } from "@/lib/face-recognition/export-clips";
@@ -58,10 +69,13 @@ type DecodedFrameScanner = {
 };
 
 type Phase = "idle" | "source-ready" | "engine-loading" | "analyzing" | "post-processing" | "results" | "exporting" | "cancelled" | "error";
+type FaceTheme = "light" | "dark";
+type TrailPoint = { x: number; y: number; createdAt: number };
 
 const subscribeToCapabilities = () => () => undefined;
 const MAX_SCENE_COUNT = 100;
 const MAX_PRELIMINARY_SCENE_COUNT = MAX_SCENE_COUNT * 8;
+const themeStorageKey = "cutweave-home-theme";
 
 async function createDecodedFrameScanner(file: File): Promise<DecodedFrameScanner | null> {
   if (typeof VideoDecoder === "undefined") return null;
@@ -269,6 +283,13 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     cropTitle: "Frame only the face you want", cropInstructions: "Draw a rectangle around the face and nearby head area. Keep other people in the background outside the selection.", cropKeyboard: "Move with the arrow keys; resize with Shift + arrow keys.", cropConfirm: "Use this crop", cropCancel: "Cancel",
   } as const;
 
+  const [theme, setTheme] = useState<FaceTheme>("dark");
+  const workspaceRef = useRef<HTMLElement>(null);
+  const trailCanvasRef = useRef<HTMLCanvasElement>(null);
+  const trailFrame = useRef<number | null>(null);
+  const trailPoints = useRef<TrailPoint[]>([]);
+  const lastTrailPoint = useRef<TrailPoint | null>(null);
+  const trailTheme = useRef<FaceTheme>("dark");
   const inputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const workerRef = useRef<Worker | null>(null);
@@ -309,6 +330,170 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     () => matches.filter((match) => !excludedMatchIds.has(match.id)),
     [excludedMatchIds, matches],
   );
+
+  useEffect(() => {
+    let restoreFrame: number | null = null;
+    try {
+      const savedTheme = window.localStorage.getItem(themeStorageKey);
+      if (savedTheme === "light" || savedTheme === "dark") {
+        restoreFrame = window.requestAnimationFrame(() => setTheme(savedTheme));
+      }
+    } catch {
+      // The default dark theme remains available when browser storage is blocked.
+    }
+    return () => {
+      if (restoreFrame !== null) window.cancelAnimationFrame(restoreFrame);
+    };
+  }, []);
+
+  useEffect(() => {
+    trailTheme.current = theme;
+  }, [theme]);
+
+  useEffect(() => {
+    const resizeCanvas = () => {
+      const canvas = trailCanvasRef.current;
+      if (!canvas) return;
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+      canvas.width = Math.round(window.innerWidth * pixelRatio);
+      canvas.height = Math.round(window.innerHeight * pixelRatio);
+    };
+
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+    return () => {
+      window.removeEventListener("resize", resizeCanvas);
+      if (trailFrame.current !== null) window.cancelAnimationFrame(trailFrame.current);
+    };
+  }, []);
+
+  function toggleTheme() {
+    const nextTheme = theme === "light" ? "dark" : "light";
+    setTheme(nextTheme);
+    try {
+      window.localStorage.setItem(themeStorageKey, nextTheme);
+    } catch {
+      // The selected theme still applies to the current page.
+    }
+  }
+
+  function renderTrail(now: number) {
+    const canvas = trailCanvasRef.current;
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) {
+      trailFrame.current = null;
+      return;
+    }
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const lifetime = reducedMotion ? 430 : 680;
+    trailPoints.current = trailPoints.current.filter((point) => now - point.createdAt < lifetime);
+
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+    context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    context.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    context.globalCompositeOperation = "lighter";
+
+    const palette = trailTheme.current === "dark"
+      ? {
+          main: "rgba(157, 232, 42, .78)",
+          soft: "rgba(121, 201, 48, .16)",
+          tip: "rgba(240, 255, 209, .98)",
+          glow: "rgba(147, 235, 47, .72)",
+        }
+      : {
+          main: "rgba(10, 133, 182, .9)",
+          soft: "rgba(40, 165, 207, .2)",
+          tip: "rgba(230, 250, 255, .98)",
+          glow: "rgba(10, 139, 192, .78)",
+        };
+
+    const points = trailPoints.current;
+    for (let index = 1; index < points.length; index += 1) {
+      const beforePrevious = points[Math.max(index - 2, 0)];
+      const previous = points[index - 1];
+      const point = points[index];
+      const next = points[Math.min(index + 1, points.length - 1)];
+      const life = Math.max(0, 1 - (now - point.createdAt) / lifetime);
+      const alpha = life * life;
+      const progress = index / Math.max(points.length - 1, 1);
+      const firstControlX = previous.x + (point.x - beforePrevious.x) / 6;
+      const firstControlY = previous.y + (point.y - beforePrevious.y) / 6;
+      const secondControlX = point.x - (next.x - previous.x) / 6;
+      const secondControlY = point.y - (next.y - previous.y) / 6;
+
+      context.save();
+      context.lineCap = "round";
+      context.lineJoin = "round";
+      context.beginPath();
+      context.moveTo(previous.x, previous.y);
+      context.bezierCurveTo(firstControlX, firstControlY, secondControlX, secondControlY, point.x, point.y);
+      context.strokeStyle = palette.soft;
+      context.globalAlpha = alpha * .7;
+      context.lineWidth = 4.5 + progress * 3.5;
+      context.shadowColor = palette.glow;
+      context.shadowBlur = 9 + progress * 5;
+      context.stroke();
+      context.strokeStyle = palette.main;
+      context.globalAlpha = alpha * .92;
+      context.lineWidth = .45 + progress * 1.45;
+      context.shadowBlur = 4 + progress * 3;
+      context.stroke();
+      context.restore();
+    }
+
+    const head = points.at(-1);
+    if (head) {
+      const headLife = Math.max(0, 1 - (now - head.createdAt) / lifetime);
+      const pulse = 4.8 + Math.sin(now / 145) * .7;
+      context.save();
+      context.globalAlpha = headLife * headLife;
+      context.fillStyle = palette.tip;
+      context.shadowColor = palette.glow;
+      context.shadowBlur = 11;
+      context.beginPath();
+      context.moveTo(head.x, head.y - pulse);
+      context.lineTo(head.x + 1.25, head.y - 1.15);
+      context.lineTo(head.x + pulse, head.y);
+      context.lineTo(head.x + 1.25, head.y + 1.15);
+      context.lineTo(head.x, head.y + pulse);
+      context.lineTo(head.x - 1.25, head.y + 1.15);
+      context.lineTo(head.x - pulse, head.y);
+      context.lineTo(head.x - 1.25, head.y - 1.15);
+      context.closePath();
+      context.fill();
+      context.restore();
+    }
+
+    if (points.length > 0) {
+      trailFrame.current = window.requestAnimationFrame(renderTrail);
+    } else {
+      context.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      trailFrame.current = null;
+    }
+  }
+
+  function followPointer(event: ReactPointerEvent<HTMLElement>) {
+    const now = event.timeStamp;
+    const nextPoint = { x: event.clientX, y: event.clientY, createdAt: now };
+    const previous = lastTrailPoint.current;
+    const distance = previous ? Math.hypot(nextPoint.x - previous.x, nextPoint.y - previous.y) : Number.POSITIVE_INFINITY;
+    const elapsed = previous ? now - previous.createdAt : Number.POSITIVE_INFINITY;
+
+    if (distance >= 5 || elapsed >= 24) {
+      trailPoints.current.push(nextPoint);
+      if (trailPoints.current.length > 30) trailPoints.current.shift();
+      lastTrailPoint.current = nextPoint;
+    }
+    workspaceRef.current?.style.setProperty("--light-opacity", "1");
+    if (trailFrame.current === null) trailFrame.current = window.requestAnimationFrame(renderTrail);
+  }
+
+  function hidePointer() {
+    workspaceRef.current?.style.setProperty("--light-opacity", "0");
+    lastTrailPoint.current = null;
+    trailPoints.current = [];
+  }
 
   function updateProgress(completed: number, total: number, force = false) {
     const now = performance.now();
@@ -951,7 +1136,15 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
   const workflowLabels = [copy.workflowSource, copy.workflowRefs, copy.workflowSettings, copy.workflowScan, copy.workflowReview];
 
   return (
-    <main className={styles.workspace}>
+    <main
+      className={styles.workspace}
+      data-theme={theme}
+      onPointerEnter={followPointer}
+      onPointerLeave={hidePointer}
+      onPointerMove={followPointer}
+      ref={workspaceRef}
+    >
+      <canvas className={styles.pointerLight} ref={trailCanvasRef} aria-hidden="true" />
       <header className={styles.header}>
         <BrandMark />
         <div className={styles.headerActions}>
@@ -959,6 +1152,15 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
             <Link href="/lab">← {copy.allTools}</Link>
             <Link href="/privacy">{copy.privacy}</Link>
           </nav>
+          <button
+            className={styles.themeToggle}
+            type="button"
+            onClick={toggleTheme}
+            aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
+            title={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
+          >
+            <Image src={theme === "dark" ? darkThemeIcon : lightThemeIcon} alt="" width={24} height={24} priority />
+          </button>
         </div>
       </header>
 
