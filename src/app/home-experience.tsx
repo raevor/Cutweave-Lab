@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
@@ -11,7 +12,9 @@ import {
 import darkThemeIcon from "../../assets/dark-theme.png";
 import lightThemeIcon from "../../assets/light-theme.png";
 import { BrandMark } from "@/components/brand-mark";
+import { ToolRouteLink } from "@/components/tool-route-link";
 import { siteCopy as text } from "@/i18n/messages/en";
+import { applySiteTheme, readSiteTheme } from "@/lib/site-theme";
 import { primaryTools } from "@/lib/tool-catalog";
 import styles from "./home.module.css";
 
@@ -22,9 +25,8 @@ const toolTracks = {
   "face-recognition": ["12%", "34%", "58%", "82%"],
   "bass-markers": ["17%", "43%", "67%", "88%"],
   "clarity-boost": ["9%", "38%", "72%"],
+  "anime-face-recognition": ["14%", "36%", "62%", "87%"],
 } as const;
-
-const themeStorageKey = "cutweave-home-theme";
 
 export function HomeExperience() {
   const copy = text.home;
@@ -38,18 +40,12 @@ export function HomeExperience() {
   const lastTrailPoint = useRef<TrailPoint | null>(null);
   const trailTheme = useRef<HomeTheme>("dark");
 
-  useEffect(() => {
-    let restoreFrame: number | null = null;
-    try {
-      const savedTheme = window.localStorage.getItem(themeStorageKey);
-      if (savedTheme === "light" || savedTheme === "dark") {
-        restoreFrame = window.requestAnimationFrame(() => setTheme(savedTheme));
-      }
-    } catch {
-      // The homepage remains usable when browser storage is unavailable.
-    }
+  useLayoutEffect(() => {
+    const savedTheme = readSiteTheme();
+    applySiteTheme(savedTheme, false);
+    const restoreFrame = window.requestAnimationFrame(() => setTheme(savedTheme));
     return () => {
-      if (restoreFrame !== null) window.cancelAnimationFrame(restoreFrame);
+      window.cancelAnimationFrame(restoreFrame);
     };
   }, []);
 
@@ -95,11 +91,7 @@ export function HomeExperience() {
   const toggleTheme = () => {
     const nextTheme = theme === "light" ? "dark" : "light";
     setTheme(nextTheme);
-    try {
-      window.localStorage.setItem(themeStorageKey, nextTheme);
-    } catch {
-      // Theme state still works for the current visit.
-    }
+    applySiteTheme(nextTheme);
   };
 
   const renderTrail = (now: number) => {
@@ -234,7 +226,6 @@ export function HomeExperience() {
   return (
     <main
       className={styles.page}
-      data-theme={theme}
       id="top"
       onPointerEnter={followPointer}
       onPointerLeave={hidePointer}
@@ -286,16 +277,16 @@ export function HomeExperience() {
                 <div className={styles.menuPanel} role="menu">
                   <p><span>Tool desk</span><small>Choose a focused workspace</small></p>
                   {primaryTools.map((tool) => (
-                    <Link
-                      href={`/lab/${tool.slug}`}
+                    <ToolRouteLink
+                      toolSlug={tool.slug}
                       key={tool.slug}
                       role="menuitem"
                       onClick={() => setToolsOpen(false)}
                     >
                       <span>{tool.index}</span>
                       <strong>{text.tools[tool.slug].title}</strong>
-                      <small>{tool.slug === "face-recognition" ? copy.available : copy.inBuild}</small>
-                    </Link>
+                      <small>{tool.slug === "face-recognition" || tool.slug === "anime-face-recognition" ? copy.available : copy.inBuild}</small>
+                    </ToolRouteLink>
                   ))}
                   <Link href="/lab" role="menuitem" onClick={() => setToolsOpen(false)}>
                     <span>ALL</span><strong>View the tool desk</strong><small>Overview</small>
@@ -397,12 +388,12 @@ export function HomeExperience() {
 
           <div className={styles.toolGrid}>
             {primaryTools.map((tool, index) => {
-              const available = tool.slug === "face-recognition";
+              const available = tool.slug === "face-recognition" || tool.slug === "anime-face-recognition";
               return (
                 <article className={styles.toolCard} data-tool={`TOOL / ${tool.index}`} key={tool.slug}>
                   <div className={styles.toolVisual} aria-hidden="true">
                     <div className={styles.toolVisualHead}>
-                      <span>TRACK {tool.index}</span><b>{index === 0 ? "ACTIVE" : "PREVIEW"}</b>
+                      <span>TRACK {tool.index}</span><b>{available ? "ACTIVE" : "PREVIEW"}</b>
                     </div>
                     <div className={styles.miniTimeline}>
                       <span /><span /><span /><span /><span />
@@ -427,9 +418,9 @@ export function HomeExperience() {
                       <div><dt>{copy.inputLabel}</dt><dd>{text.tools[tool.slug].input}</dd></div>
                       <div><dt>{copy.outputLabel}</dt><dd>{text.tools[tool.slug].output}</dd></div>
                     </dl>
-                    <Link href={`/lab/${tool.slug}`} aria-label={`${available ? copy.startTool : copy.previewTool}: ${text.tools[tool.slug].title}`}>
+                    <ToolRouteLink toolSlug={tool.slug} aria-label={`${available ? copy.startTool : copy.previewTool}: ${text.tools[tool.slug].title}`}>
                       {available ? copy.startTool : copy.previewTool}<span aria-hidden="true">↗</span>
-                    </Link>
+                    </ToolRouteLink>
                   </div>
                 </article>
               );

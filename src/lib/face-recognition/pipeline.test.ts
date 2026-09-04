@@ -112,6 +112,15 @@ describe("strict clip validation", () => {
     expect(featureLengthTimes.length).toBeLessThanOrEqual(5400);
   });
 
+  it("keeps maximum sampling unchanged and makes efficient sampling an exact alternating subset", () => {
+    const currentDefault = createSampleTimes(40 * 60, 5);
+    const maximum = createSampleTimes(40 * 60, 5, "maximum");
+    const efficient = createSampleTimes(40 * 60, 5, "efficient");
+    expect(maximum).toEqual(currentDefault);
+    expect(efficient).toEqual(maximum.filter((_, index) => index % 2 === 0));
+    expect(efficient).toHaveLength(Math.ceil(maximum.length / 2));
+  });
+
   it("searches for a complete clip window around a coarse candidate", () => {
     expect(createCandidateClipStarts(20, 5, 60)).toEqual([20, 19.2, 18.4, 17.6, 16.8, 16]);
   });

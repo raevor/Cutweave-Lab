@@ -1,4 +1,4 @@
-import type { ScanSample, SceneMatch, VisualFingerprint } from "./types";
+import type { FaceScanProfile, ScanSample, SceneMatch, VisualFingerprint } from "./types";
 
 export const MAX_VIDEO_DURATION_SECONDS = 3 * 60 * 60;
 export const MAX_SCAN_SAMPLES = 5400;
@@ -22,7 +22,7 @@ export function formatTimecode(seconds: number) {
   return [hours, minutes, wholeSeconds].map((part) => String(part).padStart(2, "0")).join(":");
 }
 
-export function createSampleTimes(duration: number, clipDuration: number) {
+export function createSampleTimes(duration: number, clipDuration: number, profile: FaceScanProfile = "maximum") {
   // A fixed 2400-frame ceiling left gaps of 3.4+ seconds in feature-length
   // sources. A 1.5-1.8 second proposal cadence catches ordinary TV cuts while
   // keeping the three-hour path bounded.
@@ -32,7 +32,7 @@ export function createSampleTimes(duration: number, clipDuration: number) {
   for (let timestamp = 0; timestamp < duration; timestamp += boundedInterval) {
     times.push(Math.min(duration - 0.05, timestamp + Math.min(0.35, boundedInterval / 3)));
   }
-  return times;
+  return profile === "efficient" ? times.filter((_, index) => index % 2 === 0) : times;
 }
 
 function sampleSelectionQuality(sample: ScanSample) {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   ChangeEvent,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -15,6 +16,7 @@ import darkThemeIcon from "../../../../assets/dark-theme.png";
 import lightThemeIcon from "../../../../assets/light-theme.png";
 import { BrandMark } from "@/components/brand-mark";
 import { siteCopy as text } from "@/i18n/messages/en";
+import { applySiteTheme, readSiteTheme } from "@/lib/site-theme";
 import { canRenderSceneClips, exportScenePackage, preferredClipFormat } from "@/lib/face-recognition/export-clips";
 import {
   MAX_VIDEO_DURATION_SECONDS,
@@ -35,6 +37,7 @@ import {
 } from "@/lib/face-recognition/pipeline";
 import type {
   FaceEngine,
+  FaceScanProfile,
   FaceScanMode,
   FaceWorkerRequest,
   FaceWorkerResponse,
@@ -70,12 +73,26 @@ type DecodedFrameScanner = {
 
 type Phase = "idle" | "source-ready" | "engine-loading" | "analyzing" | "post-processing" | "results" | "exporting" | "cancelled" | "error";
 type FaceTheme = "light" | "dark";
+type VerificationProgress = { reviewedCandidates: number; totalCandidates: number };
 type TrailPoint = { x: number; y: number; createdAt: number };
 
 const subscribeToCapabilities = () => () => undefined;
 const MAX_SCENE_COUNT = 100;
 const MAX_PRELIMINARY_SCENE_COUNT = MAX_SCENE_COUNT * 8;
-const themeStorageKey = "cutweave-home-theme";
+const scanProfileOptions = [
+  {
+    value: "efficient",
+    title: "Efficient",
+    badge: "Lower load",
+    description: "Checks half as many timeline frames. Faster and lighter, but brief appearances may be missed.",
+  },
+  {
+    value: "maximum",
+    title: "Maximum",
+    badge: "Recommended",
+    description: "Uses the current full scan density for the strongest recall.",
+  },
+] satisfies Array<{ value: FaceScanProfile; title: string; badge: string; description: string }>;
 
 async function createDecodedFrameScanner(file: File): Promise<DecodedFrameScanner | null> {
   if (typeof VideoDecoder === "undefined") return null;
@@ -268,7 +285,8 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     faceFound: "face · reference agreement", settingsTitle: "SCAN SETTINGS",
     sceneCount: "Scene count", clipLength: "Length of each clip", threshold: "Match sensitivity", auto: "automatic",
     seconds: "seconds", run: "Start scan", cancel: "Stop analysis", preparing: "Preparing the local face engine",
-    analyzing: "Scanning the video at optimized intervals on this device", post: "Verifying clips that open on the target face and removing repeats", processed: "frames processed",
+    analyzing: "Scanning the video at optimized intervals on this device", post: "Verifying candidates and preparing unique scenes for review", processed: "frames processed",
+    verifying: "VERIFYING", possibleMatchesReviewed: "Possible matches reviewed",
     noResults: "No reliable matches were found at this threshold. Choose clearer references or lower the match threshold.",
     resultsTitle: "MATCHED SCENES", resultsBody: "Every clip opens with the target face. One long scene is counted once; when there are not enough distinct scenes, fewer results are returned.",
     match: "identity score", checks: "face checks", strong: "strong", likely: "likely", review: "review", removeScene: "Remove scene", export: "Build MP4 clip ZIP", exportFallback: "This browser cannot render clips; use Chrome or Edge.",
@@ -276,7 +294,8 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     localProof: "MEDIA SENT TO SERVER", zero: "0 B", identityNote: "Cutweave does not research identity. It only tries to find the selected face again inside this video.",
     workflowSource: "Video", workflowRefs: "References", workflowSettings: "Settings", workflowScan: "Scan", workflowReview: "Review",
     intakeKicker: "LOCAL VIDEO SOURCE", intakeTitle: "Choose the video you want to search", intakePrivacy: "The file opens in this tab. It is not uploaded, copied or sent off your device.",
-    sourceReady: "VIDEO READY", referencesReady: "REFERENCES READY", settingsBody: "Choose the scene count, clip length and matching sensitivity before you scan.",
+    sourceReady: "VIDEO READY", referencesReady: "REFERENCES READY", settingsBody: "Choose the scene count, clip length, scan intensity and matching sensitivity before you scan.",
+    profileTitle: "Scan intensity", profileHelp: "Efficient checks half as many timeline frames. Face matching, final verification and your sensitivity setting stay unchanged.",
     removeReference: "Remove reference", referenceHint: "Move the video to the moment you want, then add a reference.",
     scanKicker: "LOCAL FACE SCAN", scanTitle: "Searching the video for your selected face", scanKeep: "If you cancel, the video, references and every setting are preserved.", scanCancel: "Cancel scan and return to settings",
     included: "Included in ZIP", excluded: "Excluded from ZIP", includeScene: "Include scene in ZIP", excludeScene: "Exclude from ZIP", previewScene: "Play or pause clip", exportSummary: "clips to download", backToSettings: "Change settings",
@@ -312,8 +331,10 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
   const [sceneCount, setSceneCount] = useState(25);
   const [clipLength, setClipLength] = useState(5);
   const [threshold, setThreshold] = useState(0.38);
+  const [scanProfile, setScanProfile] = useState<FaceScanProfile>("maximum");
   const [phase, setPhase] = useState<Phase>("idle");
   const [progress, setProgress] = useState({ completed: 0, total: 0 });
+  const [verificationProgress, setVerificationProgress] = useState<VerificationProgress>({ reviewedCandidates: 0, totalCandidates: 0 });
   const [matches, setMatches] = useState<SceneMatch[]>([]);
   const [excludedMatchIds, setExcludedMatchIds] = useState<Set<string>>(() => new Set());
   const [error, setError] = useState<string | null>(null);
@@ -331,18 +352,12 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     [excludedMatchIds, matches],
   );
 
-  useEffect(() => {
-    let restoreFrame: number | null = null;
-    try {
-      const savedTheme = window.localStorage.getItem(themeStorageKey);
-      if (savedTheme === "light" || savedTheme === "dark") {
-        restoreFrame = window.requestAnimationFrame(() => setTheme(savedTheme));
-      }
-    } catch {
-      // The default dark theme remains available when browser storage is blocked.
-    }
+  useLayoutEffect(() => {
+    const savedTheme = readSiteTheme();
+    applySiteTheme(savedTheme, false);
+    const restoreFrame = window.requestAnimationFrame(() => setTheme(savedTheme));
     return () => {
-      if (restoreFrame !== null) window.cancelAnimationFrame(restoreFrame);
+      window.cancelAnimationFrame(restoreFrame);
     };
   }, []);
 
@@ -370,11 +385,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
   function toggleTheme() {
     const nextTheme = theme === "light" ? "dark" : "light";
     setTheme(nextTheme);
-    try {
-      window.localStorage.setItem(themeStorageKey, nextTheme);
-    } catch {
-      // The selected theme still applies to the current page.
-    }
+    applySiteTheme(nextTheme);
   }
 
   function renderTrail(now: number) {
@@ -856,7 +867,6 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
       } else {
         completed.push(scene);
       }
-      updateProgress(completed.length, scenes.length, completed.length === scenes.length);
     };
     let sceneIndex = 0;
     if (decodedScanner) {
@@ -892,6 +902,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     setMatches([]);
     setExcludedMatchIds(new Set());
     setError(null);
+    setVerificationProgress({ reviewedCandidates: 0, totalCandidates: 0 });
     cancelledRef.current = false;
     const jobId = makeJobId();
     activeJobRef.current = jobId;
@@ -906,7 +917,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
       // Proposal scans deliberately favor recall. Every exported clip is still
       // re-checked at the user's full threshold across its opening and duration.
       const proposalThreshold = createProposalThreshold(calibratedThreshold);
-      const sampleTimes = createSampleTimes(videoDuration, clipLength);
+      const sampleTimes = createSampleTimes(videoDuration, clipLength, scanProfile);
       const samples: ScanSample[] = [];
       setPhase("analyzing");
       updateProgress(0, sampleTimes.length, true);
@@ -994,13 +1005,11 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
         samples,
         proposalThreshold,
       ));
-      const plannedVerificationFrames = candidateStarts.reduce((total, starts) => total + starts.length * checkOffsets.length, 0);
-      updateProgress(0, plannedVerificationFrames, true);
-      let verifiedFrames = 0;
       const verificationTarget = Math.min(preliminary.length, sceneCount);
       let nextDiversityCheck = verificationTarget;
       let enoughDiverseMatches = false;
       const verificationCache = new Map<number, ScanSample>();
+      setVerificationProgress({ reviewedCandidates: 0, totalCandidates: verificationCandidates.length });
       for (let candidateIndex = 0; candidateIndex < verificationCandidates.length && !enoughDiverseMatches; candidateIndex += 1) {
         for (const clipStart of candidateStarts[candidateIndex]) {
           const checkTimes = checkOffsets.map((offset) => Math.max(0, Math.min(videoDuration - 0.05, clipStart + offset)));
@@ -1026,8 +1035,6 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
               verificationCache.set(cacheKey, check);
             }
             checks.push(check);
-            verifiedFrames += 1;
-            updateProgress(verifiedFrames, plannedVerificationFrames);
             if (checkIndex === 0 && !samplePassesIdentity(check, calibratedThreshold)) break;
             if (checkIndex === 2 && checks.filter((sample) => samplePassesIdentity(sample, calibratedThreshold)).length < 2) break;
           }
@@ -1049,12 +1056,12 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
             break;
           }
         }
+        setVerificationProgress((current) => ({ ...current, reviewedCandidates: candidateIndex + 1 }));
       }
       const selected = selectSceneMatches(verified, sceneCount, clipLength, videoDuration, calibratedThreshold, {
         minimumGapSeconds: Math.max(1, clipLength * 0.95),
         contentDiversity: true,
       });
-      updateProgress(0, selected.length, true);
       const withThumbnails = await createThumbnails(selected, jobId, decodedScanner);
       if (activeJobRef.current !== jobId || cancelledRef.current) return;
       setMatches(withThumbnails);
@@ -1138,7 +1145,6 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
   return (
     <main
       className={styles.workspace}
-      data-theme={theme}
       onPointerEnter={followPointer}
       onPointerLeave={hidePointer}
       onPointerMove={followPointer}
@@ -1235,18 +1241,34 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
                     </figure>
                   ))}
                 </div>
-                <i style={{ top: `${Math.max(8, Math.min(88, progressPercent))}%` }} />
-                <b>{progressPercent}%</b>
+                <i
+                  className={phase === "post-processing" ? styles.scanLineActive : undefined}
+                  style={phase === "post-processing" ? undefined : { top: `${Math.max(8, Math.min(88, progressPercent))}%` }}
+                />
+                <b className={phase === "post-processing" ? styles.scanActivityBadge : undefined}>
+                  {phase === "post-processing" ? copy.verifying : `${progressPercent}%`}
+                </b>
               </div>
               <h2 id="scan-title">{copy.scanTitle}</h2>
               <p className={styles.scanStage}>{activeStageLabel}</p>
-              <div className={styles.progressTrack} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressPercent}>
-                <i style={{ width: `${progressPercent}%` }} />
-              </div>
-              <div className={styles.scanMeta}>
-                <span>{phase === "analyzing" && progress.total ? `${progress.completed}/${progress.total} ${copy.processed}` : activeStageLabel}</span>
-                <strong>{progressPercent}%</strong>
-              </div>
+              {phase === "post-processing" ? (
+                <div className={styles.verificationStatus} role="status" aria-label={activeStageLabel}>
+                  <div>
+                    <span>{copy.possibleMatchesReviewed}</span>
+                    <strong>{verificationProgress.reviewedCandidates}/{verificationProgress.totalCandidates}</strong>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className={styles.progressTrack} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressPercent}>
+                    <i style={{ width: `${progressPercent}%` }} />
+                  </div>
+                  <div className={styles.scanMeta}>
+                    <span>{phase === "analyzing" && progress.total ? `${progress.completed}/${progress.total} ${copy.processed}` : activeStageLabel}</span>
+                    <strong>{progressPercent}%</strong>
+                  </div>
+                </>
+              )}
               <button type="button" className={styles.cancelButton} onClick={cancelActiveWork}>{copy.scanCancel}</button>
               <small className={styles.preserveNote}>{copy.scanKeep}</small>
             </section>
@@ -1296,6 +1318,30 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
                     <button type="button" role="radio" aria-checked={engine === "cpu"} className={engine === "cpu" ? styles.engineActive : ""} disabled={controlsDisabled} onClick={() => changeEngine("cpu")}>
                       <span>{copy.cpu}</span><strong>{copy.compatible}</strong><i />
                     </button>
+                  </div>
+
+                  <div className={styles.profileSetting}>
+                    <div className={styles.profileHeading}>
+                      <strong>{copy.profileTitle}</strong>
+                      <p>{copy.profileHelp}</p>
+                    </div>
+                    <div className={styles.profileChoice} role="radiogroup" aria-label={copy.profileTitle}>
+                      {scanProfileOptions.map((option) => (
+                        <button
+                          type="button"
+                          role="radio"
+                          aria-checked={scanProfile === option.value}
+                          className={scanProfile === option.value ? styles.profileActive : ""}
+                          disabled={controlsDisabled}
+                          onClick={() => setScanProfile(option.value)}
+                          key={option.value}
+                        >
+                          <span><b>{option.title}</b><em>{option.badge}</em></span>
+                          <small>{option.description}</small>
+                          <i />
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   <div className={styles.settingsGrid}>

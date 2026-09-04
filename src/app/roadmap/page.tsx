@@ -19,11 +19,11 @@ const roadmap = [
   },
   {
     index: "02",
-    phase: "Coming soon",
-    status: "Next release",
+    phase: "Available now",
+    status: "Local beta",
     title: "Anime Face Recognition",
-    copy: "A separate recognition workspace built for illustrated and animated faces, using the proven local workflow without changing the existing Face Recognition tool.",
-    tone: "next",
+    copy: "A separate local recognition workspace for illustrated and animated characters. Accuracy and performance tuning will continue without changing the existing Face Recognition tool.",
+    tone: "ready",
   },
   {
     index: "03",

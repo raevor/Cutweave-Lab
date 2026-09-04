@@ -1,5 +1,6 @@
 export type FaceEngine = "gpu" | "cpu";
 export type FaceScanMode = "coarse" | "verify";
+export type FaceScanProfile = "efficient" | "maximum";
 
 export type VisualFingerprint = {
   luma: number[];

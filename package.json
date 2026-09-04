@@ -19,6 +19,7 @@
     "fflate": "^0.8.2",
     "mediabunny": "^1.55.4",
     "next": "16.3.3",
+    "onnxruntime-web": "^1.29.0",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },

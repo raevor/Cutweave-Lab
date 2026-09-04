@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { siteCopy as text } from "@/i18n/messages/en";
 import { primaryTools } from "@/lib/tool-catalog";
 import { BrandMark } from "./brand-mark";
+import { ToolRouteLink } from "./tool-route-link";
 import styles from "./showcase-header.module.css";
 
 export function ShowcaseHeader() {
@@ -53,14 +54,14 @@ export function ShowcaseHeader() {
           <div className={open ? `${styles.menu} ${styles.menuOpen}` : styles.menu} role="menu" aria-hidden={!open}>
             <div className={styles.menuHead}>
               <span>{text.common.nav.menuLabel}</span>
-              <span>03</span>
+              <span>04</span>
             </div>
             {primaryTools.map((tool) => {
-              const available = tool.slug === "face-recognition";
+              const available = tool.slug === "face-recognition" || tool.slug === "anime-face-recognition";
               return (
-                <Link
+                <ToolRouteLink
                   className={styles.menuTool}
-                  href={`/lab/${tool.slug}`}
+                  toolSlug={tool.slug}
                   role="menuitem"
                   tabIndex={open ? 0 : -1}
                   key={tool.slug}
@@ -72,7 +73,7 @@ export function ShowcaseHeader() {
                     <em>{available ? text.common.nav.available : text.common.nav.inBuild}</em>
                   </span>
                   <b aria-hidden="true">↗</b>
-                </Link>
+                </ToolRouteLink>
               );
             })}
             <Link className={styles.menuAll} href="/lab" role="menuitem" tabIndex={open ? 0 : -1} onClick={() => setOpen(false)}>

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
@@ -12,8 +13,10 @@ import {
 import darkThemeIcon from "../../assets/dark-theme.png";
 import lightThemeIcon from "../../assets/light-theme.png";
 import { siteCopy as text } from "@/i18n/messages/en";
+import { applySiteTheme, readSiteTheme } from "@/lib/site-theme";
 import { primaryTools } from "@/lib/tool-catalog";
 import { BrandMark } from "./brand-mark";
+import { ToolRouteLink } from "./tool-route-link";
 import styles from "./public-page-frame.module.css";
 
 type Theme = "light" | "dark";
@@ -24,8 +27,6 @@ type PublicPageFrameProps = {
   activePage: ActivePage;
   children: ReactNode;
 };
-
-const themeStorageKey = "cutweave-home-theme";
 
 export function PublicPageFrame({ activePage, children }: PublicPageFrameProps) {
   const [theme, setTheme] = useState<Theme>("dark");
@@ -38,18 +39,12 @@ export function PublicPageFrame({ activePage, children }: PublicPageFrameProps) 
   const lastTrailPoint = useRef<TrailPoint | null>(null);
   const trailTheme = useRef<Theme>("dark");
 
-  useEffect(() => {
-    let restoreFrame: number | null = null;
-    try {
-      const savedTheme = window.localStorage.getItem(themeStorageKey);
-      if (savedTheme === "light" || savedTheme === "dark") {
-        restoreFrame = window.requestAnimationFrame(() => setTheme(savedTheme));
-      }
-    } catch {
-      // The default dark theme remains available when browser storage is blocked.
-    }
+  useLayoutEffect(() => {
+    const savedTheme = readSiteTheme();
+    applySiteTheme(savedTheme, false);
+    const restoreFrame = window.requestAnimationFrame(() => setTheme(savedTheme));
     return () => {
-      if (restoreFrame !== null) window.cancelAnimationFrame(restoreFrame);
+      window.cancelAnimationFrame(restoreFrame);
     };
   }, []);
 
@@ -93,11 +88,7 @@ export function PublicPageFrame({ activePage, children }: PublicPageFrameProps) 
   const toggleTheme = () => {
     const nextTheme = theme === "light" ? "dark" : "light";
     setTheme(nextTheme);
-    try {
-      window.localStorage.setItem(themeStorageKey, nextTheme);
-    } catch {
-      // The current page still reflects the selected theme.
-    }
+    applySiteTheme(nextTheme);
   };
 
   const renderTrail = (now: number) => {
@@ -221,7 +212,6 @@ export function PublicPageFrame({ activePage, children }: PublicPageFrameProps) 
   return (
     <main
       className={styles.page}
-      data-theme={theme}
       onPointerEnter={followPointer}
       onPointerLeave={hidePointer}
       onPointerMove={followPointer}
@@ -264,11 +254,11 @@ export function PublicPageFrame({ activePage, children }: PublicPageFrameProps) 
               <div className={styles.menuPanel} role="menu">
                 <p><span>Tool desk</span><small>Choose a focused workspace</small></p>
                 {primaryTools.map((tool) => (
-                  <Link href={`/lab/${tool.slug}`} key={tool.slug} role="menuitem" onClick={() => setToolsOpen(false)}>
+                  <ToolRouteLink toolSlug={tool.slug} key={tool.slug} role="menuitem" onClick={() => setToolsOpen(false)}>
                     <span>{tool.index}</span>
                     <strong>{text.tools[tool.slug].title}</strong>
-                    <small>{tool.slug === "face-recognition" ? text.home.available : text.home.inBuild}</small>
-                  </Link>
+                    <small>{tool.slug === "face-recognition" || tool.slug === "anime-face-recognition" ? text.home.available : text.home.inBuild}</small>
+                  </ToolRouteLink>
                 ))}
                 <Link href="/lab" role="menuitem" onClick={() => setToolsOpen(false)}>
                   <span>ALL</span><strong>View the tool desk</strong><small>Overview</small>

@@ -9,17 +9,17 @@ export const siteCopy = {
   home: {
     eyebrowA: "For editors", eyebrowB: "Local browser tools",
     titleLine1: "Find the shot.", titleLine2: "Mark the beat.", titleLine3: "Keep the cut.",
-    lede: "Cutweave is a local toolkit for repetitive prep before the creative edit. Face Recognition is ready now; rhythm markers and detail recovery are the next focused tools in development.",
+    lede: "Cutweave is a local toolkit for repetitive prep before the creative edit. Face Recognition and Anime Face Recognition are ready now; rhythm markers and detail recovery are the next focused tools in development.",
     primaryAction: "Start Face Recognition", secondaryAction: "Explore all tools",
     privacyNote: "Your working media stays on this device.",
-    heroMapAria: "A product map showing three focused Cutweave tools leading from source media to an editor-reviewed result",
+    heroMapAria: "A product map showing four focused Cutweave tools leading from source media to an editor-reviewed result",
     heroMapLabel: "CUT/WEAVE TOOL MAP", heroMapNote: "INTERFACE ANATOMY / NOT ANALYSIS",
     heroOutput: "THE EDITOR DECIDES", heroOutputValue: "REVIEWED OUTPUT, READY TO TAKE",
     available: "Available now", inBuild: "In development",
     principlesLabel: "Cutweave product facts",
     facts: [
       { value: "0 B", label: "media sent to Cutweave" },
-      { value: "03", label: "focused editing tools" },
+      { value: "04", label: "focused editing tools" },
       { value: "01", label: "job on screen at a time" },
       { value: "100%", label: "final choice stays yours" },
     ],
@@ -44,7 +44,7 @@ export const siteCopy = {
     eyebrowA: "Tool library", eyebrowB: "Choose the job first", titleA: "Pick the task.", titleB: "Open the right tool.",
     intro: "Start with the result you need. Every Cutweave tool has its own focused workspace, local media intake and review path.",
     localNote: "Your working media stays in this tab", toolsLabel: "Cutweave focused editing tools",
-    launcherLabel: "FOCUSED TOOL LAUNCHER", launcherHint: "SELECT A ROW TO OPEN ITS WORKSPACE", launcherCount: "03 TOOLS",
+    launcherLabel: "FOCUSED TOOL LAUNCHER", launcherHint: "SELECT A ROW TO OPEN ITS WORKSPACE", launcherCount: "04 TOOLS",
     inputLabel: "INPUT", outputLabel: "OUTPUT", startTool: "Start tool", previewTool: "View preview", available: "Available now", inBuild: "In development",
     guideEyebrow: "The shared discipline", guideTitle: "Different job. Same clear path.",
     guideSteps: [
@@ -78,6 +78,13 @@ export const siteCopy = {
       anatomy: "PREVIEW / BEFORE & AFTER", anatomyOutput: "DETAIL READY TO COMPARE",
       results: ["A true before-and-after preview", "Noise cleanup and detail controls", "Upscale choices matched to the device", "An enhanced local export with the original untouched"],
     },
+    "anime-face-recognition": {
+      title: "Anime Face Recognition", shortTitle: "Find one animated character across the video", eyebrow: "Anime characters / scene finding",
+      description: "Choose an illustrated character from the video. Cutweave finds where the same character appears again using an anime-specific local model, then lists those scenes for review.",
+      promise: "Stop scrubbing through the whole episode just to find one character.", input: "One local animated video", output: "Character-matched scenes + timecodes",
+      anatomy: "PREVIEW / ANIME CHARACTER MATCHING", anatomyOutput: "ANIME MATCHES READY TO REVIEW",
+      results: ["A local animated-character picker", "Scenes where the chosen character appears", "Timecodes you can correct before export", "A scene list ready for the next editing step"],
+    },
   },
   focused: {
     navLabel: "Tool navigation", before: "BEFORE", after: "AFTER", markerAxisLabel: "TIMECODE / MARKER CANDIDATES",
@@ -95,7 +102,7 @@ export const siteCopy = {
     intro: "Cutweave processes working media inside the browser on the device you are using. The selected file and the data created from it are not sent to Cutweave servers or third parties.",
     primaryAction: "Open local tools", secondaryAction: "Start Face Recognition",
     proofLabel: "WORKING MEDIA SENT TO CUTWEAVE", proofValue: "0 B", proofStatus: "LOCAL MEDIA PATH ACTIVE",
-    proofNote: "The application code and face-analysis models may be downloaded to your browser. Those requests deliver the tool to your device; they do not contain your video, frames or face data.",
+    proofNote: "The application code and recognition models may be downloaded to your browser. Those requests deliver the tools to your device; they do not contain your video, frames or recognition data.",
     factsLabel: "Cutweave privacy boundaries",
     facts: [
       { value: "0 B", label: "working media uploaded" },
@@ -109,7 +116,7 @@ export const siteCopy = {
     handling: [
       { title: "Source media", copy: "The video or audio file you choose is opened directly by your browser. Cutweave does not provide a media-upload endpoint or create a server-side copy." },
       { title: "Frames and previews", copy: "Decoded frames, thumbnails, waveforms, reference crops and working previews are created and used on your device." },
-      { title: "Face data", copy: "Temporary numerical face descriptors are calculated locally for matching. They are not sent to an API, analytics service or external biometric database." },
+      { title: "Recognition data", copy: "Temporary numerical face descriptors or anime-character features are calculated locally for matching. They are not sent to an API, analytics service or external database." },
       { title: "Results and exports", copy: "Candidate scenes are presented for your review. Selected clips and ZIP files are prepared locally, and you decide what to keep or download." },
       { title: "Session lifecycle", copy: "The current build does not save a cloud project copy. Refreshing or closing the workspace ends the active in-browser session." },
     ],
@@ -132,7 +139,7 @@ export const siteCopy = {
       "It does not publish, share or remotely store the footage or results.",
     ],
     networkEyebrow: "Network clarity", networkTitle: "Tool delivery is not media upload.",
-    networkCopy: "Like any website, Cutweave loads application files from its host. The browser may request JavaScript, worker code, WASM files and face-analysis model assets. The media pipeline is separate: video bytes, filenames, local paths, frames, crops, descriptors and generated clips are not included in those requests.",
+    networkCopy: "Like any website, Cutweave loads application files from its host. The browser may request JavaScript, worker code, WASM files and recognition model assets. The media pipeline is separate: video bytes, filenames, local paths, frames, crops, descriptors and generated clips are not included in those requests.",
     networkItems: [
       { label: "May be downloaded", value: "App code · workers · models" },
       { label: "Never uploaded", value: "Media · frames · face data" },
