@@ -5,5 +5,5 @@ import nextTypeScript from "eslint-config-next/typescript";
 export default defineConfig([
   ...nextVitals,
   ...nextTypeScript,
-  globalIgnores([".next/**", "out/**", "coverage/**", "next-env.d.ts", "public/wasm/anime-face-recognition/*.mjs"]),
+  globalIgnores([".next/**", ".cache/**", "out/**", "coverage/**", "next-env.d.ts", "public/wasm/anime-face-recognition/*.mjs", "public/wasm/video-enhancer/*.mjs"]),
 ]);

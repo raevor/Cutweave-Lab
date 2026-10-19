@@ -1,8 +1,11 @@
+import Image from "next/image";
 import Link from "next/link";
+import faceRecognitionLightCover from "../../../assets/face-recognition.png";
+import faceRecognitionDarkCover from "../../../assets/face-recognition-dark.png";
 import { PublicPageFrame } from "@/components/public-page-frame";
 import { ToolRouteLink } from "@/components/tool-route-link";
 import { siteCopy as text } from "@/i18n/messages/en";
-import { primaryTools } from "@/lib/tool-catalog";
+import { isToolAvailable, primaryTools } from "@/lib/tool-catalog";
 import styles from "./lab.module.css";
 
 const trackPoints = {
@@ -61,8 +64,9 @@ export default function LabPage() {
 
         <div className={styles.toolStack}>
           {primaryTools.map((tool, index) => {
-            const available = tool.slug === "face-recognition" || tool.slug === "anime-face-recognition";
+            const available = isToolAvailable(tool.slug);
             const toolCopy = text.tools[tool.slug];
+            const isFaceRecognition = tool.slug === "face-recognition";
 
             return (
               <article className={styles.toolCard} data-index={tool.index} key={tool.slug}>
@@ -71,10 +75,35 @@ export default function LabPage() {
                     <span>TRACK / {tool.index}</span>
                     <b>{available ? "ACTIVE TOOL" : "INTERFACE PREVIEW"}</b>
                   </div>
-                  <div className={styles.visualFrame}>
-                    <span>{toolCopy.anatomy}</span>
-                    <div className={styles.focusBox}><i /><i /><i /><i /></div>
-                    <b>{String(index + 1).padStart(2, "0")} / 04</b>
+                  <div className={`${styles.visualFrame} ${isFaceRecognition ? styles.visualFrameCover : ""}`}>
+                    {isFaceRecognition ? (
+                      <>
+                        <Image
+                          src={faceRecognitionLightCover}
+                          alt={toolCopy.title}
+                          fill
+                          sizes="(max-width: 980px) 100vw, 1672px"
+                          className={`${styles.coverImage} ${styles.coverImageLight}`}
+                          priority
+                          unoptimized
+                        />
+                        <Image
+                          src={faceRecognitionDarkCover}
+                          alt={toolCopy.title}
+                          fill
+                          sizes="(max-width: 980px) 100vw, 1672px"
+                          className={`${styles.coverImage} ${styles.coverImageDark}`}
+                          priority
+                          unoptimized
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <span>{toolCopy.anatomy}</span>
+                        <div className={styles.focusBox}><i /><i /><i /><i /></div>
+                        <b>{String(index + 1).padStart(2, "0")} / 04</b>
+                      </>
+                    )}
                   </div>
                   <div className={styles.visualTimeline}>
                     <span>00:00</span>

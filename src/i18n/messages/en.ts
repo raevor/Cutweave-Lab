@@ -9,7 +9,7 @@ export const siteCopy = {
   home: {
     eyebrowA: "For editors", eyebrowB: "Local browser tools",
     titleLine1: "Find the shot.", titleLine2: "Mark the beat.", titleLine3: "Keep the cut.",
-    lede: "Cutweave is a local toolkit for repetitive prep before the creative edit. Face Recognition and Anime Face Recognition are ready now; rhythm markers and detail recovery are the next focused tools in development.",
+    lede: "Cutweave is a local toolkit for repetitive prep before the creative edit. Face Recognition, Anime Face Recognition and Music & Bass Markers are ready now; detail recovery is the next focused tool in development.",
     primaryAction: "Start Face Recognition", secondaryAction: "Explore all tools",
     privacyNote: "Your working media stays on this device.",
     heroMapAria: "A product map showing four focused Cutweave tools leading from source media to an editor-reviewed result",
@@ -66,10 +66,10 @@ export const siteCopy = {
     },
     "bass-markers": {
       title: "Music & Bass Markers", shortTitle: "Put the hits on the timeline", eyebrow: "Music / bass and impact points",
-      description: "Add a song, audio file or video. Cutweave listens for the hits that matter to an edit and places adjustable markers on the timeline.",
-      promise: "Let the rhythm points arrive before you start cutting.", input: "Local song, audio or video", output: "Adjustable timeline markers",
+      description: "Add a local audio file. Cutweave finds the impacts and bass entries that matter to an edit, then places adjustable markers on a real waveform.",
+      promise: "Let the rhythm points arrive before you start cutting.", input: "One local audio file", output: "Marker-rich WAV + timing data",
       anatomy: "PREVIEW / MUSIC & BASS MARKERS", anatomyOutput: "HITS READY TO ADJUST",
-      results: ["Bass and strong-impact marker candidates", "Sensitivity and minimum-gap controls", "Markers you can move, remove or add", "Marker data prepared for export"],
+      results: ["Bass and strong-impact marker candidates", "Sensitivity and minimum-gap controls", "Markers you can move, remove or add", "WAV, XMP, JSON and CSV export"],
     },
     "clarity-boost": {
       title: "Video Enhancer", shortTitle: "Bring back useful detail", eyebrow: "Picture / denoise, detail and upscale",

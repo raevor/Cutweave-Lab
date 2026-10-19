@@ -29,9 +29,9 @@ export const primaryTools: ToolDefinition[] = [
   },
   {
     slug: "bass-markers", index: "03", title: "Music & Bass Markers", shortTitle: "Put the hits on the timeline",
-    eyebrow: "Music / bass and impact points", description: "Find strong hits in a song or video and turn them into adjustable edit markers.",
-    promise: "Let the rhythm points arrive before you start cutting.", input: "Local song, audio or video", output: "Adjustable timeline markers", accent: "blue",
-    results: ["Bass and impact candidates", "Sensitivity controls", "Editable marker strip", "Marker data for export"],
+    eyebrow: "Music / bass and impact points", description: "Find strong hits in a local audio file and turn them into adjustable edit markers.",
+    promise: "Let the rhythm points arrive before you start cutting.", input: "One local audio file", output: "Marker-rich WAV + timing data", accent: "blue",
+    results: ["Bass and impact candidates", "Sensitivity and spacing controls", "Editable marker timeline", "WAV, XMP, JSON and CSV export"],
   },
   {
     slug: "clarity-boost", index: "04", title: "Video Enhancer", shortTitle: "Bring back useful detail",
@@ -43,4 +43,8 @@ export const primaryTools: ToolDefinition[] = [
 
 export function getTool(slug: string) {
   return primaryTools.find((tool) => tool.slug === slug);
+}
+
+export function isToolAvailable(slug: ToolSlug) {
+  return slug === "face-recognition" || slug === "anime-face-recognition" || slug === "bass-markers" || slug === "clarity-boost";
 }

@@ -1,0 +1,4 @@
+# Model weights and runtime binaries must never undergo line-ending conversion.
+*.onnx binary
+*.data binary
+*.wasm binary

@@ -157,6 +157,14 @@
 .visualHead { position: relative; z-index: 2; display: flex; justify-content: space-between; color: var(--muted); font: 800 8px/1 var(--font-mono); letter-spacing: .09em; }
 .visualHead b { color: var(--accent-deep); }
 .visualFrame { position: absolute; inset: clamp(70px, 6vw, 100px) clamp(32px, 4vw, 68px) clamp(145px, 10vw, 178px); border: 1px solid var(--line-strong); background: linear-gradient(112deg, transparent 0 42%, color-mix(in oklch, var(--surface-raised) 52%, transparent) 42% 72%, transparent 72%), color-mix(in oklch, var(--accent-soft) 45%, var(--surface)); box-shadow: inset 0 0 0 6px color-mix(in oklch, var(--surface-raised) 55%, transparent), 7px 8px 0 color-mix(in oklch, var(--shadow-solid) 72%, transparent); }
+.visualFrameCover { overflow: hidden; background: var(--surface); }
+.coverImage { object-fit: cover; object-position: center; width: 100%; height: 100%; display: block; image-rendering: -webkit-optimize-contrast; }
+.coverImageDark { display: block; }
+.coverImageLight { display: none; }
+:global([data-theme="light"]) .coverImageLight { display: block !important; }
+:global([data-theme="light"]) .coverImageDark { display: none !important; }
+:global([data-theme="dark"]) .coverImageLight { display: none !important; }
+:global([data-theme="dark"]) .coverImageDark { display: block !important; }
 .visualFrame > span { position: absolute; top: 13px; left: 14px; color: var(--muted); font: 800 7px/1 var(--font-mono); letter-spacing: .08em; }
 .visualFrame > b { position: absolute; right: 14px; bottom: 12px; color: var(--accent-deep); font: 850 9px/1 var(--font-mono); }
 .focusBox { width: clamp(90px, 11vw, 170px); aspect-ratio: 1; position: absolute; top: 50%; left: 58%; transform: translate(-50%, -50%); }

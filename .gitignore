@@ -3,6 +3,10 @@
 # prepared TestSprite evidence public. Keep the private strategy, user media,
 # credentials and raw local artifacts below off GitHub from the first commit.
 
+# New Markdown documents stay local. Existing tracked Markdown files remain
+# tracked and their updates may be committed; do not force-add new ones.
+*.md
+
 # -----------------------------------------------------------------------------
 # Private Cutweave strategy and personal working files — never publish
 # -----------------------------------------------------------------------------
@@ -13,6 +17,7 @@
 /private-notes/
 /notes-private/
 /research-private/
+/Tasarımlar/
 /*_PRIVATE.md
 /*-PRIVATE.md
 /private-*.md
@@ -28,8 +33,7 @@
 /geminiresearch.md
 /discord.txt
 
-# AGENTS.md and TASKS.md are intentional English project documents. Nora makes
-# its equivalent agent rules, specs and task records public as development proof.
+# Previously tracked AGENTS.md, TASKS.md and README.md remain public.
 
 # Local AI/IDE state may contain machine paths, conversation history or keys.
 /.agents/

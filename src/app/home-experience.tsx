@@ -11,11 +11,13 @@ import {
 } from "react";
 import darkThemeIcon from "../../assets/dark-theme.png";
 import lightThemeIcon from "../../assets/light-theme.png";
+import faceRecognitionLightCover from "../../assets/face-recognition.png";
+import faceRecognitionDarkCover from "../../assets/face-recognition-dark.png";
 import { BrandMark } from "@/components/brand-mark";
 import { ToolRouteLink } from "@/components/tool-route-link";
 import { siteCopy as text } from "@/i18n/messages/en";
 import { applySiteTheme, readSiteTheme } from "@/lib/site-theme";
-import { primaryTools } from "@/lib/tool-catalog";
+import { isToolAvailable, primaryTools } from "@/lib/tool-catalog";
 import styles from "./home.module.css";
 
 type HomeTheme = "light" | "dark";
@@ -285,7 +287,7 @@ export function HomeExperience() {
                     >
                       <span>{tool.index}</span>
                       <strong>{text.tools[tool.slug].title}</strong>
-                      <small>{tool.slug === "face-recognition" || tool.slug === "anime-face-recognition" ? copy.available : copy.inBuild}</small>
+                      <small>{isToolAvailable(tool.slug) ? copy.available : copy.inBuild}</small>
                     </ToolRouteLink>
                   ))}
                   <Link href="/lab" role="menuitem" onClick={() => setToolsOpen(false)}>
@@ -388,13 +390,39 @@ export function HomeExperience() {
 
           <div className={styles.toolGrid}>
             {primaryTools.map((tool, index) => {
-              const available = tool.slug === "face-recognition" || tool.slug === "anime-face-recognition";
+              const available = isToolAvailable(tool.slug);
+              const isFaceRecognition = tool.slug === "face-recognition";
               return (
                 <article className={styles.toolCard} data-tool={`TOOL / ${tool.index}`} key={tool.slug}>
-                  <div className={styles.toolVisual} aria-hidden="true">
+                  <div
+                    className={`${styles.toolVisual} ${isFaceRecognition ? styles.toolVisualHasCover : ""}`}
+                    aria-hidden="true"
+                  >
                     <div className={styles.toolVisualHead}>
                       <span>TRACK {tool.index}</span><b>{available ? "ACTIVE" : "PREVIEW"}</b>
                     </div>
+                    {isFaceRecognition ? (
+                      <div className={styles.toolCoverFrame}>
+                        <Image
+                          src={faceRecognitionLightCover}
+                          alt={text.tools[tool.slug].title}
+                          fill
+                          sizes="(max-width: 980px) 100vw, 1672px"
+                          className={`${styles.toolCoverImage} ${styles.toolCoverLight}`}
+                          priority
+                          unoptimized
+                        />
+                        <Image
+                          src={faceRecognitionDarkCover}
+                          alt={text.tools[tool.slug].title}
+                          fill
+                          sizes="(max-width: 980px) 100vw, 1672px"
+                          className={`${styles.toolCoverImage} ${styles.toolCoverDark}`}
+                          priority
+                          unoptimized
+                        />
+                      </div>
+                    ) : null}
                     <div className={styles.miniTimeline}>
                       <span /><span /><span /><span /><span />
                       <i style={{ left: `${24 + index * 17}%` }} />

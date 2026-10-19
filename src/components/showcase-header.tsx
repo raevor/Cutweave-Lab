@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { siteCopy as text } from "@/i18n/messages/en";
-import { primaryTools } from "@/lib/tool-catalog";
+import { isToolAvailable, primaryTools } from "@/lib/tool-catalog";
 import { BrandMark } from "./brand-mark";
 import { ToolRouteLink } from "./tool-route-link";
 import styles from "./showcase-header.module.css";
@@ -57,7 +57,7 @@ export function ShowcaseHeader() {
               <span>04</span>
             </div>
             {primaryTools.map((tool) => {
-              const available = tool.slug === "face-recognition" || tool.slug === "anime-face-recognition";
+              const available = isToolAvailable(tool.slug);
               return (
                 <ToolRouteLink
                   className={styles.menuTool}

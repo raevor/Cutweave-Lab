@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "test": "vitest run",
     "lint": "eslint .",
@@ -16,6 +16,7 @@
     "@tensorflow/tfjs-backend-webgl": "^4.22.0",
     "@tensorflow/tfjs-backend-webgpu": "^4.22.0",
     "@vladmandic/face-api": "^1.7.15",
+    "@websr/websr": "0.0.16",
     "fflate": "^0.8.2",
     "mediabunny": "^1.55.4",
     "next": "16.3.3",

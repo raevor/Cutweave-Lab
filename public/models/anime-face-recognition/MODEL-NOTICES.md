@@ -11,8 +11,8 @@ reference crops and character embeddings are never sent to the model authors or 
 - Embedded exporter metadata: Ultralytics YOLO11, AGPL-3.0
 - Source: https://huggingface.co/deepghs/anime_head_detection
 
-The stricter embedded exporter notice should be reviewed before distributing this model in a
-license-incompatible product.
+The repository label and embedded exporter notice are both retained here;
+the repository label alone does not resolve distribution compatibility.
 
 ## Character similarity encoder
 

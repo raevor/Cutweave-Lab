@@ -14,7 +14,7 @@ import darkThemeIcon from "../../assets/dark-theme.png";
 import lightThemeIcon from "../../assets/light-theme.png";
 import { siteCopy as text } from "@/i18n/messages/en";
 import { applySiteTheme, readSiteTheme } from "@/lib/site-theme";
-import { primaryTools } from "@/lib/tool-catalog";
+import { isToolAvailable, primaryTools } from "@/lib/tool-catalog";
 import { BrandMark } from "./brand-mark";
 import { ToolRouteLink } from "./tool-route-link";
 import styles from "./public-page-frame.module.css";
@@ -257,7 +257,7 @@ export function PublicPageFrame({ activePage, children }: PublicPageFrameProps) 
                   <ToolRouteLink toolSlug={tool.slug} key={tool.slug} role="menuitem" onClick={() => setToolsOpen(false)}>
                     <span>{tool.index}</span>
                     <strong>{text.tools[tool.slug].title}</strong>
-                    <small>{tool.slug === "face-recognition" || tool.slug === "anime-face-recognition" ? text.home.available : text.home.inBuild}</small>
+                    <small>{isToolAvailable(tool.slug) ? text.home.available : text.home.inBuild}</small>
                   </ToolRouteLink>
                 ))}
                 <Link href="/lab" role="menuitem" onClick={() => setToolsOpen(false)}>

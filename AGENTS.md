@@ -8,6 +8,12 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+# Required first read — TestSprite Season 4
+
+- Before planning or changing this project, read `HACKATHON_RULES_S4.md` (local-only reference, intentionally not distributed). It is the current S4 rules and delivery reference (checked 2026-10-19).
+- For hackathon requirements it supersedes older S2/S3 assumptions and pre-announcement notes in other guides. Current official organizer updates take precedence. The reference includes the full official S4 Discord rules and the separate CLI announcement supplied by the user on 2026-10-19. Apply the Project Track eligibility/account/PR-date/submission requirements; do not substitute CLI bonus rules.
+- Read `TASKS.md` and relevant tool documentation next. Keep the project invariants below; a cloud test integration never authorizes sending private user media.
+
 # CUT/WEAVE project invariants
 
 - English is the default public interface language; Turkish is the only optional locale in V1. Repository documentation, commit titles and test descriptions are English.

@@ -874,6 +874,55 @@
   box-shadow: inset 0 0 0 12px color-mix(in oklch, var(--surface-raised) 16%, transparent);
 }
 
+.toolVisualHasCover::before,
+.toolVisualHasCover::after {
+  display: none;
+}
+
+.toolCoverFrame {
+  position: absolute;
+  inset: clamp(70px, 6vw, 96px) clamp(30px, 4vw, 66px) clamp(116px, 9vw, 148px);
+  border: 1px solid var(--line-strong);
+  overflow: hidden;
+  background: var(--surface);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklch, var(--surface-raised) 54%, transparent),
+    7px 7px 0 color-mix(in oklch, var(--shadow-solid) 72%, transparent);
+}
+
+.toolCoverImage {
+  object-fit: cover;
+  object-position: center;
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.toolCoverDark {
+  display: block;
+}
+
+.toolCoverLight {
+  display: none;
+}
+
+:global([data-theme="light"]) .toolCoverLight {
+  display: block !important;
+}
+
+:global([data-theme="light"]) .toolCoverDark {
+  display: none !important;
+}
+
+:global([data-theme="dark"]) .toolCoverLight {
+  display: none !important;
+}
+
+:global([data-theme="dark"]) .toolCoverDark {
+  display: block !important;
+}
+
 .toolVisualHead {
   position: relative;
   z-index: 2;
@@ -1252,6 +1301,7 @@
   .toolCard:nth-child(even) .toolVisual { min-height: 310px; border-right: 0; border-left: 0; border-bottom: 1px solid var(--line-strong); }
   .toolVisual::before { inset: 62px 24px 104px; }
   .toolVisual::after { width: 112px; }
+  .toolCoverFrame { inset: 62px 24px 104px; }
   .miniTimeline { left: 24px; right: 24px; bottom: 72px; }
   .miniClips { left: 24px; right: 24px; bottom: 47px; }
   .toolVisual > small { left: 24px; bottom: 21px; }

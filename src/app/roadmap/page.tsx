@@ -27,11 +27,11 @@ const roadmap = [
   },
   {
     index: "03",
-    phase: "In development",
-    status: "Building",
+    phase: "Available now",
+    status: "Local beta",
     title: "Music & Bass Markers",
-    copy: "A focused tool for finding useful musical hits and rhythm points, then turning them into adjustable markers for the edit.",
-    tone: "building",
+    copy: "A local audio workspace for finding useful impacts and bass entries, reviewing every marker, trimming the source and exporting marker timing for the edit.",
+    tone: "ready",
   },
   {
     index: "04",
