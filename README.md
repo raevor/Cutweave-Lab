@@ -1,8 +1,8 @@
 # CUT/WEAVE LAB
 
-Recognize a selected face across a video, place music and bass markers, and enhance video quality—inside your browser.
+Recognize a selected face or animated character across a video and place music and bass markers—inside your browser.
 
-> Current status: Face Recognition, Anime Face Recognition, Music & Bass Markers and Video Enhancer run locally in the browser. Video Enhancer uses separate general-purpose native restoration and 2× GPU reconstruction engines, with CPU-assisted local media preparation/export. CPU-only enhancement is disabled. The 2026-10-19 revision awaits user validation; its changes and limits are documented in `docs/VIDEO_ENHANCER.md`.
+> Current status: Face Recognition, Anime Face Recognition and Music & Bass Markers run locally in the browser.
 
 ## Run locally
 
@@ -19,7 +19,6 @@ Open [http://localhost:3000](http://localhost:3000).
 - `/lab` — clickable local tool library.
 - `/lab/face-recognition`, `/lab/anime-face-recognition` — local face and animated-character scene finding.
 - `/lab/bass-markers` — local audio analysis, marker editing, trimming and marker-rich WAV/XMP/data export.
-- `/lab/clarity-boost` — local GPU Video Enhancer with CPU-assisted media preparation, a real frame comparison and enhanced MP4 export.
 - `/privacy` — current and planned data boundary.
 
 ## Foundation guarantees

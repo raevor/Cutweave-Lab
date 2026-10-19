@@ -54,7 +54,7 @@ export function ShowcaseHeader() {
           <div className={open ? `${styles.menu} ${styles.menuOpen}` : styles.menu} role="menu" aria-hidden={!open}>
             <div className={styles.menuHead}>
               <span>{text.common.nav.menuLabel}</span>
-              <span>04</span>
+              <span>{String(primaryTools.length).padStart(2, "0")}</span>
             </div>
             {primaryTools.map((tool) => {
               const available = isToolAvailable(tool.slug);

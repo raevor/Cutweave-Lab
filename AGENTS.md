@@ -24,5 +24,5 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Heavy analysis belongs in dedicated workers and must support cancellation, bounded memory and stale-result protection.
 - Never present sample topology, fake progress, decorative waveforms or prepared thumbnails as real analysis.
 - The visual identity uses edit points, tracks and timecode. Keep every tool in its own focused screen until a combined workspace has a proven use. Do not use pixel art, mascots, game-room composition or generic AI gradients.
-- The three primary tools are Face Recognition, Music & Bass Markers and Video Enhancer. Face recognition means finding the selected face again inside the local video; it never identifies the person through an internet lookup or external database.
+- The three primary tools are Face Recognition, Anime Face Recognition and Music & Bass Markers. Face recognition means finding the selected face again inside the local video; it never identifies the person through an internet lookup or external database.
 - Preserve keyboard access, visible focus and reduced-motion behavior.

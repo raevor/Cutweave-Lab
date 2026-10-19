@@ -10,9 +10,9 @@ type ToolRouteLinkProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> 
 export function ToolRouteLink({ toolSlug, children, ...props }: ToolRouteLinkProps) {
   const href = `/lab/${toolSlug}`;
 
-  // These routes require document-level isolation headers. A client-side
+  // This route requires document-level isolation headers. A client-side
   // navigation would retain the previous page's isolation policy.
-  if (toolSlug === "anime-face-recognition" || toolSlug === "clarity-boost") {
+  if (toolSlug === "anime-face-recognition") {
     return <a href={href} {...props}>{children}</a>;
   }
 

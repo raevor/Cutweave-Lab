@@ -33,14 +33,6 @@ const roadmap = [
     copy: "A local audio workspace for finding useful impacts and bass entries, reviewing every marker, trimming the source and exporting marker timing for the edit.",
     tone: "ready",
   },
-  {
-    index: "04",
-    phase: "In development",
-    status: "Building",
-    title: "Video Enhancer",
-    copy: "A local workspace for previewing detail recovery, denoising and upscaling choices before exporting the selected result.",
-    tone: "building",
-  },
 ] as const;
 
 export default function RoadmapPage() {

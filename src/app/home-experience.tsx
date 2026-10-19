@@ -13,6 +13,8 @@ import darkThemeIcon from "../../assets/dark-theme.png";
 import lightThemeIcon from "../../assets/light-theme.png";
 import faceRecognitionLightCover from "../../assets/face-recognition.png";
 import faceRecognitionDarkCover from "../../assets/face-recognition-dark.png";
+import animeFaceRecognitionLightCover from "../../assets/anime-face-recognition.png";
+import animeFaceRecognitionDarkCover from "../../assets/anime-face-recognition-dark.png";
 import { BrandMark } from "@/components/brand-mark";
 import { ToolRouteLink } from "@/components/tool-route-link";
 import { siteCopy as text } from "@/i18n/messages/en";
@@ -26,7 +28,6 @@ type TrailPoint = { x: number; y: number; createdAt: number };
 const toolTracks = {
   "face-recognition": ["12%", "34%", "58%", "82%"],
   "bass-markers": ["17%", "43%", "67%", "88%"],
-  "clarity-boost": ["9%", "38%", "72%"],
   "anime-face-recognition": ["14%", "36%", "62%", "87%"],
 } as const;
 
@@ -391,20 +392,24 @@ export function HomeExperience() {
           <div className={styles.toolGrid}>
             {primaryTools.map((tool, index) => {
               const available = isToolAvailable(tool.slug);
-              const isFaceRecognition = tool.slug === "face-recognition";
+              const cover = tool.slug === "face-recognition"
+                ? { light: faceRecognitionLightCover, dark: faceRecognitionDarkCover }
+                : tool.slug === "anime-face-recognition"
+                  ? { light: animeFaceRecognitionLightCover, dark: animeFaceRecognitionDarkCover }
+                  : null;
               return (
                 <article className={styles.toolCard} data-tool={`TOOL / ${tool.index}`} key={tool.slug}>
                   <div
-                    className={`${styles.toolVisual} ${isFaceRecognition ? styles.toolVisualHasCover : ""}`}
+                    className={`${styles.toolVisual} ${cover ? styles.toolVisualHasCover : ""}`}
                     aria-hidden="true"
                   >
                     <div className={styles.toolVisualHead}>
                       <span>TRACK {tool.index}</span><b>{available ? "ACTIVE" : "PREVIEW"}</b>
                     </div>
-                    {isFaceRecognition ? (
+                    {cover ? (
                       <div className={styles.toolCoverFrame}>
                         <Image
-                          src={faceRecognitionLightCover}
+                          src={cover.light}
                           alt={text.tools[tool.slug].title}
                           fill
                           sizes="(max-width: 980px) 100vw, 1672px"
@@ -413,7 +418,7 @@ export function HomeExperience() {
                           unoptimized
                         />
                         <Image
-                          src={faceRecognitionDarkCover}
+                          src={cover.dark}
                           alt={text.tools[tool.slug].title}
                           fill
                           sizes="(max-width: 980px) 100vw, 1672px"

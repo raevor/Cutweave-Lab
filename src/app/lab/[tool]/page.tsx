@@ -4,7 +4,6 @@ import { getTool, primaryTools } from "@/lib/tool-catalog";
 import { FaceRecognitionWorkspace } from "./face-recognition-workspace";
 import { AnimeFaceRecognitionWorkspace } from "./anime-face-recognition-workspace";
 import { MusicBassMarkersWorkspace } from "./music-bass-markers-workspace";
-import { VideoEnhancerWorkspace } from "./video-enhancer-workspace";
 import { ToolWorkspace } from "./tool-workspace";
 
 export function generateStaticParams() {
@@ -25,6 +24,5 @@ export default async function FocusedToolPage({ params }: { params: Promise<{ to
   if (tool.slug === "face-recognition") return <FaceRecognitionWorkspace tool={tool} />;
   if (tool.slug === "anime-face-recognition") return <AnimeFaceRecognitionWorkspace tool={tool} />;
   if (tool.slug === "bass-markers") return <MusicBassMarkersWorkspace tool={tool} />;
-  if (tool.slug === "clarity-boost") return <VideoEnhancerWorkspace tool={tool} />;
   return <ToolWorkspace tool={tool} />;
 }

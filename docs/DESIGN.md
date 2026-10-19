@@ -6,7 +6,7 @@ Cutweave combines a professional post-production control surface with an indepen
 
 ## Tool-first information architecture
 
-The lab opens as a focused tool library, not a miniature NLE. Large interactive tool panels explain the job, input and output of Face Recognition, Music & Bass Markers and Video Enhancer. Selecting a tool opens a calm, single-purpose local-media workspace. A combined editing surface is outside the current scope.
+The lab opens as a focused tool library, not a miniature NLE. Large interactive tool panels explain the job, input and output of Face Recognition, Anime Face Recognition and Music & Bass Markers. Selecting a tool opens a calm, single-purpose local-media workspace. A combined editing surface is outside the current scope.
 
 Tool panels may visualize UI anatomy and data relationships. They must not use prepared footage, decorative waveforms or fabricated metrics as if they came from analysis.
 

@@ -102,7 +102,7 @@ export function ToolWorkspace({ tool }: { tool: ToolDefinition }) {
 
           {!file ? (
             <div className="tool-intake">
-              <div className="tool-intake-visual"><ToolVisual tool={tool.slug} anatomyLabel={toolCopy.anatomy} outputLabel={copy.output} outputValue={toolCopy.anatomyOutput} beforeLabel={copy.before} afterLabel={copy.after} markerAxisLabel={copy.markerAxisLabel} /></div>
+              <div className="tool-intake-visual"><ToolVisual tool={tool.slug} anatomyLabel={toolCopy.anatomy} outputLabel={copy.output} outputValue={toolCopy.anatomyOutput} markerAxisLabel={copy.markerAxisLabel} /></div>
               <div className="tool-intake-copy">
                 <small>{copy.localIntake}</small>
                 <h2>{toolCopy.shortTitle}</h2>

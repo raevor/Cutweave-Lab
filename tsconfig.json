@@ -36,6 +36,12 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    ".cache",
+    "src/lib/video-enhancer",
+    "src/workers/video-enhancer*.ts",
+    "src/app/lab/*/video-enhancer-workspace.tsx",
+    "scripts/verify-video-enhancer*",
+    "scripts/verify-learned-restoration*"
   ]
 }

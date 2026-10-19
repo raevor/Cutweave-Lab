@@ -183,3 +183,35 @@ Desktop.ini
 *.swp
 *.swo
 *~
+
+# -----------------------------------------------------------------------------
+# Withdrawn Video Enhancer — kept only on the local machine
+# -----------------------------------------------------------------------------
+
+/src/lib/video-enhancer/
+/src/workers/video-enhancer.worker.ts
+/src/workers/video-enhancer-gpu.worker.ts
+/src/app/lab/[[]tool]/video-enhancer-workspace.tsx
+/src/app/lab/[[]tool]/video-enhancer-workspace.module.css
+/src/app/enhancer-check/
+/src/app/enhancer-color-check/
+/src/app/enhancer-learned-check/
+/src/app/enhancer-verify/
+/public/models/video-enhancer/
+/public/wasm/video-enhancer/
+/public/licenses/video-enhancer-fsr.txt
+/docs/VIDEO_ENHANCER.md
+/scripts/check-enhancer-shaders.mjs
+/scripts/prepare-enhancer-v15-models.py
+/scripts/prepare-enhancer-v16-model.py
+/scripts/prepare-quicksrnet-model.py
+/scripts/prepare-span-gpu-head.py
+/scripts/prepare-universal-span-model.py
+/scripts/prepare-video-restoration-model.py
+/scripts/verify-enhancer-v14-math.py
+/scripts/verify-enhancer-v15-packaging.py
+/scripts/verify-learned-restoration.tsx
+/scripts/verify-learned-restoration.worker.ts
+/scripts/verify-video-enhancer-browser.tsx
+/scripts/verify-video-enhancer-color.tsx
+/scripts/verify-video-enhancer-color.worker.ts

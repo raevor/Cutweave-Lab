@@ -1,4 +1,4 @@
-export type ToolSlug = "face-recognition" | "bass-markers" | "clarity-boost" | "anime-face-recognition";
+export type ToolSlug = "face-recognition" | "bass-markers" | "anime-face-recognition";
 
 export type ToolDefinition = {
   slug: ToolSlug;
@@ -10,7 +10,7 @@ export type ToolDefinition = {
   promise: string;
   input: string;
   output: string;
-  accent: "signal" | "rust" | "blue";
+  accent: "rust" | "blue";
   results: string[];
 };
 
@@ -33,12 +33,6 @@ export const primaryTools: ToolDefinition[] = [
     promise: "Let the rhythm points arrive before you start cutting.", input: "One local audio file", output: "Marker-rich WAV + timing data", accent: "blue",
     results: ["Bass and impact candidates", "Sensitivity and spacing controls", "Editable marker timeline", "WAV, XMP, JSON and CSV export"],
   },
-  {
-    slug: "clarity-boost", index: "04", title: "Video Enhancer", shortTitle: "Bring back useful detail",
-    eyebrow: "Picture / cleanup and upscale", description: "Clean up soft footage, reduce noise and prepare a sharper local upscale.",
-    promise: "Rescue a usable shot before you give up on it.", input: "One local video", output: "Enhanced clip + comparison", accent: "signal",
-    results: ["Before-and-after preview", "Denoise and detail controls", "Device-aware upscale options", "Enhanced local export"],
-  },
 ];
 
 export function getTool(slug: string) {
@@ -46,5 +40,5 @@ export function getTool(slug: string) {
 }
 
 export function isToolAvailable(slug: ToolSlug) {
-  return slug === "face-recognition" || slug === "anime-face-recognition" || slug === "bass-markers" || slug === "clarity-boost";
+  return slug === "face-recognition" || slug === "anime-face-recognition" || slug === "bass-markers";
 }

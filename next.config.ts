@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   async headers() {
-    return [...["/lab/anime-face-recognition", "/lab/clarity-boost"].map(source=>({
+    return [...["/lab/anime-face-recognition"].map(source=>({
       source,
       headers: [
         { key: "Cross-Origin-Opener-Policy", value: "same-origin" },

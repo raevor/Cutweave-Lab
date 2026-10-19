@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import faceRecognitionLightCover from "../../../assets/face-recognition.png";
 import faceRecognitionDarkCover from "../../../assets/face-recognition-dark.png";
+import animeFaceRecognitionLightCover from "../../../assets/anime-face-recognition.png";
+import animeFaceRecognitionDarkCover from "../../../assets/anime-face-recognition-dark.png";
 import { PublicPageFrame } from "@/components/public-page-frame";
 import { ToolRouteLink } from "@/components/tool-route-link";
 import { siteCopy as text } from "@/i18n/messages/en";
@@ -11,7 +13,6 @@ import styles from "./lab.module.css";
 const trackPoints = {
   "face-recognition": ["11%", "36%", "63%", "84%"],
   "bass-markers": ["17%", "31%", "55%", "79%", "91%"],
-  "clarity-boost": ["24%", "49%", "76%"],
   "anime-face-recognition": ["10%", "32%", "57%", "81%"],
 } as const;
 
@@ -29,7 +30,7 @@ export default function LabPage() {
         </div>
 
         <aside className={styles.dispatch} aria-label="Cutweave tool desk overview">
-          <header><span>CUT/WEAVE / TOOL DESK</span><b>04 FOCUSED ROUTES</b></header>
+          <header><span>CUT/WEAVE / TOOL DESK</span><b>{String(primaryTools.length).padStart(2, "0")} FOCUSED ROUTES</b></header>
           <div className={styles.dispatchScreen}>
             <div className={styles.dispatchTarget} aria-hidden="true"><i /><i /><i /><i /></div>
             <span className={styles.dispatchLabel}>CHOOSE THE JOB<br />BEFORE THE SOURCE</span>
@@ -56,7 +57,7 @@ export default function LabPage() {
       <section className={styles.launcher} aria-labelledby="launcher-title">
         <header className={styles.sectionHead}>
           <div>
-            <p className={styles.kicker}>Tool desk / 04 routes</p>
+            <p className={styles.kicker}>Tool desk / {String(primaryTools.length).padStart(2, "0")} routes</p>
             <h2 id="launcher-title">Choose the job.<br /><em>Enter its workspace.</em></h2>
           </div>
           <p>Each route opens around one preparation task, one local source and one result you can inspect before export.</p>
@@ -66,7 +67,11 @@ export default function LabPage() {
           {primaryTools.map((tool, index) => {
             const available = isToolAvailable(tool.slug);
             const toolCopy = text.tools[tool.slug];
-            const isFaceRecognition = tool.slug === "face-recognition";
+            const cover = tool.slug === "face-recognition"
+              ? { light: faceRecognitionLightCover, dark: faceRecognitionDarkCover }
+              : tool.slug === "anime-face-recognition"
+                ? { light: animeFaceRecognitionLightCover, dark: animeFaceRecognitionDarkCover }
+                : null;
 
             return (
               <article className={styles.toolCard} data-index={tool.index} key={tool.slug}>
@@ -75,11 +80,11 @@ export default function LabPage() {
                     <span>TRACK / {tool.index}</span>
                     <b>{available ? "ACTIVE TOOL" : "INTERFACE PREVIEW"}</b>
                   </div>
-                  <div className={`${styles.visualFrame} ${isFaceRecognition ? styles.visualFrameCover : ""}`}>
-                    {isFaceRecognition ? (
+                  <div className={`${styles.visualFrame} ${cover ? styles.visualFrameCover : ""}`}>
+                    {cover ? (
                       <>
                         <Image
-                          src={faceRecognitionLightCover}
+                          src={cover.light}
                           alt={toolCopy.title}
                           fill
                           sizes="(max-width: 980px) 100vw, 1672px"
@@ -88,7 +93,7 @@ export default function LabPage() {
                           unoptimized
                         />
                         <Image
-                          src={faceRecognitionDarkCover}
+                          src={cover.dark}
                           alt={toolCopy.title}
                           fill
                           sizes="(max-width: 980px) 100vw, 1672px"
@@ -101,7 +106,7 @@ export default function LabPage() {
                       <>
                         <span>{toolCopy.anatomy}</span>
                         <div className={styles.focusBox}><i /><i /><i /><i /></div>
-                        <b>{String(index + 1).padStart(2, "0")} / 04</b>
+                        <b>{String(index + 1).padStart(2, "0")} / {String(primaryTools.length).padStart(2, "0")}</b>
                       </>
                     )}
                   </div>

@@ -5,13 +5,11 @@ type ToolVisualProps = {
   anatomyLabel?: string;
   outputLabel?: string;
   outputValue?: string;
-  beforeLabel?: string;
-  afterLabel?: string;
   markerAxisLabel?: string;
 };
 
-export function ToolVisual({ tool, anatomyLabel, outputLabel = "OUTPUT", outputValue, beforeLabel = "BEFORE", afterLabel = "AFTER", markerAxisLabel = "TIMECODE / MARKER CANDIDATES" }: ToolVisualProps) {
-  if (tool === "face-recognition") {
+export function ToolVisual({ tool, anatomyLabel, outputLabel = "OUTPUT", outputValue, markerAxisLabel = "TIMECODE / MARKER CANDIDATES" }: ToolVisualProps) {
+  if (tool === "face-recognition" || tool === "anime-face-recognition") {
     return (
       <div className="tool-anatomy subject-anatomy" aria-hidden="true">
         <div className="anatomy-label">{anatomyLabel ?? "PREVIEW / FACE-MATCHED SCENES"}</div>
@@ -24,28 +22,14 @@ export function ToolVisual({ tool, anatomyLabel, outputLabel = "OUTPUT", outputV
     );
   }
 
-  if (tool === "bass-markers") {
-    return (
-      <div className="tool-anatomy beat-anatomy" aria-hidden="true">
-        <div className="anatomy-label">{anatomyLabel ?? "PREVIEW / MUSIC & BASS MARKERS"}</div>
-        <div className="beat-axis">
-          <span className="beat-axis-label">{markerAxisLabel}</span>
-          {[12, 28, 48, 64, 82].map((position, index) => <i key={position} style={{ left: `${position}%`, height: `${34 + index * 8}%` }}><span>{String(index + 1).padStart(2, "0")}</span></i>)}
-        </div>
-        <div className="anatomy-reading"><small>{outputLabel}</small><strong>{outputValue ?? "HITS READY TO ADJUST"}</strong></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="tool-anatomy quality-anatomy" aria-hidden="true">
-      <div className="anatomy-label">{anatomyLabel ?? "PREVIEW / BEFORE & AFTER"}</div>
-      <div className="quality-compare">
-        <div className="quality-side quality-side--before"><span>{beforeLabel}</span><i /><i /><i /></div>
-        <div className="quality-side quality-side--after"><span>{afterLabel}</span><i /><i /><i /></div>
-        <b><span>×2</span></b>
+    <div className="tool-anatomy beat-anatomy" aria-hidden="true">
+      <div className="anatomy-label">{anatomyLabel ?? "PREVIEW / MUSIC & BASS MARKERS"}</div>
+      <div className="beat-axis">
+        <span className="beat-axis-label">{markerAxisLabel}</span>
+        {[12, 28, 48, 64, 82].map((position, index) => <i key={position} style={{ left: `${position}%`, height: `${34 + index * 8}%` }}><span>{String(index + 1).padStart(2, "0")}</span></i>)}
       </div>
-      <div className="anatomy-reading"><small>{outputLabel}</small><strong>{outputValue ?? "DETAIL READY TO COMPARE"}</strong></div>
+      <div className="anatomy-reading"><small>{outputLabel}</small><strong>{outputValue ?? "HITS READY TO ADJUST"}</strong></div>
     </div>
   );
 }

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     template: "%s — CUT/WEAVE LAB",
   },
   description:
-    "Find face-matched scenes, create music and bass markers, and enhance video quality without sending your media away.",
+    "Find face-matched scenes and character appearances, and create music and bass markers without sending your media away.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
