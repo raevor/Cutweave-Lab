@@ -1,5 +1,6 @@
 "use client";
 
+import { flushSync } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -11,36 +12,42 @@ import {
 } from "react";
 import darkThemeIcon from "../../assets/dark-theme.png";
 import lightThemeIcon from "../../assets/light-theme.png";
-import faceRecognitionLightCover from "../../assets/face-recognition.png";
-import faceRecognitionDarkCover from "../../assets/face-recognition-dark.png";
-import animeFaceRecognitionLightCover from "../../assets/anime-face-recognition.png";
-import animeFaceRecognitionDarkCover from "../../assets/anime-face-recognition-dark.png";
 import { BrandMark } from "@/components/brand-mark";
+import { TimelineBackdrop } from "@/components/timeline-backdrop";
+import { ToolIllustration } from "@/components/tool-illustration";
 import { ToolRouteLink } from "@/components/tool-route-link";
 import { siteCopy as text } from "@/i18n/messages/en";
-import { applySiteTheme, readSiteTheme } from "@/lib/site-theme";
+import { applySiteTheme, readSiteTheme, switchSiteTheme } from "@/lib/site-theme";
 import { isToolAvailable, primaryTools } from "@/lib/tool-catalog";
+import { AmbientLayer } from "@/components/ambient-layer";
+import { SequenceNav } from "@/components/sequence-nav";
 import styles from "./home.module.css";
 
 type HomeTheme = "light" | "dark";
 type TrailPoint = { x: number; y: number; createdAt: number };
 
-const toolTracks = {
-  "face-recognition": ["12%", "34%", "58%", "82%"],
-  "bass-markers": ["17%", "43%", "67%", "88%"],
-  "anime-face-recognition": ["14%", "36%", "62%", "87%"],
-} as const;
+const SEQUENCE = [
+  { id: "top", label: "Opening" },
+  { id: "tool-face-recognition", label: "Face Recognition", tool: "face-recognition" },
+  { id: "tool-anime-face-recognition", label: "Anime Face Recognition", tool: "anime-face-recognition" },
+  { id: "tool-bass-markers", label: "Music & Bass Markers", tool: "bass-markers" },
+  { id: "workflow", label: "How it works" },
+  { id: "local", label: "Local by design" },
+];
 
 export function HomeExperience() {
   const copy = text.home;
   const [theme, setTheme] = useState<HomeTheme>("dark");
   const [toolsOpen, setToolsOpen] = useState(false);
   const pageRef = useRef<HTMLElement>(null);
+  const heroRef = useRef<HTMLElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const trailCanvasRef = useRef<HTMLCanvasElement>(null);
   const trailFrame = useRef<number | null>(null);
   const trailPoints = useRef<TrailPoint[]>([]);
   const lastTrailPoint = useRef<TrailPoint | null>(null);
+  /* Writing a custom property on <main> restyles the whole page, so only write it when it changes. */
+  const lightOn = useRef(false);
   const trailTheme = useRef<HomeTheme>("dark");
 
   useLayoutEffect(() => {
@@ -78,7 +85,8 @@ export function HomeExperience() {
     const resizeCanvas = () => {
       const canvas = trailCanvasRef.current;
       if (!canvas) return;
-      const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+      /* A soft glowing line reads the same at 1x and costs far less on a viewport-sized canvas. */
+      const pixelRatio = 1;
       canvas.width = Math.round(window.innerWidth * pixelRatio);
       canvas.height = Math.round(window.innerHeight * pixelRatio);
     };
@@ -91,10 +99,17 @@ export function HomeExperience() {
     };
   }, []);
 
-  const toggleTheme = () => {
+  /* Hovering a headline line spotlights the matching timeline lanes. */
+  const focusLanes = (lanes: string | null) => {
+    const hero = heroRef.current;
+    if (!hero) return;
+    if (lanes) hero.dataset.laneFocus = lanes;
+    else delete hero.dataset.laneFocus;
+  };
+
+  const toggleTheme = (event?: { currentTarget: Element }) => {
     const nextTheme = theme === "light" ? "dark" : "light";
-    setTheme(nextTheme);
-    applySiteTheme(nextTheme);
+    switchSiteTheme(nextTheme, event?.currentTarget ?? null, () => setTheme(nextTheme), flushSync);
   };
 
   const renderTrail = (now: number) => {
@@ -109,23 +124,20 @@ export function HomeExperience() {
     const lifetime = reducedMotion ? 430 : 680;
     trailPoints.current = trailPoints.current.filter((point) => now - point.createdAt < lifetime);
 
-    const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
-    context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    context.setTransform(1, 0, 0, 1, 0, 0);
     context.clearRect(0, 0, window.innerWidth, window.innerHeight);
     context.globalCompositeOperation = "lighter";
 
     const palette = trailTheme.current === "dark"
       ? {
-          main: "rgba(157, 232, 42, .78)",
-          soft: "rgba(121, 201, 48, .16)",
-          tip: "rgba(240, 255, 209, .98)",
-          glow: "rgba(147, 235, 47, .72)",
+          main: "rgba(244, 180, 67, .7)",
+          soft: "rgba(244, 180, 67, .16)",
+          tip: "rgba(255, 240, 214, .98)",
         }
       : {
-          main: "rgba(10, 133, 182, .9)",
-          soft: "rgba(40, 165, 207, .2)",
-          tip: "rgba(230, 250, 255, .98)",
-          glow: "rgba(10, 139, 192, .78)",
+          main: "rgba(176, 108, 20, .85)",
+          soft: "rgba(196, 128, 36, .18)",
+          tip: "rgba(255, 246, 230, .98)",
         };
 
     const points = trailPoints.current;
@@ -157,17 +169,18 @@ export function HomeExperience() {
         point.x,
         point.y,
       );
+      /* Glow from two wide, faint strokes instead of shadowBlur, which is very expensive per segment. */
       context.strokeStyle = palette.soft;
-      context.globalAlpha = alpha * .7;
-      context.lineWidth = 4.5 + progress * 3.5;
-      context.shadowColor = palette.glow;
-      context.shadowBlur = 9 + progress * 5;
+      context.globalAlpha = alpha * .45;
+      context.lineWidth = 12 + progress * 8;
+      context.stroke();
+      context.globalAlpha = alpha * .8;
+      context.lineWidth = 5 + progress * 4;
       context.stroke();
 
       context.strokeStyle = palette.main;
       context.globalAlpha = alpha * .92;
-      context.lineWidth = .45 + progress * 1.45;
-      context.shadowBlur = 4 + progress * 3;
+      context.lineWidth = .6 + progress * 1.5;
       context.stroke();
       context.restore();
     }
@@ -179,9 +192,11 @@ export function HomeExperience() {
 
       context.save();
       context.globalAlpha = headLife * headLife;
+      context.fillStyle = palette.soft;
+      context.beginPath();
+      context.arc(head.x, head.y, pulse * 1.8, 0, Math.PI * 2);
+      context.fill();
       context.fillStyle = palette.tip;
-      context.shadowColor = palette.glow;
-      context.shadowBlur = 11;
       context.beginPath();
       context.moveTo(head.x, head.y - pulse);
       context.lineTo(head.x + 1.25, head.y - 1.15);
@@ -216,12 +231,16 @@ export function HomeExperience() {
       if (trailPoints.current.length > 30) trailPoints.current.shift();
       lastTrailPoint.current = nextPoint;
     }
-    pageRef.current?.style.setProperty("--light-opacity", "1");
+    if (!lightOn.current) {
+      pageRef.current?.style.setProperty("--light-opacity", "1");
+      lightOn.current = true;
+    }
     if (trailFrame.current === null) trailFrame.current = requestAnimationFrame(renderTrail);
   };
 
   const hidePointer = () => {
     pageRef.current?.style.setProperty("--light-opacity", "0");
+    lightOn.current = false;
     lastTrailPoint.current = null;
     trailPoints.current = [];
   };
@@ -300,18 +319,13 @@ export function HomeExperience() {
           </div>
         </header>
 
-        <section className={styles.hero} aria-labelledby="hero-title">
-          <span className={`${styles.editMark} ${styles.editMarkOne}`} aria-hidden="true">+</span>
-          <span className={`${styles.editMark} ${styles.editMarkTwo}`} aria-hidden="true">/</span>
-          <span className={styles.heroTimecode} aria-hidden="true">TC / 00:00:00:00</span>
+        <section className={styles.hero} aria-labelledby="hero-title" ref={heroRef}>
+          <TimelineBackdrop variant="hero" scrubTarget={heroRef} className={styles.heroTimeline} />
 
           <div className={styles.heroCopy}>
-            <p className={styles.kicker}>
-              <span>{copy.eyebrowA}</span><span>{copy.eyebrowB}</span>
-            </p>
             <h1 id="hero-title">
-              <span>{copy.titleLine1}</span>
-              <span>{copy.titleLine2}</span>
+              <span onPointerEnter={() => focusLanes("face,anime")} onPointerLeave={() => focusLanes(null)}>{copy.titleLine1}</span>
+              <span onPointerEnter={() => focusLanes("bass")} onPointerLeave={() => focusLanes(null)}>{copy.titleLine2}</span>
               <em>{copy.titleLine3}</em>
             </h1>
             <p className={styles.lede}>{copy.lede}</p>
@@ -325,51 +339,9 @@ export function HomeExperience() {
               </Link>
             </div>
 
-            <div className={styles.localStatus}>
-              <span><i aria-hidden="true" />{copy.privacyNote}</span>
-              <strong><small>Media sent to us</small>0 B</strong>
-            </div>
           </div>
 
-          <div className={styles.editorStage} aria-label={copy.heroMapAria}>
-            <div className={styles.stageShadow} aria-hidden="true" />
-            <div className={styles.signalMap}>
-              <div className={styles.mapHead}>
-                <span>{copy.heroMapLabel}</span>
-                <small>Interface anatomy / not analysis</small>
-                <b>{copy.heroMapNote}</b>
-              </div>
-              <div className={styles.previewWindow} aria-hidden="true">
-                <div className={styles.previewCornerA} />
-                <div className={styles.previewCornerB} />
-                <span className={styles.previewSubject}>LOCAL FILE</span>
-                <div className={styles.focusFrame}><i /><i /><i /><i /></div>
-                <div className={styles.previewReadout}>
-                  <small>SEARCH TARGET</small><strong>FACE / 01</strong>
-                </div>
-              </div>
-              <div className={styles.timeRail} aria-hidden="true">
-                <span>00:00</span><span>12:16</span><span>28:42</span><span>44:08</span>
-              </div>
-              <div className={styles.trackField} aria-hidden="true">
-                <div className={styles.playhead}><i /></div>
-                {primaryTools.map((tool) => (
-                  <div className={styles.track} key={tool.slug}>
-                    <span>{tool.index}</span>
-                    <strong>{text.tools[tool.slug].title}</strong>
-                    <div className={styles.trackLine}>
-                      {toolTracks[tool.slug].map((left, index) => (
-                        <i style={{ left }} key={`${left}-${index}`} />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className={styles.mapOutput}>
-                <span>{copy.heroOutput}</span><strong>{copy.heroOutputValue}</strong><b aria-hidden="true">/</b>
-              </div>
-            </div>
-          </div>
+          <p className={styles.heroHint} aria-hidden="true">Move across the timeline to scrub it</p>
         </section>
 
         <section className={styles.proofStrip} aria-label={copy.principlesLabel}>
@@ -380,7 +352,8 @@ export function HomeExperience() {
           ))}
         </section>
 
-        <section className={styles.tools} id="tools" aria-labelledby="home-tools-title">
+        <section className={`${styles.tools} ambient-host`} id="tools" aria-labelledby="home-tools-title">
+          <AmbientLayer seed={3} />
           <header className={styles.sectionHead}>
             <div>
               <p className={styles.kicker}>{copy.toolsEyebrow}</p>
@@ -390,52 +363,15 @@ export function HomeExperience() {
           </header>
 
           <div className={styles.toolGrid}>
-            {primaryTools.map((tool, index) => {
+            {primaryTools.map((tool) => {
               const available = isToolAvailable(tool.slug);
-              const cover = tool.slug === "face-recognition"
-                ? { light: faceRecognitionLightCover, dark: faceRecognitionDarkCover }
-                : tool.slug === "anime-face-recognition"
-                  ? { light: animeFaceRecognitionLightCover, dark: animeFaceRecognitionDarkCover }
-                  : null;
               return (
-                <article className={styles.toolCard} data-tool={`TOOL / ${tool.index}`} key={tool.slug}>
-                  <div
-                    className={`${styles.toolVisual} ${cover ? styles.toolVisualHasCover : ""}`}
-                    aria-hidden="true"
-                  >
+                <article className={styles.toolCard} id={`tool-${tool.slug}`} data-tool={`TOOL / ${tool.index}`} data-tool-key={tool.slug} key={tool.slug}>
+                  <div className={`${styles.toolVisual} ${styles.toolVisualHasCover}`} aria-hidden="true">
                     <div className={styles.toolVisualHead}>
-                      <span>TRACK {tool.index}</span><b>{available ? "ACTIVE" : "PREVIEW"}</b>
+                      <span>{text.tools[tool.slug].title}</span><b>{available ? "Ready to use" : "In development"}</b>
                     </div>
-                    {cover ? (
-                      <div className={styles.toolCoverFrame}>
-                        <Image
-                          src={cover.light}
-                          alt={text.tools[tool.slug].title}
-                          fill
-                          sizes="(max-width: 980px) 100vw, 1672px"
-                          className={`${styles.toolCoverImage} ${styles.toolCoverLight}`}
-                          priority
-                          unoptimized
-                        />
-                        <Image
-                          src={cover.dark}
-                          alt={text.tools[tool.slug].title}
-                          fill
-                          sizes="(max-width: 980px) 100vw, 1672px"
-                          className={`${styles.toolCoverImage} ${styles.toolCoverDark}`}
-                          priority
-                          unoptimized
-                        />
-                      </div>
-                    ) : null}
-                    <div className={styles.miniTimeline}>
-                      <span /><span /><span /><span /><span />
-                      <i style={{ left: `${24 + index * 17}%` }} />
-                    </div>
-                    <div className={styles.miniClips}>
-                      <i /><i /><i /><i />
-                    </div>
-                    <small>00:{12 + index * 9}:24:{8 + index * 3}</small>
+                    <ToolIllustration tool={tool.slug} className={styles.toolIllustration} />
                   </div>
 
                   <div className={styles.toolCardBody}>
@@ -461,7 +397,10 @@ export function HomeExperience() {
           </div>
         </section>
 
-        <section className={styles.workflow} id="workflow" aria-labelledby="workflow-title">
+        <div className={styles.sectionBand} aria-hidden="true" />
+
+        <section className={`${styles.workflow} ambient-host`} id="workflow" aria-labelledby="workflow-title">
+          <AmbientLayer seed={5} density={0.8} />
           <div className={styles.workflowTitle}>
             <p className={styles.kicker}>{copy.workflowEyebrow}</p>
             <h2 id="workflow-title">{copy.workflowTitleA}<br /><em>{copy.workflowTitleB}</em></h2>
@@ -478,7 +417,10 @@ export function HomeExperience() {
           </div>
         </section>
 
-        <section className={styles.localProof} aria-labelledby="local-title">
+        <div className={styles.sectionBand} aria-hidden="true" />
+
+        <section className={`${styles.localProof} ambient-host`} id="local" aria-labelledby="local-title">
+          <AmbientLayer seed={8} density={0.8} />
           <div className={styles.localCopy}>
             <p className={styles.kicker}>{copy.localEyebrow}</p>
             <h2 id="local-title">{copy.localTitleA}<br /><em>{copy.localTitleB}</em></h2>
@@ -497,6 +439,8 @@ export function HomeExperience() {
             <div className={styles.blockedRoute}><span aria-hidden="true">×</span><small>{copy.routeCloud}</small><strong>{copy.routeCloudStatus}</strong></div>
           </div>
         </section>
+
+        <SequenceNav items={SEQUENCE} />
 
         <footer className={styles.footer}>
           <BrandMark />

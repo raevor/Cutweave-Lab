@@ -33,6 +33,20 @@
 /geminiresearch.md
 /discord.txt
 
+# Local agent handoffs, reports and test-scope notes. `*.md` already covers
+# them; these explicit entries keep them local even if that rule changes.
+/HANDOFF.md
+/DESIGN_HANDOFF.md
+/CODEX_REPORT.md
+/CUTWEAVE_PRD.md
+/HACKATHON_RULES_S4.md
+/*HANDOFF*.md
+/*REPORT*.md
+
+# Local test media (synthetic fixtures for manual and TestSprite runs). Test
+# runners receive them directly; they are not part of the public source.
+/test-fixtures/
+
 # Previously tracked AGENTS.md, TASKS.md and README.md remain public.
 
 # Local AI/IDE state may contain machine paths, conversation history or keys.

@@ -1,23 +1,23 @@
 .page {
   --light-opacity: 0;
-  --signal: oklch(0.79 0.19 128);
-  --bg: oklch(0.985 0.007 225);
-  --bg-soft: oklch(0.955 0.018 225);
-  --bg-wash: oklch(0.92 0.035 225);
-  --surface: oklch(0.997 0.003 225);
+  --signal: oklch(0.79 0.158 72);
+  --bg: oklch(0.985 0.00385 265);
+  --bg-soft: oklch(0.955 0.0099 265);
+  --bg-wash: oklch(0.92 0.0193 265);
+  --surface: oklch(0.997 0.00165 265);
   --surface-raised: oklch(1 0 0);
-  --ink: oklch(0.31 0.045 230);
-  --ink-strong: oklch(0.22 0.055 235);
-  --muted: oklch(0.53 0.045 230);
-  --line: oklch(0.82 0.025 225);
-  --line-strong: oklch(0.43 0.08 230);
-  --accent: oklch(0.62 0.12 222);
-  --accent-deep: oklch(0.43 0.13 240);
-  --accent-soft: oklch(0.9 0.055 220);
+  --ink: oklch(0.31 0.0248 265);
+  --ink-strong: oklch(0.22 0.0303 265);
+  --muted: oklch(0.53 0.0248 265);
+  --line: oklch(0.82 0.0138 265);
+  --line-strong: oklch(0.43 0.044 265);
+  --accent: oklch(0.56 0.17 255);
+  --accent-deep: oklch(0.46 0.18 258);
+  --accent-soft: oklch(0.93 0.035 250);
   --danger: oklch(0.58 0.18 28);
-  --shadow: oklch(0.38 0.08 232 / .24);
-  --shadow-solid: oklch(0.35 0.09 235);
-  --button-ink: oklch(0.985 0.006 225);
+  --shadow: oklch(0.38 0.044 265 / .24);
+  --shadow-solid: oklch(0.33 0.1 258);
+  --button-ink: oklch(0.985 0.0033 265);
   --toggle-main: var(--surface-raised);
   --toggle-highlight: oklch(1 0 0);
   --toggle-shade: var(--bg-soft);
@@ -25,14 +25,14 @@
   --toggle-inner: var(--accent-soft);
   --toggle-edge: var(--accent);
   --toggle-drop: var(--shadow-solid);
-  --btn-main: oklch(0.54 0.14 235);
-  --btn-highlight: oklch(0.72 0.12 220);
-  --btn-shade: oklch(0.43 0.14 242);
-  --btn-border: oklch(0.3 0.1 242);
-  --btn-inner: oklch(0.88 0.055 218 / .9);
-  --btn-edge: oklch(0.33 0.11 240);
-  --btn-drop: oklch(0.24 0.075 238);
-  --grid: oklch(0.48 0.06 225 / .08);
+  --btn-main: oklch(0.55 0.18 256);
+  --btn-highlight: oklch(0.7 0.14 250);
+  --btn-shade: oklch(0.45 0.18 258);
+  --btn-border: oklch(0.3 0.12 260);
+  --btn-inner: oklch(0.88 0.0303 265 / .9);
+  --btn-edge: oklch(0.34 0.13 260);
+  --btn-drop: oklch(0.24 0.0413 265);
+  --grid: oklch(0.48 0.033 265 / .08);
   min-height: 100svh;
   position: relative;
   isolation: isolate;
@@ -43,38 +43,38 @@
 }
 
 :global(html[data-theme="dark"]) .page {
-  --bg: oklch(0.165 0.043 238);
-  --bg-soft: oklch(0.19 0.046 237);
-  --bg-wash: oklch(0.225 0.05 234);
-  --surface: oklch(0.205 0.042 238);
-  --surface-raised: oklch(0.235 0.048 236);
-  --ink: oklch(0.91 0.02 220);
-  --ink-strong: oklch(0.975 0.009 220);
-  --muted: oklch(0.72 0.045 224);
-  --line: oklch(0.36 0.045 232);
-  --line-strong: oklch(0.69 0.09 222);
+  --bg: oklch(0.165 0.0237 265);
+  --bg-soft: oklch(0.19 0.0253 265);
+  --bg-wash: oklch(0.225 0.0275 265);
+  --surface: oklch(0.205 0.0231 265);
+  --surface-raised: oklch(0.235 0.0264 265);
+  --ink: oklch(0.91 0.011 265);
+  --ink-strong: oklch(0.975 0.00495 265);
+  --muted: oklch(0.72 0.0248 265);
+  --line: oklch(0.36 0.0248 265);
+  --line-strong: oklch(0.69 0.0964 60);
   --accent: var(--signal);
-  --accent-deep: oklch(0.76 0.18 128);
-  --accent-soft: oklch(0.29 0.075 150);
+  --accent-deep: oklch(0.76 0.15 72);
+  --accent-soft: oklch(0.29 0.0625 72);
   --danger: oklch(0.72 0.16 28);
-  --shadow: oklch(0.06 0.03 240 / .55);
-  --shadow-solid: oklch(0.08 0.035 240);
-  --button-ink: oklch(0.16 0.043 238);
-  --toggle-main: oklch(0.225 0.048 237);
-  --toggle-highlight: oklch(0.31 0.06 233);
-  --toggle-shade: oklch(0.16 0.043 239);
+  --shadow: oklch(0.06 0.0165 265 / .55);
+  --shadow-solid: oklch(0.08 0.0193 265);
+  --button-ink: oklch(0.16 0.0237 265);
+  --toggle-main: oklch(0.225 0.0264 265);
+  --toggle-highlight: oklch(0.31 0.033 265);
+  --toggle-shade: oklch(0.16 0.0237 265);
   --toggle-border: var(--signal);
-  --toggle-inner: oklch(0.75 0.17 130 / .42);
-  --toggle-edge: oklch(0.55 0.15 134);
-  --toggle-drop: oklch(0.075 0.035 240);
-  --btn-main: oklch(0.7 0.18 128);
-  --btn-highlight: oklch(0.86 0.2 126);
-  --btn-shade: oklch(0.58 0.17 130);
-  --btn-border: oklch(0.88 0.16 126);
-  --btn-inner: oklch(0.93 0.13 124 / .72);
-  --btn-edge: oklch(0.42 0.12 135);
-  --btn-drop: oklch(0.075 0.035 240);
-  --grid: oklch(0.72 0.08 225 / .07);
+  --toggle-inner: oklch(0.75 0.142 72 / .42);
+  --toggle-edge: oklch(0.55 0.125 72);
+  --toggle-drop: oklch(0.075 0.0193 265);
+  --btn-main: oklch(0.7 0.15 72);
+  --btn-highlight: oklch(0.86 0.158 72);
+  --btn-shade: oklch(0.58 0.142 72);
+  --btn-border: oklch(0.88 0.133 72);
+  --btn-inner: oklch(0.93 0.108 72 / .72);
+  --btn-edge: oklch(0.42 0.1 72);
+  --btn-drop: oklch(0.075 0.0193 265);
+  --grid: oklch(0.72 0.044 265 / .07);
 }
 
 .pointerLight {
@@ -369,7 +369,6 @@
   .page *::before,
   .page *::after {
     scroll-behavior: auto !important;
-    transition-duration: .01ms !important;
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
   }

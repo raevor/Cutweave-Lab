@@ -1,0 +1,35 @@
+.backdrop {
+  --tl-face: oklch(0.74 0.15 295);
+  --tl-anime: oklch(0.82 0.12 168);
+  --tl-bass: oklch(0.75 0.16 32);
+  --tl-playhead: oklch(0.83 0.15 72);
+  --tl-ink: oklch(0.95 0.008 265);
+  --tl-muted: oklch(0.66 0.02 265);
+  --tl-line: oklch(0.34 0.025 265);
+  --tl-clip: oklch(0.22 0.022 265);
+  --tl-bg: oklch(0.17 0.022 265);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.backdrop canvas { display: block; }
+
+:global(html[data-theme="light"]) .backdrop {
+  --tl-face: oklch(0.55 0.18 295);
+  --tl-anime: oklch(0.58 0.11 170);
+  --tl-bass: oklch(0.6 0.17 32);
+  --tl-playhead: oklch(0.55 0.19 256);
+  --tl-ink: oklch(0.24 0.03 265);
+  --tl-muted: oklch(0.5 0.025 265);
+  --tl-line: oklch(0.84 0.015 265);
+  --tl-clip: oklch(0.97 0.006 265);
+  --tl-bg: oklch(0.985 0.004 265);
+}
+
+.band { opacity: .55; }
+
+@media (prefers-reduced-motion: reduce) {
+  .band { opacity: .4; }
+}

@@ -1,4 +1,4 @@
-.backdrop { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 24px; background: oklch(0.055 0.01 250 / .96); }
+.backdrop { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 24px; background: oklch(0.055 0.008 265 / .96); }
 .dialog { width: min(1080px, 100%); max-height: calc(100vh - 48px); overflow: auto; border: 1px solid var(--face-line); background: var(--face-panel); color: var(--face-text); box-shadow: 16px 16px 0 color-mix(in oklch, var(--face-signal) 16%, transparent); }
 .header { min-height: 86px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 18px 22px; border-bottom: 1px solid var(--face-line); }
 .header p { margin: 0 0 8px; color: var(--face-signal); font: 800 8px/1 var(--font-mono); letter-spacing: .14em; }
@@ -6,9 +6,9 @@
 .header button { width: 42px; height: 42px; border: 1px solid var(--face-line); background: transparent; color: inherit; cursor: pointer; font-size: 22px; }
 .header button:hover { border-color: var(--face-danger); background: var(--face-danger); }
 .copy { margin: 0; padding: 15px 22px; color: var(--face-muted); font-size: 12px; line-height: 1.5; }
-.stage { --crop-x: 24%; --crop-y: 8%; --crop-width: 52%; --crop-height: 84%; position: relative; contain: layout paint; margin: 0 22px; overflow: hidden; border: 1px solid oklch(0.37 0.02 250); background: #020304; cursor: crosshair; touch-action: none; user-select: none; }
+.stage { --crop-x: 24%; --crop-y: 8%; --crop-width: 52%; --crop-height: 84%; position: relative; contain: layout paint; margin: 0 22px; overflow: hidden; border: 1px solid oklch(0.37 0.016 265); background: #020304; cursor: crosshair; touch-action: none; user-select: none; }
 .stage > img { width: 100%; height: auto; display: block; pointer-events: none; }
-.shade { position: absolute; z-index: 1; display: block; background: oklch(0.025 0.006 250 / .74); pointer-events: none; }
+.shade { position: absolute; z-index: 1; display: block; background: oklch(0.025 0.0048 265 / .74); pointer-events: none; }
 .shadeTop { inset: 0 0 auto; height: var(--crop-y); }
 .shadeRight { left: calc(var(--crop-x) + var(--crop-width)); right: 0; top: var(--crop-y); height: var(--crop-height); }
 .shadeBottom { inset: calc(var(--crop-y) + var(--crop-height)) 0 0; }

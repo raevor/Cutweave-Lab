@@ -38,6 +38,7 @@
   "exclude": [
     "node_modules",
     ".cache",
+    "tmp",
     "src/lib/video-enhancer",
     "src/workers/video-enhancer*.ts",
     "src/app/lab/*/video-enhancer-workspace.tsx",

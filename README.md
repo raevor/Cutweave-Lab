@@ -25,9 +25,23 @@ Details: [`docs/PRIVACY.md`](docs/PRIVACY.md).
 
 ## Automated testing
 
-The live app is tested with [TestSprite](https://www.testsprite.com). The TestSprite GitHub App runs the suite automatically against each pull request's Vercel preview deployment and reports the result on the PR.
+The live app is tested with [TestSprite](https://www.testsprite.com). The TestSprite GitHub App runs the suite automatically against each pull request's Vercel preview deployment and reports the result on the PR. `main` is protected: a pull request can only be merged once the required **TestSprite V3** check passes, and force pushes to `main` are blocked.
 
-Suite coverage is documented once the suite is generated and stable.
+The suite has 39 browser tests in nine groups:
+
+| Area | Tests | What they check |
+|---|---:|---|
+| Navigation & shell | 8 | Brand and hero, the header tools menu (open, launch a tool, close with Escape, open the tool desk), theme switch persisting after reload, the How it works and Roadmap links, and the right-edge section timeline |
+| Home page | 5 | Exactly three tool cards in order with working routes, the facts strip, footer links and Back to top, hero calls to action and the media boundary section |
+| Tool library | 5 | Exactly three tools, each Start tool link opening the right workspace, the tool desk summary and the privacy link |
+| Face Recognition | 5 | Empty source state, privacy copy, 0 B sent to server, no scan action before a video is chosen, no results shown before analysis, the All tools link |
+| Anime Face Recognition | 4 | The first-visit notice (dismiss, keep hidden after reload, reopen from the header) and the empty source state |
+| Music & Bass Markers | 3 | Empty state, no analysis or export before a file is loaded, accepted formats and the privacy link |
+| Privacy | 4 | Local processing and 0 B media transfer, no identity lookup or biometric database query, what the browser downloads versus what never leaves the tab, the Open local tools link |
+| Roadmap | 2 | Exactly three shipped tools and the link to the tool library |
+| Not found | 3 | The custom 404 page for unknown tool and top-level routes and the way back home |
+
+Cloud tests never receive personal media. Real face matching, model accuracy and GPU performance are out of scope for the remote runner; they are covered by the local unit tests and manual checks. The responsive layout is also checked locally: the cloud runner cannot resize its viewport, so a 390px mobile test was removed from the plan after it came back blocked.
 
 Local checks:
 

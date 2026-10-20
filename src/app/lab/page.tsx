@@ -1,27 +1,21 @@
-import Image from "next/image";
+import type { CSSProperties } from "react";
 import Link from "next/link";
-import faceRecognitionLightCover from "../../../assets/face-recognition.png";
-import faceRecognitionDarkCover from "../../../assets/face-recognition-dark.png";
-import animeFaceRecognitionLightCover from "../../../assets/anime-face-recognition.png";
-import animeFaceRecognitionDarkCover from "../../../assets/anime-face-recognition-dark.png";
 import { PublicPageFrame } from "@/components/public-page-frame";
+import { TimelineBackdrop } from "@/components/timeline-backdrop";
+import { ToolIllustration } from "@/components/tool-illustration";
 import { ToolRouteLink } from "@/components/tool-route-link";
 import { siteCopy as text } from "@/i18n/messages/en";
 import { isToolAvailable, primaryTools } from "@/lib/tool-catalog";
+import { AmbientLayer } from "@/components/ambient-layer";
+import { SequenceNav } from "@/components/sequence-nav";
 import styles from "./lab.module.css";
-
-const trackPoints = {
-  "face-recognition": ["11%", "36%", "63%", "84%"],
-  "bass-markers": ["17%", "31%", "55%", "79%", "91%"],
-  "anime-face-recognition": ["10%", "32%", "57%", "81%"],
-} as const;
 
 export default function LabPage() {
   const copy = text.library;
 
   return (
     <PublicPageFrame activePage="tools">
-      <section className={styles.hero} aria-labelledby="lab-title">
+      <section className={styles.hero} id="overview" aria-labelledby="lab-title">
         <div className={styles.heroCopy}>
           <p className={styles.kicker}><span>{copy.eyebrowA}</span><span>{copy.eyebrowB}</span></p>
           <h1 id="lab-title"><span>{copy.titleA}</span><em>{copy.titleB}</em></h1>
@@ -31,13 +25,13 @@ export default function LabPage() {
 
         <aside className={styles.dispatch} aria-label="Cutweave tool desk overview">
           <header><span>CUT/WEAVE / TOOL DESK</span><b>{String(primaryTools.length).padStart(2, "0")} FOCUSED ROUTES</b></header>
-          <div className={styles.dispatchScreen}>
-            <div className={styles.dispatchTarget} aria-hidden="true"><i /><i /><i /><i /></div>
-            <span className={styles.dispatchLabel}>CHOOSE THE JOB<br />BEFORE THE SOURCE</span>
+          <div className={styles.dispatchScreen} aria-hidden="true">
+            <TimelineBackdrop variant="hero" className={styles.dispatchTimeline} />
+            <span className={styles.dispatchLabel}>Choose the job<br />before the source</span>
           </div>
           <div className={styles.dispatchTracks} aria-hidden="true">
             {primaryTools.map((tool) => (
-              <div key={tool.slug}>
+              <div key={tool.slug} data-tool-key={tool.slug}>
                 <span>{tool.index}</span>
                 <strong>{text.tools[tool.slug].title}</strong>
                 <i><b /></i>
@@ -54,7 +48,8 @@ export default function LabPage() {
         <div><small>03</small><strong>Reviewable output</strong><span>You decide what leaves</span></div>
       </section>
 
-      <section className={styles.launcher} aria-labelledby="launcher-title">
+      <section className={`${styles.launcher} ambient-host`} aria-labelledby="launcher-title">
+        <AmbientLayer seed={4} />
         <header className={styles.sectionHead}>
           <div>
             <p className={styles.kicker}>Tool desk / {String(primaryTools.length).padStart(2, "0")} routes</p>
@@ -64,61 +59,19 @@ export default function LabPage() {
         </header>
 
         <div className={styles.toolStack}>
-          {primaryTools.map((tool, index) => {
+          {primaryTools.map((tool) => {
             const available = isToolAvailable(tool.slug);
             const toolCopy = text.tools[tool.slug];
-            const cover = tool.slug === "face-recognition"
-              ? { light: faceRecognitionLightCover, dark: faceRecognitionDarkCover }
-              : tool.slug === "anime-face-recognition"
-                ? { light: animeFaceRecognitionLightCover, dark: animeFaceRecognitionDarkCover }
-                : null;
 
             return (
-              <article className={styles.toolCard} data-index={tool.index} key={tool.slug}>
+              <article className={styles.toolCard} id={`tool-${tool.slug}`} data-index={tool.index} data-tool-key={tool.slug} key={tool.slug}>
                 <div className={styles.toolVisual} aria-hidden="true">
                   <div className={styles.visualHead}>
-                    <span>TRACK / {tool.index}</span>
-                    <b>{available ? "ACTIVE TOOL" : "INTERFACE PREVIEW"}</b>
+                    <span>Track {tool.index}</span>
+                    <b>{available ? "Ready to use" : "In development"}</b>
                   </div>
-                  <div className={`${styles.visualFrame} ${cover ? styles.visualFrameCover : ""}`}>
-                    {cover ? (
-                      <>
-                        <Image
-                          src={cover.light}
-                          alt={toolCopy.title}
-                          fill
-                          sizes="(max-width: 980px) 100vw, 1672px"
-                          className={`${styles.coverImage} ${styles.coverImageLight}`}
-                          priority
-                          unoptimized
-                        />
-                        <Image
-                          src={cover.dark}
-                          alt={toolCopy.title}
-                          fill
-                          sizes="(max-width: 980px) 100vw, 1672px"
-                          className={`${styles.coverImage} ${styles.coverImageDark}`}
-                          priority
-                          unoptimized
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <span>{toolCopy.anatomy}</span>
-                        <div className={styles.focusBox}><i /><i /><i /><i /></div>
-                        <b>{String(index + 1).padStart(2, "0")} / {String(primaryTools.length).padStart(2, "0")}</b>
-                      </>
-                    )}
-                  </div>
-                  <div className={styles.visualTimeline}>
-                    <span>00:00</span>
-                    <div>
-                      {trackPoints[tool.slug].map((left) => <i style={{ left }} key={left} />)}
-                      <b style={{ left: `${28 + index * 19}%` }} />
-                    </div>
-                    <span>END</span>
-                  </div>
-                  <div className={styles.visualOutput}><span>EXPECTED OUTPUT</span><strong>{toolCopy.anatomyOutput}</strong></div>
+                  <ToolIllustration tool={tool.slug} className={styles.visualScene} />
+                  <div className={styles.visualOutput}><span>You get</span><strong>{toolCopy.anatomyOutput}</strong></div>
                 </div>
 
                 <div className={styles.toolBody}>
@@ -142,7 +95,10 @@ export default function LabPage() {
         </div>
       </section>
 
-      <section className={styles.guide} aria-labelledby="guide-title">
+      <div className={styles.sectionBand} aria-hidden="true" />
+
+      <section className={`${styles.guide} ambient-host`} id="guide" aria-labelledby="guide-title">
+        <AmbientLayer seed={9} density={0.7} />
         <div className={styles.guideTitle}>
           <p className={styles.kicker}>{copy.guideEyebrow}</p>
           <h2 id="guide-title">{copy.guideTitle}</h2>
@@ -151,7 +107,7 @@ export default function LabPage() {
           {copy.guideSteps.map((step, index) => (
             <li key={step.title}>
               <span>0{index + 1}</span>
-              <div aria-hidden="true"><i /></div>
+              <div aria-hidden="true" style={{ "--step-fill": `${Math.round(((index + 1) / copy.guideSteps.length) * 100)}%` } as CSSProperties}><i /></div>
               <strong>{step.title}</strong>
               <p>{step.copy}</p>
             </li>
@@ -167,6 +123,15 @@ export default function LabPage() {
         <p>{copy.boundaryCopy}</p>
         <Link className={styles.boundaryAction} href="/privacy">{copy.boundaryAction}<span aria-hidden="true">→</span></Link>
       </section>
+      <SequenceNav
+        items={[
+          { id: "overview", label: "Overview" },
+          { id: "tool-face-recognition", label: "Face Recognition", tool: "face-recognition" },
+          { id: "tool-anime-face-recognition", label: "Anime Face Recognition", tool: "anime-face-recognition" },
+          { id: "tool-bass-markers", label: "Music & Bass Markers", tool: "bass-markers" },
+          { id: "guide", label: "Picking a tool" },
+        ]}
+      />
     </PublicPageFrame>
   );
 }

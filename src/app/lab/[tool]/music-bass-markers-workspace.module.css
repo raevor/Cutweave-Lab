@@ -1,31 +1,31 @@
 .workspace {
-  --music-bg: oklch(0.165 0.043 238);
-  --music-panel: oklch(0.19 0.046 237);
-  --music-panel-raised: oklch(0.225 0.05 234);
-  --music-visual: oklch(0.145 0.038 239);
-  --music-line: oklch(0.36 0.045 232);
-  --music-line-soft: oklch(0.28 0.04 234);
-  --music-text: oklch(0.975 0.009 220);
-  --music-muted: oklch(0.72 0.045 224);
-  --music-faint: oklch(0.57 0.04 228);
-  --music-signal: oklch(0.79 0.19 128);
-  --music-signal-deep: oklch(0.71 0.18 128);
-  --music-online: oklch(0.79 0.19 128);
-  --music-impact: oklch(0.81 0.2 127);
-  --music-bass: oklch(0.7 0.24 25);
+  --music-bg: oklch(0.165 0.0237 265);
+  --music-panel: oklch(0.19 0.0253 265);
+  --music-panel-raised: oklch(0.225 0.0275 265);
+  --music-visual: oklch(0.145 0.0209 265);
+  --music-line: oklch(0.36 0.0248 265);
+  --music-line-soft: oklch(0.28 0.022 265);
+  --music-text: oklch(0.975 0.00495 265);
+  --music-muted: oklch(0.72 0.0248 265);
+  --music-faint: oklch(0.57 0.022 265);
+  --music-signal: oklch(0.79 0.179 32);
+  --music-signal-deep: oklch(0.71 0.17 32);
+  --music-online: oklch(0.82 0.13 160);
+  --music-impact: oklch(0.84 0.13 200);
+  --music-bass: oklch(0.72 0.2 345);
   --music-manual: oklch(0.82 0.18 78);
   --music-danger: oklch(0.68 0.19 28);
-  --music-grid: oklch(0.72 0.08 225 / .07);
-  --music-glow: oklch(0.36 0.1 145 / .27);
-  --music-button-ink: oklch(0.16 0.043 238);
-  --toggle-main: oklch(0.225 0.048 237);
-  --toggle-highlight: oklch(0.31 0.06 233);
-  --toggle-shade: oklch(0.16 0.043 239);
+  --music-grid: oklch(0.72 0.044 265 / .07);
+  --music-glow: oklch(0.36 0.0944 32 / .27);
+  --music-button-ink: oklch(0.16 0.0237 265);
+  --toggle-main: oklch(0.225 0.0264 265);
+  --toggle-highlight: oklch(0.31 0.033 265);
+  --toggle-shade: oklch(0.16 0.0237 265);
   --toggle-border: var(--music-signal);
-  --toggle-inner: oklch(0.75 0.17 130 / .42);
-  --toggle-edge: oklch(0.55 0.15 134);
-  --toggle-drop: oklch(0.075 0.035 240);
-  --music-shadow: oklch(0.06 0.03 240 / .55);
+  --toggle-inner: oklch(0.75 0.161 32 / .42);
+  --toggle-edge: oklch(0.55 0.142 32);
+  --toggle-drop: oklch(0.075 0.0193 265);
+  --music-shadow: oklch(0.06 0.0165 265 / .55);
   min-height: 100vh;
   padding: 0 clamp(20px, 3.3vw, 58px) 80px;
   overflow: hidden;
@@ -39,33 +39,33 @@
 }
 
 :global(html[data-theme="light"]) .workspace {
-  --music-bg: oklch(0.985 0.007 225);
-  --music-panel: oklch(0.997 0.003 225);
-  --music-panel-raised: oklch(0.95 0.022 225);
-  --music-visual: oklch(0.94 0.027 225);
-  --music-line: oklch(0.78 0.038 225);
-  --music-line-soft: oklch(0.87 0.022 225);
-  --music-text: oklch(0.2 0.055 235);
-  --music-muted: oklch(0.49 0.052 230);
-  --music-faint: oklch(0.6 0.04 228);
-  --music-signal: oklch(0.52 0.15 230);
-  --music-signal-deep: oklch(0.43 0.14 237);
-  --music-online: oklch(0.56 0.16 128);
-  --music-impact: oklch(0.5 0.16 130);
-  --music-bass: oklch(0.56 0.22 25);
-  --music-manual: oklch(0.58 0.16 72);
+  --music-bg: oklch(0.985 0.00385 265);
+  --music-panel: oklch(0.997 0.00165 265);
+  --music-panel-raised: oklch(0.95 0.0121 265);
+  --music-visual: oklch(0.94 0.0149 265);
+  --music-line: oklch(0.78 0.0209 265);
+  --music-line-soft: oklch(0.87 0.0121 265);
+  --music-text: oklch(0.2 0.0303 265);
+  --music-muted: oklch(0.49 0.0286 265);
+  --music-faint: oklch(0.6 0.022 265);
+  --music-signal: oklch(0.52 0.182 32);
+  --music-signal-deep: oklch(0.43 0.17 32);
+  --music-online: oklch(0.52 0.12 160);
+  --music-impact: oklch(0.5 0.12 220);
+  --music-bass: oklch(0.55 0.2 345);
+  --music-manual: oklch(0.55 0.19 256);
   --music-danger: oklch(0.58 0.18 28);
-  --music-grid: oklch(0.48 0.06 225 / .08);
-  --music-glow: oklch(0.75 0.09 220 / .22);
-  --music-button-ink: oklch(0.985 0.006 225);
+  --music-grid: oklch(0.48 0.033 265 / .08);
+  --music-glow: oklch(0.75 0.109 32 / .22);
+  --music-button-ink: oklch(0.985 0.0033 265);
   --toggle-main: oklch(1 0 0);
   --toggle-highlight: oklch(1 0 0);
-  --toggle-shade: oklch(0.955 0.018 225);
+  --toggle-shade: oklch(0.955 0.0099 265);
   --toggle-border: var(--music-signal-deep);
-  --toggle-inner: oklch(0.9 0.055 220);
-  --toggle-edge: oklch(0.62 0.12 222);
-  --toggle-drop: oklch(0.35 0.09 235);
-  --music-shadow: oklch(0.38 0.08 232 / .24);
+  --toggle-inner: oklch(0.9 0.0303 265);
+  --toggle-edge: oklch(0.62 0.146 32);
+  --toggle-drop: oklch(0.35 0.109 32);
+  --music-shadow: oklch(0.38 0.044 265 / .24);
 }
 
 .workspace :global(.brand-mark) { color: var(--music-text); }
@@ -134,7 +134,7 @@
   letter-spacing: -.075em;
   text-transform: uppercase;
 }
-.hero h1 em { color: var(--music-signal); font: 400 .88em/.88 Georgia, "Times New Roman", serif; text-transform: none; }
+.hero h1 em { color: var(--music-signal); font: 300 .88em/.88 var(--font-sans); font-stretch: 62%; font-variation-settings: "wdth" 62; font-style: normal; letter-spacing: -0.035em; text-transform: none; }
 .heroPromise { max-width: 790px; margin: 25px 0 0; color: var(--music-muted); font-size: clamp(16px, 1.35vw, 21px); line-height: 1.45; letter-spacing: -.02em; }
 .localStatus { min-width: 240px; padding: 18px 20px; display: grid; grid-template-columns: 1fr auto; gap: 7px 20px; border: 1px solid var(--music-line); background: var(--music-panel); }
 .localStatus span { color: var(--music-text); font: 750 9px/1.3 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
@@ -156,15 +156,11 @@
 .intake { min-height: 540px; display: grid; grid-template-columns: minmax(300px, .78fr) minmax(380px, 1.04fr) minmax(230px, .55fr); border: 1px solid var(--music-line); background: var(--music-panel); transition: border-color 180ms ease, box-shadow 180ms ease; }
 .intakeDragging { border-color: var(--music-signal); box-shadow: inset 0 0 0 3px color-mix(in oklch, var(--music-signal) 22%, transparent); }
 .intakeVisual { min-height: 540px; position: relative; overflow: hidden; display: grid; place-items: center; border-right: 1px solid var(--music-line); background: var(--music-visual); }
-.intakeVisual::before, .intakeVisual::after { content: ""; position: absolute; border: 1px solid var(--music-line); }
-.intakeVisual::before { inset: 13%; }
-.intakeVisual::after { inset: 23% 11%; border-color: color-mix(in oklch, var(--music-signal) 60%, var(--music-line)); }
 .intakeVisual > span { position: absolute; top: 19px; left: 19px; color: var(--music-signal); font: 800 8px/1 var(--font-mono); letter-spacing: .1em; }
 .intakeVisual > b { position: absolute; right: 20px; bottom: 18px; color: var(--music-signal); font: 900 50px/.8 var(--font-mono); opacity: .24; }
-.intakeGuide { width: 72%; height: 104px; position: relative; z-index: 2; display: grid; place-items: center; border-top: 1px solid var(--music-line); border-bottom: 1px solid var(--music-line); }
-.intakeGuide::before { content: ""; height: 1px; position: absolute; right: 0; left: 0; top: 50%; background: var(--music-line); }
-.intakeGuide i { width: 2px; position: absolute; top: -14px; bottom: -14px; left: 50%; background: var(--music-signal); box-shadow: 0 0 12px color-mix(in oklch, var(--music-signal) 45%, transparent); }
-.intakeGuide strong { z-index: 1; padding: 8px 12px; border: 1px solid var(--music-line); background: var(--music-visual); color: var(--music-muted); font: 800 8px/1 var(--font-mono); letter-spacing: .08em; }
+.intakeGuide { position: absolute; z-index: 2; bottom: 13%; left: 50%; transform: translateX(-50%); }
+.intakeGuide i { display: none; }
+.intakeGuide strong { z-index: 1; display: block; white-space: nowrap; padding: 8px 12px; border: 1px solid var(--music-line); background: var(--music-visual); color: var(--music-muted); font: 800 8px/1 var(--font-mono); letter-spacing: .08em; }
 .intakeCopy { padding: clamp(38px, 5vw, 78px); display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
 .intakeCopy h2, .analysisControls h2, .editorHeader h2, .exportPanel h2 { margin: 18px 0 0; color: var(--music-text); font-size: clamp(38px, 4.2vw, 69px); line-height: .88; letter-spacing: -.065em; text-transform: uppercase; }
 .intakeCopy > span, .analysisControls > span, .exportPanel > div:first-child > span { max-width: 620px; margin-top: 25px; color: var(--music-muted); font-size: 14px; line-height: 1.6; }
@@ -411,6 +407,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .workspace *, .workspace *::before, .workspace *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+  .workspace *, .workspace *::before, .workspace *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
   .progressPanel .progressIndeterminate i { width: 100%; transform: none; animation: none; }
 }
