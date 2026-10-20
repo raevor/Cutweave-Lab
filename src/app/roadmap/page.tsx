@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicPageFrame } from "@/components/public-page-frame";
+import { ToolIllustration } from "@/components/tool-illustration";
+import { AmbientLayer } from "@/components/ambient-layer";
 import styles from "./roadmap.module.css";
 
 export const metadata: Metadata = {
@@ -11,6 +13,7 @@ export const metadata: Metadata = {
 const roadmap = [
   {
     index: "01",
+    slug: "face-recognition",
     phase: "Available now",
     status: "Refinement ongoing",
     title: "Face Recognition",
@@ -19,6 +22,7 @@ const roadmap = [
   },
   {
     index: "02",
+    slug: "anime-face-recognition",
     phase: "Available now",
     status: "Local beta",
     title: "Anime Face Recognition",
@@ -27,6 +31,7 @@ const roadmap = [
   },
   {
     index: "03",
+    slug: "bass-markers",
     phase: "Available now",
     status: "Local beta",
     title: "Music & Bass Markers",
@@ -38,7 +43,7 @@ const roadmap = [
 export default function RoadmapPage() {
   return (
     <PublicPageFrame activePage="roadmap">
-      <div className={styles.shell}>
+      <div className={`${styles.shell} ${styles.shellTop}`}>
         <header className={styles.hero}>
           <p className={styles.kicker}><span>Roadmap</span><span>Living plan</span></p>
           <h1>What comes<br /><em>next.</em></h1>
@@ -47,10 +52,16 @@ export default function RoadmapPage() {
             Priorities may move as we test each tool with real editing workflows.
           </p>
         </header>
+      </div>
 
+      <div className={styles.band} aria-hidden="true" />
+
+      <div className="ambient-host">
+        <AmbientLayer seed={6} />
+      <div className={`${styles.shell} ${styles.shellBody}`}>
         <section className={styles.timeline} aria-label="Cutweave product roadmap">
           {roadmap.map((item) => (
-            <article className={styles.item} data-tone={item.tone} key={item.title}>
+            <article className={styles.item} data-tone={item.tone} data-tool-key={item.slug} key={item.title}>
               <div className={styles.marker} aria-hidden="true"><span>{item.index}</span><i /></div>
               <div className={styles.itemHead}>
                 <p>{item.phase}</p>
@@ -58,6 +69,7 @@ export default function RoadmapPage() {
               </div>
               <h2>{item.title}</h2>
               <p className={styles.itemCopy}>{item.copy}</p>
+              <ToolIllustration tool={item.slug} className={styles.itemScene} />
             </article>
           ))}
         </section>
@@ -69,6 +81,7 @@ export default function RoadmapPage() {
           </div>
           <Link href="/lab">Explore the current tools <span aria-hidden="true">→</span></Link>
         </aside>
+      </div>
       </div>
     </PublicPageFrame>
   );

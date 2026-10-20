@@ -1,22 +1,22 @@
 .page {
   --light-opacity: 0;
-  --signal: oklch(0.79 0.19 128);
-  --bg: oklch(0.985 0.007 225);
-  --bg-soft: oklch(0.955 0.018 225);
-  --bg-wash: oklch(0.92 0.035 225);
-  --surface: oklch(0.997 0.003 225);
+  --signal: oklch(0.79 0.158 72);
+  --bg: oklch(0.985 0.00385 265);
+  --bg-soft: oklch(0.955 0.0099 265);
+  --bg-wash: oklch(0.92 0.0193 265);
+  --surface: oklch(0.997 0.00165 265);
   --surface-raised: oklch(1 0 0);
-  --ink: oklch(0.31 0.045 230);
-  --ink-strong: oklch(0.22 0.055 235);
-  --muted: oklch(0.53 0.045 230);
-  --line: oklch(0.82 0.025 225);
-  --line-strong: oklch(0.43 0.08 230);
-  --accent: oklch(0.62 0.12 222);
-  --accent-deep: oklch(0.43 0.13 240);
-  --accent-soft: oklch(0.9 0.055 220);
-  --button-ink: oklch(0.985 0.006 225);
-  --shadow: oklch(0.38 0.08 232 / .24);
-  --shadow-solid: oklch(0.35 0.09 235);
+  --ink: oklch(0.31 0.0248 265);
+  --ink-strong: oklch(0.22 0.0303 265);
+  --muted: oklch(0.53 0.0248 265);
+  --line: oklch(0.82 0.0138 265);
+  --line-strong: oklch(0.43 0.044 265);
+  --accent: oklch(0.56 0.17 255);
+  --accent-deep: oklch(0.46 0.18 258);
+  --accent-soft: oklch(0.93 0.035 250);
+  --button-ink: oklch(0.985 0.0033 265);
+  --shadow: oklch(0.38 0.044 265 / .24);
+  --shadow-solid: oklch(0.33 0.1 258);
   --toggle-main: var(--surface-raised);
   --toggle-highlight: oklch(1 0 0);
   --toggle-shade: var(--bg-soft);
@@ -24,14 +24,14 @@
   --toggle-inner: var(--accent-soft);
   --toggle-edge: var(--accent);
   --toggle-drop: var(--shadow-solid);
-  --btn-main: oklch(0.54 0.14 235);
-  --btn-highlight: oklch(0.72 0.12 220);
-  --btn-shade: oklch(0.43 0.14 242);
-  --btn-border: oklch(0.3 0.1 242);
-  --btn-inner: oklch(0.88 0.055 218 / .9);
-  --btn-edge: oklch(0.33 0.11 240);
-  --btn-drop: oklch(0.24 0.075 238);
-  --grid: oklch(0.48 0.06 225 / .08);
+  --btn-main: oklch(0.55 0.18 256);
+  --btn-highlight: oklch(0.7 0.14 250);
+  --btn-shade: oklch(0.45 0.18 258);
+  --btn-border: oklch(0.3 0.12 260);
+  --btn-inner: oklch(0.88 0.0303 265 / .9);
+  --btn-edge: oklch(0.34 0.13 260);
+  --btn-drop: oklch(0.24 0.0413 265);
+  --grid: oklch(0.48 0.033 265 / .08);
   --rust: var(--accent-deep);
   min-height: 100svh;
   position: relative;
@@ -43,37 +43,37 @@
 }
 
 :global(html[data-theme="dark"]) .page {
-  --bg: oklch(0.165 0.043 238);
-  --bg-soft: oklch(0.19 0.046 237);
-  --bg-wash: oklch(0.225 0.05 234);
-  --surface: oklch(0.205 0.042 238);
-  --surface-raised: oklch(0.235 0.048 236);
-  --ink: oklch(0.91 0.02 220);
-  --ink-strong: oklch(0.975 0.009 220);
-  --muted: oklch(0.72 0.045 224);
-  --line: oklch(0.36 0.045 232);
-  --line-strong: oklch(0.69 0.09 222);
+  --bg: oklch(0.165 0.0237 265);
+  --bg-soft: oklch(0.19 0.0253 265);
+  --bg-wash: oklch(0.225 0.0275 265);
+  --surface: oklch(0.205 0.0231 265);
+  --surface-raised: oklch(0.235 0.0264 265);
+  --ink: oklch(0.91 0.011 265);
+  --ink-strong: oklch(0.975 0.00495 265);
+  --muted: oklch(0.72 0.0248 265);
+  --line: oklch(0.36 0.0248 265);
+  --line-strong: oklch(0.69 0.0964 60);
   --accent: var(--signal);
-  --accent-deep: oklch(0.69 0.16 129);
-  --accent-soft: oklch(0.29 0.075 150);
-  --button-ink: oklch(0.16 0.043 238);
-  --shadow: oklch(0.06 0.03 240 / .55);
-  --shadow-solid: oklch(0.08 0.035 240);
-  --toggle-main: oklch(0.225 0.048 237);
-  --toggle-highlight: oklch(0.31 0.06 233);
-  --toggle-shade: oklch(0.16 0.043 239);
+  --accent-deep: oklch(0.69 0.133 72);
+  --accent-soft: oklch(0.29 0.0625 72);
+  --button-ink: oklch(0.16 0.0237 265);
+  --shadow: oklch(0.06 0.0165 265 / .55);
+  --shadow-solid: oklch(0.08 0.0193 265);
+  --toggle-main: oklch(0.225 0.0264 265);
+  --toggle-highlight: oklch(0.31 0.033 265);
+  --toggle-shade: oklch(0.16 0.0237 265);
   --toggle-border: var(--signal);
-  --toggle-inner: oklch(0.75 0.17 130 / .42);
-  --toggle-edge: oklch(0.55 0.15 134);
-  --toggle-drop: oklch(0.075 0.035 240);
-  --btn-main: oklch(0.7 0.18 128);
-  --btn-highlight: oklch(0.86 0.2 126);
-  --btn-shade: oklch(0.58 0.17 130);
-  --btn-border: oklch(0.88 0.16 126);
-  --btn-inner: oklch(0.93 0.13 124 / .72);
-  --btn-edge: oklch(0.42 0.12 135);
-  --btn-drop: oklch(0.075 0.035 240);
-  --grid: oklch(0.72 0.08 225 / .07);
+  --toggle-inner: oklch(0.75 0.142 72 / .42);
+  --toggle-edge: oklch(0.55 0.125 72);
+  --toggle-drop: oklch(0.075 0.0193 265);
+  --btn-main: oklch(0.7 0.15 72);
+  --btn-highlight: oklch(0.86 0.158 72);
+  --btn-shade: oklch(0.58 0.142 72);
+  --btn-border: oklch(0.88 0.133 72);
+  --btn-inner: oklch(0.93 0.108 72 / .72);
+  --btn-edge: oklch(0.42 0.1 72);
+  --btn-drop: oklch(0.075 0.0193 265);
+  --grid: oklch(0.72 0.044 265 / .07);
   --rust: var(--signal);
 }
 
@@ -340,48 +340,30 @@
 
 .hero {
   min-height: calc(100svh - 76px);
-  padding: clamp(74px, 8vw, 136px) clamp(20px, 5.5vw, 104px) clamp(86px, 8vw, 132px);
+  padding: clamp(40px, 6vh, 84px) clamp(20px, 5.5vw, 104px) clamp(280px, 38vh, 340px);
   position: relative;
   display: grid;
-  grid-template-columns: minmax(440px, .9fr) minmax(560px, 1.1fr);
-  gap: clamp(54px, 8vw, 146px);
-  align-items: center;
+  align-content: start;
+  isolation: isolate;
   background:
-    radial-gradient(circle at 82% 28%, color-mix(in oklch, var(--accent-soft) 52%, transparent) 0, transparent 28%),
-    linear-gradient(140deg, transparent 52%, color-mix(in oklch, var(--bg-soft) 78%, transparent) 100%);
+    radial-gradient(ellipse 70% 55% at 62% 100%, color-mix(in oklch, var(--accent) 10%, transparent), transparent 70%),
+    var(--bg);
 }
 
-.hero::before,
-.hero::after {
-  content: "";
-  width: 74px;
-  height: 74px;
+.heroTimeline { z-index: 0; }
+
+.heroHint {
   position: absolute;
-  border-color: var(--accent);
-  opacity: .7;
-}
-
-.hero::before { top: 42px; left: 28px; border-top: 1px solid; border-left: 1px solid; }
-.hero::after { right: 28px; bottom: 42px; border-right: 1px solid; border-bottom: 1px solid; }
-
-.editMark {
-  position: absolute;
-  color: var(--accent);
-  font: 500 22px/1 var(--font-mono);
-  opacity: .68;
-}
-
-.editMarkOne { top: 21%; right: 4.2%; }
-.editMarkTwo { left: 2.8%; bottom: 19%; }
-
-.heroTimecode {
-  position: absolute;
-  right: clamp(30px, 5vw, 92px);
-  top: 27px;
+  right: clamp(20px, 5.5vw, 104px);
+  bottom: 14px;
+  margin: 0;
+  z-index: 1;
   color: var(--muted);
-  font: 700 9px/1 var(--font-mono);
-  letter-spacing: .1em;
+  font: 500 12px/1.3 var(--font-sans);
 }
+
+/* Scrubbing needs a mouse; touch screens and coarse pointers do not get the hint. */
+@media (hover: none), (pointer: coarse) { .heroHint { display: none; } }
 
 .heroCopy { position: relative; z-index: 2; min-width: 0; }
 
@@ -410,29 +392,65 @@
 }
 
 .heroCopy h1 {
-  margin: 27px 0 0;
+  margin: 0;
   display: grid;
+  justify-items: start;
   color: var(--ink-strong);
-  font-size: clamp(58px, 6.7vw, 126px);
+  font-size: clamp(52px, 7.1vw, 128px);
   font-weight: 900;
-  line-height: .81;
-  letter-spacing: -.076em;
+  line-height: .84;
+  letter-spacing: -.045em;
   text-transform: uppercase;
 }
 
-.heroCopy h1 span:nth-child(2) { color: var(--accent-deep); }
+.heroCopy h1 > * {
+  display: block;
+  font-stretch: 112%;
+  font-variation-settings: "wdth" 112;
+  animation: trimIn 1.05s cubic-bezier(.2, .75, .15, 1) both;
+}
 
-.heroCopy h1 em,
+.heroCopy h1 > :nth-child(2) { color: var(--accent-deep); animation-delay: .14s; }
+
+.heroCopy h1 em {
+  margin-top: .06em;
+  color: var(--accent);
+  font-size: .78em;
+  font-weight: 300;
+  font-style: normal;
+  font-stretch: 62%;
+  font-variation-settings: "wdth" 62;
+  letter-spacing: -.02em;
+  text-transform: none;
+  animation-name: trimInNarrow;
+  animation-delay: .3s;
+}
+
+@keyframes trimIn {
+  from { clip-path: inset(0 100% 0 0); font-variation-settings: "wdth" 62; }
+  to { clip-path: inset(0 0 0 0); font-variation-settings: "wdth" 112; }
+}
+
+@keyframes trimInNarrow {
+  from { clip-path: inset(0 100% 0 0); font-variation-settings: "wdth" 125; }
+  to { clip-path: inset(0 0 0 0); font-variation-settings: "wdth" 62; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroCopy h1 > * { animation: none; }
+}
+
 .sectionHead h2 em,
 .workflowTitle h2 em,
 .localCopy h2 em {
   color: var(--accent);
-  font: 400 1.01em/.9 Georgia, "Times New Roman", serif;
-  letter-spacing: -.07em;
+  font: 300 1.01em/.9 var(--font-sans);
+  font-stretch: 62%;
+  font-variation-settings: "wdth" 62;
+  font-style: normal;
+  letter-spacing: -.035em;
   text-transform: none;
 }
-
-.heroCopy h1 em { padding-left: .12em; }
 
 .lede {
   max-width: 650px;
@@ -734,19 +752,10 @@
 .tools {
   padding: clamp(106px, 11vw, 186px) clamp(20px, 6.2vw, 118px);
   position: relative;
-  overflow: hidden;
+  /* clip, not hidden: hidden makes the section a scroll container and the sticky ambient canvas then starts below its padding. */
+  overflow: clip;
   background:
     linear-gradient(180deg, color-mix(in oklch, var(--surface) 82%, var(--bg-soft)) 0%, var(--bg-soft) 42%, var(--bg-wash) 100%);
-}
-
-.tools::before {
-  content: "TOOLS / 04:18:22:09";
-  position: absolute;
-  top: 42px;
-  right: clamp(20px, 6.2vw, 118px);
-  color: var(--muted);
-  font: 800 9px/1 var(--font-mono);
-  letter-spacing: .1em;
 }
 
 .tools::after {
@@ -1048,7 +1057,7 @@
   background: var(--surface);
 }
 
-.workflowTitle { position: sticky; top: 110px; }
+.workflowTitle { position: static; }
 
 .workflowSteps {
   display: grid;
@@ -1072,28 +1081,47 @@
 .workflowSteps article > span { color: var(--accent-deep); font: 850 10px/1 var(--font-mono); }
 
 .workflowSteps article > div {
-  height: 46px;
-  margin: 32px 0 28px;
+  --step-fill: 25%;
+  height: 34px;
+  margin: 30px 0 26px;
   position: relative;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), color-mix(in oklch, var(--line) 70%, transparent) calc(10% - 1px) 10%),
+    var(--bg-soft);
+  overflow: hidden;
 }
 
-.workflowSteps article > div::before,
-.workflowSteps article > div::after {
+/* The sequence fills up step by step, like clips being laid onto a track. */
+.workflowSteps article > div::before {
   content: "";
-  width: 6px;
-  height: 6px;
   position: absolute;
-  top: 19px;
-  transform: rotate(45deg);
-  background: var(--accent);
+  inset: 4px auto 4px 4px;
+  width: calc(var(--step-fill) - 8px);
+  border-radius: 4px;
+  background: linear-gradient(90deg, color-mix(in oklch, var(--accent) 38%, transparent), color-mix(in oklch, var(--accent) 70%, transparent));
+  box-shadow: inset 0 2px 0 var(--accent);
 }
 
-.workflowSteps article > div::before { left: 0; }
-.workflowSteps article > div::after { right: 0; }
-.workflowSteps article > div i { width: 38%; height: 2px; position: absolute; left: 31%; top: 21px; background: var(--accent-deep); }
-.workflowSteps h3 { margin: 0; color: var(--ink-strong); font-size: clamp(21px, 1.6vw, 29px); letter-spacing: -.04em; text-transform: uppercase; }
+.workflowSteps article > div i {
+  width: 2px;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--step-fill) - 2px);
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent);
+}
+
+.workflowSteps article:nth-child(2) > div { --step-fill: 50%; }
+.workflowSteps article:nth-child(3) > div { --step-fill: 75%; }
+.workflowSteps article:nth-child(4) > div { --step-fill: 100%; }
+
+.workflowSteps article > div::before { transition: width .5s cubic-bezier(.2, .8, .2, 1); }
+.workflowSteps article:hover > div::before { width: calc(var(--step-fill) - 4px); }
+
+.workflowSteps h3 { margin: 0; color: var(--ink-strong); font-size: clamp(21px, 1.6vw, 29px); font-stretch: 112%; font-variation-settings: "wdth" 112; letter-spacing: -.03em; text-transform: uppercase; }
 .workflowSteps p { margin: 14px 0 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
 
 .localProof {
@@ -1213,7 +1241,6 @@
 }
 
 @media (max-width: 1180px) {
-  .hero { grid-template-columns: minmax(380px, .85fr) minmax(470px, 1.15fr); gap: 54px; }
   .heroCopy h1 { font-size: clamp(54px, 7.7vw, 92px); }
   .sectionHead h2,
   .workflowTitle h2,
@@ -1229,7 +1256,7 @@
 @media (max-width: 940px) {
   .header { grid-template-columns: 1fr auto; }
   .nav { display: none; }
-  .hero { min-height: auto; grid-template-columns: 1fr; padding-top: 88px; }
+  .hero { padding-top: 64px; }
   .heroCopy { max-width: 760px; }
   .heroCopy h1 { font-size: clamp(64px, 12vw, 108px); }
   .editorStage { width: min(760px, 94%); justify-self: end; }
@@ -1266,7 +1293,7 @@
   .headerActions { gap: 8px; }
   .themeToggle { width: 39px; height: 37px; }
   .openTools { min-height: 39px; padding: 0 12px; gap: 13px; font-size: 8px; }
-  .hero { padding: 72px 20px 82px; gap: 58px; }
+  .hero { padding: 48px 20px clamp(300px, 46vh, 360px); }
   .hero::before,
   .hero::after { display: none; }
   .heroTimecode { top: 23px; right: 20px; }
@@ -1342,9 +1369,59 @@
   .page *::before,
   .page *::after {
     scroll-behavior: auto !important;
-    transition-duration: .01ms !important;
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
   }
   .pointerLight { transition-duration: .34s !important; }
+}
+
+/* Tool illustrations replace the old cover images. */
+.toolVisualHasCover {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+    var(--bg-soft);
+  background-size: 34px 34px, 34px 34px, auto;
+}
+
+/* The scene fills the visual panel below its header; the SVG keeps its aspect ratio inside. */
+.toolIllustration {
+  --scene-top: clamp(58px, 5vw, 76px);
+  --scene-side: clamp(18px, 4%, 48px);
+  --scene-bottom: clamp(24px, 3vw, 44px);
+  width: calc(100% - 2 * var(--scene-side));
+  height: calc(100% - var(--scene-top) - var(--scene-bottom));
+  position: absolute;
+  top: var(--scene-top);
+  left: var(--scene-side);
+  z-index: 1;
+}
+
+
+.toolVisualHead span {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-strong);
+  font: 600 13px/1 var(--font-sans);
+  letter-spacing: 0;
+}
+
+.toolVisualHead span::before {
+  content: "";
+  width: 4px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--tool-label, var(--accent));
+}
+
+.toolVisualHead b { font: 500 12px/1 var(--font-sans); letter-spacing: 0; color: var(--muted); }
+
+/* A plain hairline between sections. */
+.sectionBand {
+  height: 0;
+  border-top: 1px solid var(--line);
 }

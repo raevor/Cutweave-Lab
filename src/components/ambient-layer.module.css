@@ -1,0 +1,31 @@
+.layer {
+  --amb-face: oklch(0.74 0.15 295);
+  --amb-anime: oklch(0.82 0.12 168);
+  --amb-bass: oklch(0.75 0.16 32);
+  --amb-playhead: oklch(0.83 0.15 72);
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* Two soft glows in the tool colours. Static CSS, so they cost nothing per frame. */
+  background:
+    radial-gradient(ellipse 45% 38% at 24% 30%, color-mix(in oklch, var(--amb-face) 10%, transparent), transparent 70%),
+    radial-gradient(ellipse 45% 38% at 78% 72%, color-mix(in oklch, var(--amb-anime) 9%, transparent), transparent 70%);
+}
+
+/* Viewport-sized and sticky, so a tall section never needs a giant canvas. */
+.canvas {
+  width: 100%;
+  height: min(100vh, 100%);
+  position: sticky;
+  top: 0;
+  display: block;
+}
+
+:global(html[data-theme="light"]) .layer {
+  --amb-face: oklch(0.55 0.18 295);
+  --amb-anime: oklch(0.56 0.11 170);
+  --amb-bass: oklch(0.6 0.17 32);
+  --amb-playhead: oklch(0.55 0.19 255);
+}
+

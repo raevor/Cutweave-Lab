@@ -1,5 +1,6 @@
 "use client";
 
+import { flushSync } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -33,8 +34,10 @@ import type {
   MusicAnalysisWorkerResponse,
   MusicMarker,
 } from "@/lib/music-bass-markers/types";
-import { applySiteTheme, readSiteTheme } from "@/lib/site-theme";
+import { applySiteTheme, readSiteTheme, switchSiteTheme } from "@/lib/site-theme";
 import type { ToolDefinition } from "@/lib/tool-catalog";
+import { SourceSlot } from "@/components/source-slot";
+import { WorkspaceRuler } from "@/components/workspace-ruler";
 import styles from "./music-bass-markers-workspace.module.css";
 
 type Phase = "idle" | "source-ready" | "decoding" | "analyzing" | "results" | "export-ready" | "exporting" | "error";
@@ -577,10 +580,9 @@ export function MusicBassMarkersWorkspace({ tool }: { tool: ToolDefinition }) {
     if (event.ctrlKey) playScrubPreview(nextTime);
   }
 
-  function toggleTheme() {
+  function toggleTheme(event?: { currentTarget: Element }) {
     const nextTheme = theme === "light" ? "dark" : "light";
-    setTheme(nextTheme);
-    applySiteTheme(nextTheme);
+    switchSiteTheme(nextTheme, event?.currentTarget ?? null, () => setTheme(nextTheme), flushSync);
   }
 
   function resetAnalysis() {
@@ -892,7 +894,7 @@ export function MusicBassMarkersWorkspace({ tool }: { tool: ToolDefinition }) {
   }
 
   return (
-    <main className={styles.workspace}>
+    <main className={styles.workspace} data-tool-key="bass-markers">
       <header className={styles.header}>
         <BrandMark />
         <div className={styles.headerActions}>
@@ -919,6 +921,8 @@ export function MusicBassMarkersWorkspace({ tool }: { tool: ToolDefinition }) {
         </div>
       </section>
 
+      <WorkspaceRuler />
+
       <ol className={styles.workflow} aria-label="Music marker workflow">
         {workflowLabels.map((label, index) => (
           <li className={index < workflowStep ? styles.stepComplete : index === workflowStep ? styles.stepCurrent : ""} key={label} aria-current={index === workflowStep ? "step" : undefined}>
@@ -938,6 +942,7 @@ export function MusicBassMarkersWorkspace({ tool }: { tool: ToolDefinition }) {
           aria-labelledby="music-intake-title"
         >
           <div className={styles.intakeVisual} aria-hidden="true">
+            <SourceSlot kind="audio" />
             <div className={styles.intakeGuide}><i /><strong>NO SOURCE LOADED</strong></div>
             <span>LOCAL EDIT POINTS</span><b>03</b>
           </div>

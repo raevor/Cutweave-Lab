@@ -1,0 +1,49 @@
+.slot {
+  --slot-accent: var(--tool-label, oklch(0.83 0.15 72));
+  --slot-line: color-mix(in oklch, currentColor 16%, transparent);
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  color: oklch(0.82 0.01 265);
+  pointer-events: none;
+}
+
+:global(html[data-theme="light"]) .slot { color: oklch(0.32 0.03 265); }
+
+.strip { fill: color-mix(in oklch, currentColor 5%, transparent); }
+.holes { fill: color-mix(in oklch, currentColor 14%, transparent); animation: holes 1.8s linear infinite; }
+@keyframes holes { to { transform: translateY(22px); } }
+
+.frame { fill: color-mix(in oklch, var(--slot-accent) 5%, transparent); stroke: var(--slot-line); stroke-width: 1.5; stroke-dasharray: 6 6; }
+
+.ghost { filter: grayscale(1) contrast(.8); opacity: .3; animation: breathe 3.6s ease-in-out infinite; }
+@keyframes breathe { 0%, 100% { opacity: .22; } 50% { opacity: .42; } }
+
+.search { fill: none; stroke: var(--slot-accent); stroke-width: 2.5; stroke-linecap: round; animation: search 7s cubic-bezier(.7, 0, .3, 1) infinite; }
+/* The 80 x 92 frame wanders over the slot, then locks on the portrait's face (centre about 150, 199). */
+@keyframes search {
+  0%, 12% { transform: translate(60px, 92px); }
+  28%, 40% { transform: translate(166px, 214px); }
+  56%, 68% { transform: translate(110px, 153px); }
+  84%, 100% { transform: translate(60px, 92px); }
+}
+
+.scan { fill: var(--slot-accent); opacity: .7; animation: scan 3.4s ease-in-out infinite alternate; }
+@keyframes scan { to { transform: translateY(258px); } }
+
+.caption { fill: color-mix(in oklch, currentColor 60%, transparent); font: 500 13px var(--font-sans); }
+
+.grid { fill: color-mix(in oklch, currentColor 10%, transparent); }
+.gridMajor { fill: color-mix(in oklch, currentColor 20%, transparent); }
+.glint { fill: var(--slot-accent); opacity: .5; filter: blur(4px); animation: glint 4s ease-in-out infinite; }
+@keyframes glint { 0% { transform: translateX(0); opacity: 0; } 15%, 85% { opacity: .55; } 100% { transform: translateX(195px); opacity: 0; } }
+.flatline { fill: var(--slot-accent); opacity: .8; }
+.idleHead { fill: var(--slot-accent); animation: blink 1.2s steps(2, jump-none) infinite; }
+@keyframes blink { 50% { opacity: .25; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .holes, .ghost, .search, .scan, .glint, .idleHead { animation: none; }
+  .search { transform: translate(110px, 153px); }
+  .scan { transform: translateY(130px); }
+}

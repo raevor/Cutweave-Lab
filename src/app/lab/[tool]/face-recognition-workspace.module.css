@@ -1,33 +1,33 @@
 .workspace {
   --light-opacity: 0;
-  --face-bg: oklch(0.165 0.043 238);
-  --face-panel: oklch(0.19 0.046 237);
-  --face-panel-raised: oklch(0.225 0.05 234);
-  --face-line: oklch(0.36 0.045 232);
-  --face-line-soft: oklch(0.28 0.04 234);
-  --face-text: oklch(0.975 0.009 220);
-  --face-muted: oklch(0.72 0.045 224);
-  --face-faint: oklch(0.57 0.04 228);
-  --face-signal: oklch(0.79 0.19 128);
-  --face-signal-deep: oklch(0.71 0.18 128);
+  --face-bg: oklch(0.165 0.0237 265);
+  --face-panel: oklch(0.19 0.0253 265);
+  --face-panel-raised: oklch(0.225 0.0275 265);
+  --face-line: oklch(0.36 0.0248 265);
+  --face-line-soft: oklch(0.28 0.022 265);
+  --face-text: oklch(0.975 0.00495 265);
+  --face-muted: oklch(0.72 0.0248 265);
+  --face-faint: oklch(0.57 0.022 265);
+  --face-signal: oklch(0.79 0.168 295);
+  --face-signal-deep: oklch(0.71 0.16 295);
   --face-danger: oklch(0.66 0.2 28);
-  --face-grid: oklch(0.72 0.08 225 / .07);
-  --face-glow: oklch(0.36 0.1 145 / .27);
-  --face-visual: oklch(0.145 0.038 239);
-  --face-active: oklch(0.24 0.065 145);
-  --face-button-ink: oklch(0.16 0.043 238);
-  --face-media-text: oklch(0.98 0.008 220);
-  --face-active-icon: oklch(0.16 0.043 238);
+  --face-grid: oklch(0.72 0.044 265 / .07);
+  --face-glow: oklch(0.36 0.0889 295 / .27);
+  --face-visual: oklch(0.145 0.0209 265);
+  --face-active: oklch(0.24 0.0578 295);
+  --face-button-ink: oklch(0.16 0.0237 265);
+  --face-media-text: oklch(0.98 0.0044 265);
+  --face-active-icon: oklch(0.16 0.0237 265);
   --face-error-bg: oklch(0.18 0.035 28);
   --face-error-text: oklch(0.9 0.035 28);
-  --toggle-main: oklch(0.225 0.048 237);
-  --toggle-highlight: oklch(0.31 0.06 233);
-  --toggle-shade: oklch(0.16 0.043 239);
+  --toggle-main: oklch(0.225 0.0264 265);
+  --toggle-highlight: oklch(0.31 0.033 265);
+  --toggle-shade: oklch(0.16 0.0237 265);
   --toggle-border: var(--face-signal);
-  --toggle-inner: oklch(0.75 0.17 130 / .42);
-  --toggle-edge: oklch(0.55 0.15 134);
-  --toggle-drop: oklch(0.075 0.035 240);
-  --face-shadow: oklch(0.06 0.03 240 / .55);
+  --toggle-inner: oklch(0.75 0.151 295 / .42);
+  --toggle-edge: oklch(0.55 0.133 295);
+  --toggle-drop: oklch(0.075 0.0193 265);
+  --face-shadow: oklch(0.06 0.0165 265 / .55);
   min-height: 100vh;
   padding: 0 clamp(20px, 3.3vw, 58px) 72px;
   position: relative;
@@ -44,34 +44,34 @@
 }
 
 :global(html[data-theme="light"]) .workspace {
-  --face-bg: oklch(0.985 0.007 225);
-  --face-panel: oklch(0.997 0.003 225);
-  --face-panel-raised: oklch(0.955 0.018 225);
-  --face-line: oklch(0.82 0.025 225);
-  --face-line-soft: oklch(0.88 0.018 225);
-  --face-text: oklch(0.22 0.055 235);
-  --face-muted: oklch(0.53 0.045 230);
-  --face-faint: oklch(0.61 0.04 228);
-  --face-signal: oklch(0.54 0.14 235);
-  --face-signal-deep: oklch(0.43 0.13 240);
+  --face-bg: oklch(0.985 0.00385 265);
+  --face-panel: oklch(0.997 0.00165 265);
+  --face-panel-raised: oklch(0.955 0.0099 265);
+  --face-line: oklch(0.82 0.0138 265);
+  --face-line-soft: oklch(0.88 0.0099 265);
+  --face-text: oklch(0.22 0.0303 265);
+  --face-muted: oklch(0.53 0.0248 265);
+  --face-faint: oklch(0.61 0.022 265);
+  --face-signal: oklch(0.54 0.16 295);
+  --face-signal-deep: oklch(0.43 0.149 295);
   --face-danger: oklch(0.58 0.18 28);
-  --face-grid: oklch(0.48 0.06 225 / .08);
-  --face-glow: oklch(0.77 0.08 220 / .23);
-  --face-visual: oklch(0.95 0.025 225);
-  --face-active: oklch(0.92 0.045 225);
-  --face-button-ink: oklch(0.985 0.006 225);
-  --face-media-text: oklch(0.98 0.008 220);
-  --face-active-icon: oklch(0.985 0.006 225);
+  --face-grid: oklch(0.48 0.033 265 / .08);
+  --face-glow: oklch(0.77 0.044 265 / .23);
+  --face-visual: oklch(0.95 0.0138 265);
+  --face-active: oklch(0.92 0.0248 265);
+  --face-button-ink: oklch(0.985 0.0033 265);
+  --face-media-text: oklch(0.98 0.0044 265);
+  --face-active-icon: oklch(0.985 0.0033 265);
   --face-error-bg: oklch(0.94 0.035 28);
   --face-error-text: oklch(0.45 0.12 28);
   --toggle-main: oklch(1 0 0);
   --toggle-highlight: oklch(1 0 0);
-  --toggle-shade: oklch(0.955 0.018 225);
+  --toggle-shade: oklch(0.955 0.0099 265);
   --toggle-border: var(--face-signal-deep);
-  --toggle-inner: oklch(0.9 0.055 220);
-  --toggle-edge: oklch(0.62 0.12 222);
-  --toggle-drop: oklch(0.35 0.09 235);
-  --face-shadow: oklch(0.38 0.08 232 / .24);
+  --toggle-inner: oklch(0.9 0.0303 265);
+  --toggle-edge: oklch(0.62 0.137 295);
+  --toggle-drop: oklch(0.35 0.103 295);
+  --face-shadow: oklch(0.38 0.044 265 / .24);
 }
 
 .pointerLight {
@@ -186,7 +186,7 @@
   background: var(--face-panel);
 }
 .localStatus span { color: var(--face-text); font: 750 9px/1.3 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
-.localStatus span i, .intakeFacts div:last-child i { width: 7px; height: 7px; display: inline-block; margin-right: 8px; border-radius: 50%; background: var(--face-signal); box-shadow: 0 0 0 4px oklch(0.82 0.19 128 / .1); }
+.localStatus span i, .intakeFacts div:last-child i { width: 7px; height: 7px; display: inline-block; margin-right: 8px; border-radius: 50%; background: var(--face-signal); box-shadow: 0 0 0 4px oklch(0.82 0.168 295 / .1); }
 .localStatus strong { grid-row: span 2; align-self: center; color: var(--face-signal); font: 900 26px/1 var(--font-mono); }
 .localStatus small { color: var(--face-faint); font: 700 8px/1.3 var(--font-mono); letter-spacing: .08em; }
 
@@ -218,15 +218,7 @@
   background: var(--face-panel);
 }
 .intakeVisual { position: relative; min-height: 540px; overflow: hidden; border-right: 1px solid var(--face-line); background: var(--face-visual); }
-.intakeVisual::before, .intakeVisual::after { content: ""; position: absolute; background: var(--face-line); }
-.intakeVisual::before { width: 1px; top: 12%; bottom: 12%; left: 50%; }
-.intakeVisual::after { height: 1px; left: 14%; right: 14%; top: 50%; }
-.intakeVisual b { position: absolute; left: 28px; top: 26px; color: var(--face-signal); font: 800 11px/1 var(--font-mono); }
-.intakeCorner { position: absolute; inset: 21% 18%; border: 1px solid var(--face-line); }
-.intakeCorner::before, .intakeCorner::after { content: ""; position: absolute; width: 46px; height: 46px; border-color: var(--face-signal); }
-.intakeCorner::before { left: -1px; top: -1px; border-left: 2px solid var(--face-signal); border-top: 2px solid var(--face-signal); }
-.intakeCorner::after { right: -1px; bottom: -1px; border-right: 2px solid var(--face-signal); border-bottom: 2px solid var(--face-signal); }
-.intakeScanline { position: absolute; z-index: 2; left: 18%; right: 18%; top: 50%; height: 1px; background: var(--face-signal); box-shadow: 0 0 20px color-mix(in oklch, var(--face-signal) 35%, transparent); }
+.intakeVisual b { z-index: 1; position: absolute; left: 28px; top: 26px; color: var(--face-signal); font: 800 11px/1 var(--font-mono); }
 .intakeCopy { align-self: center; padding: clamp(38px, 5vw, 82px); }
 .intakeCopy h2 { max-width: 720px; margin: 16px 0 22px; font-size: clamp(38px, 4.6vw, 72px); font-weight: 850; line-height: .95; letter-spacing: -.06em; }
 .intakeCopy > span { display: block; max-width: 590px; color: var(--face-muted); font-size: 16px; line-height: 1.55; }
@@ -294,8 +286,8 @@
 .referenceEmpty span { font: 700 7px/1 var(--font-mono); letter-spacing: .11em; }
 .referenceSeek { width: 100%; height: 100%; padding: 0; overflow: hidden; border: 0; background: #020303; cursor: pointer; }
 .referenceSeek img { width: 100%; height: 100%; display: block; object-fit: cover; }
-.referenceSeek span { position: absolute; left: 7px; bottom: 7px; padding: 5px 6px; background: oklch(0.08 0.01 250 / .9); color: var(--face-media-text); font: 800 7px/1 var(--font-mono); }
-.referenceRemove { position: absolute; z-index: 3; top: 6px; right: 6px; width: 28px; height: 28px; padding: 0; border: 1px solid oklch(0.9 0.01 88 / .28); background: oklch(0.08 0.01 250 / .9); color: var(--face-media-text); cursor: pointer; font-size: 19px; line-height: 1; }
+.referenceSeek span { position: absolute; left: 7px; bottom: 7px; padding: 5px 6px; background: oklch(0.08 0.008 265 / .9); color: var(--face-media-text); font: 800 7px/1 var(--font-mono); }
+.referenceRemove { position: absolute; z-index: 3; top: 6px; right: 6px; width: 28px; height: 28px; padding: 0; border: 1px solid oklch(0.9 0.01 88 / .28); background: oklch(0.08 0.008 265 / .9); color: var(--face-media-text); cursor: pointer; font-size: 19px; line-height: 1; }
 .referenceRemove:hover { border-color: var(--face-danger); background: var(--face-danger); }
 .referenceFilled > small { position: absolute; left: 7px; top: 8px; color: var(--face-signal); font: 850 8px/1 var(--font-mono); }
 .referenceHint { margin: 12px 0 0; color: var(--face-faint); font: 650 9px/1.45 var(--font-mono); }
@@ -347,15 +339,15 @@
 .faceScan > span:nth-child(4) { left: 0; bottom: 0; border-left: 2px solid; border-bottom: 2px solid; }
 .faceScan::before { content: ""; position: absolute; z-index: 2; inset: 6%; border: 1px solid var(--face-line); pointer-events: none; }
 .faceScan::after { content: ""; position: absolute; z-index: 3; left: 8%; right: 8%; top: 50%; height: 1px; background: oklch(0.92 0.02 88 / .28); pointer-events: none; }
-.scanReferences { position: absolute; inset: 10%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; overflow: hidden; background: oklch(0.075 0.01 250); }
+.scanReferences { position: absolute; inset: 10%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; overflow: hidden; background: oklch(0.075 0.008 265); }
 .scanReferences figure { position: relative; min-width: 0; height: 100%; margin: 0; overflow: hidden; border: 1px solid var(--face-line-soft); background: #020304; }
 .scanReferences img { width: 100%; height: 100%; display: block; object-fit: cover; filter: grayscale(1) contrast(1.08) brightness(.72); }
-.scanReferences figure::after { content: ""; position: absolute; inset: 13%; border: 1px solid color-mix(in oklch, var(--face-signal) 42%, transparent); box-shadow: inset 0 0 0 1px oklch(0.05 0.01 250 / .35); }
-.scanReferences figcaption { position: absolute; z-index: 2; left: 8px; bottom: 8px; padding: 5px 6px; background: oklch(0.07 0.01 250 / .9); color: var(--face-signal); font: 800 7px/1 var(--font-mono); letter-spacing: .08em; }
+.scanReferences figure::after { content: ""; position: absolute; inset: 13%; border: 1px solid color-mix(in oklch, var(--face-signal) 42%, transparent); box-shadow: inset 0 0 0 1px oklch(0.05 0.008 265 / .35); }
+.scanReferences figcaption { position: absolute; z-index: 2; left: 8px; bottom: 8px; padding: 5px 6px; background: oklch(0.07 0.008 265 / .9); color: var(--face-signal); font: 800 7px/1 var(--font-mono); letter-spacing: .08em; }
 .faceScan > i { position: absolute; z-index: 5; left: 6%; right: 6%; height: 1px; background: var(--face-signal); box-shadow: 0 0 18px color-mix(in oklch, var(--face-signal) 72%, transparent), 0 5px 22px color-mix(in oklch, var(--face-signal) 25%, transparent); transition: top 180ms linear; }
 .faceScan > .scanLineActive { top: 10%; height: 78%; overflow: hidden; background: transparent; box-shadow: none; transition: none; }
 .faceScan > .scanLineActive::before { position: absolute; inset: 0; border-top: 1px solid var(--face-signal); filter: drop-shadow(0 0 7px color-mix(in oklch, var(--face-signal) 72%, transparent)) drop-shadow(0 5px 10px color-mix(in oklch, var(--face-signal) 28%, transparent)); content: ""; will-change: transform, opacity; animation: scanLineSearch 3.2s ease-in-out infinite alternate; }
-.faceScan > b { position: absolute; z-index: 6; right: 6%; bottom: 5%; padding: 8px 10px; border: 1px solid var(--face-signal); background: oklch(0.07 0.01 250 / .92); color: var(--face-signal); font: 900 24px/1 var(--font-mono); letter-spacing: -.05em; }
+.faceScan > b { position: absolute; z-index: 6; right: 6%; bottom: 5%; padding: 8px 10px; border: 1px solid var(--face-signal); background: oklch(0.07 0.008 265 / .92); color: var(--face-signal); font: 900 24px/1 var(--font-mono); letter-spacing: -.05em; }
 .faceScan > .scanActivityBadge { min-width: 86px; padding-block: 10px; font-size: 9px; letter-spacing: .09em; text-align: center; }
 .scanPanel h2 { width: 100%; max-width: 560px; margin: 0; overflow-wrap: anywhere; font-size: clamp(26px, 2.5vw, 38px); line-height: 1.02; letter-spacing: -.05em; }
 .scanStage { min-height: 40px; max-width: 520px; margin: 14px 0 20px; color: var(--face-muted); font-size: 12px; line-height: 1.45; }
@@ -397,9 +389,9 @@
 .clipPlayer { position: absolute; inset: 0; overflow: hidden; background: #000; }
 .clipPlayer video { width: 100%; height: 100%; display: block; cursor: pointer; object-fit: contain; }
 .clipToggle { position: absolute; z-index: 2; inset: 0 0 42px; display: grid; place-content: center; border: 0; background: transparent; color: var(--face-media-text); cursor: pointer; }
-.clipToggle span { width: 50px; height: 50px; display: grid; place-content: center; padding-left: 2px; border: 1px solid oklch(0.96 0.01 88 / .62); background: oklch(0.06 0.01 250 / .82); font: 800 14px/1 var(--font-mono); transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease; }
+.clipToggle span { width: 50px; height: 50px; display: grid; place-content: center; padding-left: 2px; border: 1px solid oklch(0.96 0.01 88 / .62); background: oklch(0.06 0.008 265 / .82); font: 800 14px/1 var(--font-mono); transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease; }
 .clipToggle:hover span { border-color: var(--face-signal); background: oklch(0.1 0.025 128 / .9); transform: scale(1.04); }
-.clipTimeline { position: absolute; z-index: 4; left: 0; right: 0; bottom: 0; min-height: 42px; display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 7px 10px; background: linear-gradient(180deg, transparent, oklch(0.03 0.008 250 / .98) 36%); }
+.clipTimeline { position: absolute; z-index: 4; left: 0; right: 0; bottom: 0; min-height: 42px; display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 7px 10px; background: linear-gradient(180deg, transparent, oklch(0.03 0.0064 265 / .98) 36%); }
 .clipTimeline button { width: 26px; height: 26px; padding: 0; border: 0; background: transparent; color: var(--face-media-text); cursor: pointer; font-size: 10px; }
 .clipTimeline input { width: 100%; height: 18px; margin: 0; accent-color: var(--face-signal); cursor: pointer; }
 .clipTimeline strong { color: var(--face-media-text); font: 750 8px/1 var(--font-mono); white-space: nowrap; }
@@ -410,8 +402,8 @@
 .sceneCardMeta .sceneStatusExcluded { color: oklch(0.72 0.14 28); }
 .sceneCardMeta strong { overflow: hidden; font: 800 12px/1.2 var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
 .sceneCardMeta em { color: var(--face-muted); font: 700 9px/1 var(--font-mono); font-style: normal; }
-.sceneDecision { position: absolute; z-index: 6; top: 9px; right: 9px; display: grid; grid-template-columns: 40px 40px; gap: 6px; padding: 5px; background: oklch(0.055 0.008 250 / .88); backdrop-filter: blur(7px); }
-.sceneDecision button { width: 40px; height: 40px; padding: 0; border: 1px solid oklch(0.9 0.01 88 / .32); background: oklch(0.07 0.01 250 / .88); color: var(--face-media-text); cursor: pointer; font-size: 19px; }
+.sceneDecision { position: absolute; z-index: 6; top: 9px; right: 9px; display: grid; grid-template-columns: 40px 40px; gap: 6px; padding: 5px; background: oklch(0.055 0.0064 265 / .88); backdrop-filter: blur(7px); }
+.sceneDecision button { width: 40px; height: 40px; padding: 0; border: 1px solid oklch(0.9 0.01 88 / .32); background: oklch(0.07 0.008 265 / .88); color: var(--face-media-text); cursor: pointer; font-size: 19px; }
 .sceneDecision .decisionActive { border-color: var(--face-signal); background: var(--face-signal); color: var(--face-active-icon); }
 .sceneDecision .rejectActive { border-color: var(--face-danger); background: var(--face-danger); color: white; }
 .exportRow { min-height: 92px; display: flex; align-items: center; justify-content: flex-end; gap: 18px; padding: 16px 22px; border-top: 1px solid var(--face-line); }
@@ -482,7 +474,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .workspace *, .workspace *::before, .workspace *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+  .workspace *, .workspace *::before, .workspace *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
   .workspace .scanLineActive::before { animation-duration: 5.6s !important; animation-iteration-count: infinite !important; }
   .pointerLight { transition-duration: .34s !important; }
 }

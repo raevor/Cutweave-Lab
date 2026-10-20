@@ -1,0 +1,123 @@
+.scene {
+  --ill-ink: oklch(0.95 0.008 265);
+  --ill-muted: oklch(0.68 0.02 265);
+  --ill-panel: oklch(0.21 0.022 265);
+  --ill-line: oklch(0.34 0.025 265);
+  --ill-dim: oklch(0.42 0.02 265);
+  --ill-playhead: oklch(0.83 0.15 72);
+  --ill-card: oklch(0.27 0.022 265);
+  --ill-ok: oklch(0.74 0.17 152);
+  --ill-no: oklch(0.66 0.2 25);
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+  font-family: var(--font-sans);
+}
+
+:global(html[data-theme="light"]) .scene {
+  --ill-ink: oklch(0.24 0.03 265);
+  --ill-muted: oklch(0.48 0.025 265);
+  --ill-panel: oklch(0.995 0.003 265);
+  --ill-line: oklch(0.84 0.015 265);
+  --ill-dim: oklch(0.78 0.015 265);
+  --ill-playhead: oklch(0.55 0.19 256);
+  --ill-card: oklch(0.965 0.008 265);
+  --ill-ok: oklch(0.6 0.16 152);
+  --ill-no: oklch(0.58 0.21 25);
+}
+
+.face { --ill-accent: oklch(0.74 0.15 295); }
+.anime { --ill-accent: oklch(0.82 0.12 168); }
+.bass { --ill-accent: oklch(0.75 0.16 32); }
+:global(html[data-theme="light"]) .face { --ill-accent: oklch(0.55 0.18 295); }
+:global(html[data-theme="light"]) .anime { --ill-accent: oklch(0.56 0.11 170); }
+:global(html[data-theme="light"]) .bass { --ill-accent: oklch(0.6 0.17 32); }
+
+.panel { fill: var(--ill-panel); stroke: var(--ill-line); stroke-width: 1.5; }
+.track { fill: var(--ill-panel); stroke: var(--ill-line); stroke-width: 1.5; }
+.caption { fill: var(--ill-muted); font-size: 15px; font-weight: 500; }
+
+.refCard { fill: var(--ill-card); stroke: var(--ill-line); stroke-width: 1.5; }
+.frame { fill: var(--ill-card); stroke: var(--ill-line); stroke-width: 1.5; }
+.okTint { fill: var(--ill-ok); fill-opacity: .07; }
+.noTint { fill: var(--ill-panel); fill-opacity: .62; }
+.okRing,
+.noRing { fill: none; stroke-width: 3; }
+.okRing { stroke: var(--ill-ok); }
+.noRing { stroke: var(--ill-no); stroke-dasharray: 6 5; }
+.okBadge { fill: var(--ill-ok); }
+.noBadge { fill: var(--ill-no); }
+.badgeMark { fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.okText { fill: var(--ill-ok); font-weight: 650; }
+
+.lock {
+  fill: none;
+  stroke: var(--ill-playhead);
+  stroke-width: 4;
+  stroke-linecap: square;
+}
+
+.scan { fill: var(--ill-playhead); }
+.scanGlow { fill: var(--ill-playhead); opacity: .16; }
+.tick { fill: var(--ill-line); }
+.chip { fill: var(--ill-accent); }
+
+.bar {
+  fill: var(--ill-dim);
+  animation: barPass 5s linear both infinite;
+}
+
+.marker {
+  fill: var(--ill-playhead);
+  animation: markerDrop 5s cubic-bezier(.2, .9, .3, 1.3) both infinite;
+}
+
+.sweep {
+  fill: var(--ill-playhead);
+  transform-box: view-box;
+  animation: sweep 5s linear both infinite;
+}
+
+.exportChip {
+  fill: var(--ill-accent);
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: chipIn 5s cubic-bezier(.2, .8, .2, 1) both infinite;
+}
+
+
+
+
+@keyframes chipIn {
+  0% { transform: scaleX(0); }
+  8%, 82% { transform: scaleX(1); }
+  92%, 100% { transform: scaleX(0); }
+}
+
+@keyframes sweep {
+  0% { transform: translateX(0); opacity: 1; }
+  84% { transform: translateX(576px); opacity: 1; }
+  85%, 100% { transform: translateX(576px); opacity: 0; }
+}
+
+@keyframes barPass {
+  0% { fill: var(--ill-dim); }
+  2%, 80% { fill: var(--ill-accent); }
+  95%, 100% { fill: var(--ill-dim); }
+}
+
+@keyframes markerDrop {
+  0% { opacity: 0; transform: translateY(-10px); }
+  5%, 80% { opacity: 1; transform: translateY(0); }
+  92%, 100% { opacity: 0; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar, .marker, .exportChip { animation: none; }
+  .sweep { animation: none; opacity: 0; }
+  .bar { fill: var(--ill-accent); }
+}
+
+/* Set by the component while the scene is off screen. */
+.scene[data-paused] * { animation-play-state: paused !important; }
