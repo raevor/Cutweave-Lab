@@ -27,7 +27,7 @@ Details: [`docs/PRIVACY.md`](docs/PRIVACY.md).
 
 The live app is tested with [TestSprite](https://www.testsprite.com). The TestSprite GitHub App runs the suite automatically against each pull request's Vercel preview deployment and reports the result on the PR. `main` is protected: a pull request can only be merged once the required **TestSprite V3** check passes, and force pushes to `main` are blocked.
 
-The suite has 70 browser tests in twelve groups. Besides page structure, it drives the real tool flows with files: the runner loads media, adds a reference through the crop dialog, runs a full anime scan to the review step and takes audio markers to the export step.
+The suite has 67 browser tests in twelve groups. Besides page structure, it drives the real tool flows with files: the runner loads media, adds an anime reference through the crop dialog, runs a full anime scan to the review step and takes audio markers to the export step.
 
 | Area | Tests | What they check |
 |---|---:|---|
@@ -35,16 +35,16 @@ The suite has 70 browser tests in twelve groups. Besides page structure, it driv
 | Home page | 11 | The three hero lines and both calls to action, all four facts, the four workflow steps, three tool cards in order with working routes, illustration captions, footer links and Back to top, and the media boundary section |
 | Tool library | 7 | Exactly three tools on tracks 01 to 03 with input and output details, each Start tool link, the heading, the tool desk summary and the privacy link |
 | Face Recognition | 7 | Empty source state, the five-step bar, privacy copy, 0 B sent to server, no scan action or results before a video is chosen, the All tools and Privacy links |
-| Face Recognition video flow | 3 | Loading a video, adding a reference through the crop dialog and cancelling a crop |
+| Face Recognition video flow | 1 | Loading a video into the workspace and reaching the references step |
 | Anime Face Recognition | 5 | The first-visit notice (dismiss, keep hidden after reload, reopen from the header), the empty source state, 0 B sent to server and the All tools link |
-| Anime video flow | 3 | Loading a video, adding a character reference, and a full scan from three references to matched scenes |
+| Anime video flow | 2 | Adding a character reference, and a full scan from three references to matched scenes |
 | Music & Bass Markers | 4 | Empty state, the five-step bar, 0 B sent to server, no analysis or export before a file is loaded, accepted formats and the privacy link |
 | Music & Bass Markers audio flow | 5 | Loading audio, finding markers on the full track, adding a marker, the export options and cancelling an analysis |
 | Privacy | 6 | Local processing and 0 B media transfer, no identity lookup or biometric database query, what the browser downloads versus what never leaves the tab, the summary values and both calls to action |
 | Roadmap | 2 | Exactly three shipped tools and the link to the tool library |
 | Not found | 4 | The custom 404 page for unknown tool and top-level routes, its label and the way back home |
 
-The flow tests use three files prepared only for this suite: a synthetic 120 BPM click track and two short test video clips. They are stored in the TestSprite project and are not part of this repository. Eighteen longer flow tests (multi-reference setups, cancelled and full face scans, crop-error and repeated-click checks) were removed from the cloud plan after the runner repeatedly blocked them, reporting that file uploads were not permitted although the same upload step passed in other tests of the same run. Those flows are covered by manual checks. Assertions check the workflow and its states, never how many scenes a scan finds: match counts and model accuracy depend on the runner's hardware and are covered by the local unit tests and manual checks. The responsive layout is also checked locally: the cloud runner cannot resize its viewport, so a 390px mobile test was removed from the plan after it came back blocked.
+The flow tests use three files prepared only for this suite: a synthetic 120 BPM click track and two short test video clips. They are stored in the TestSprite project and are not part of this repository. Twenty-one video flow tests (single and multi-reference setups, cancelled and full face scans, crop-error and repeated-click checks) were removed from the cloud plan after the runner repeatedly blocked them, reporting that file uploads were not permitted although the same upload step passed in other tests of the same run. Those flows are covered by manual checks. Assertions check the workflow and its states, never how many scenes a scan finds: match counts and model accuracy depend on the runner's hardware and are covered by the local unit tests and manual checks. The responsive layout is also checked locally: the cloud runner cannot resize its viewport, so a 390px mobile test was removed from the plan after it came back blocked.
 
 Local checks:
 
