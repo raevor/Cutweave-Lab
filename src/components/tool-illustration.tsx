@@ -91,9 +91,10 @@ function MatchScene({ kind, id }: { kind: CharacterKind; id: string }) {
       {FRAMES.map((frame, i) => {
         const x = x0 + i * (fw + gap);
         const ok = frame.who === 0;
-        const s = 0.88;
+        /* The anime cast sits a little smaller with its shoulders in frame, so the outfit stays visible. */
+        const s = kind === "character" ? 0.8 : 0.88;
         const cx = x + fw / 2;
-        const transform = `translate(${cx} ${y0 + fh - 120 * s + 16}) scale(${s}) translate(-50 0)`;
+        const transform = `translate(${cx} ${y0 + fh - 120 * s + (kind === "character" ? 2 : 16)}) scale(${s}) translate(-50 0)`;
         return (
           <g key={i}>
             <rect className={styles.frame} x={x} y={y0} width={fw} height={fh} rx="8" />
