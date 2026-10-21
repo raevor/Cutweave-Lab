@@ -144,5 +144,12 @@ privacy: {
     responsibilityCopy: "Local processing limits what Cutweave can access. It does not change your obligations: only process footage you have the right to use, and respect consent, privacy and copyright.",
     responsibilityNote: "Because Cutweave never receives your footage, it cannot view, recover or moderate a local session.",
   },
-  notFound: { eyebrow: "404 / Wrong turn", titleA: "That tool is", titleB: "not here.", home: "Go back to the tools" },
+  notFound: {
+    eyebrow: "404 / Wrong turn",
+    titleA: "That tool is",
+    titleB: "not here.",
+    body: "The playhead reached a gap in the edit. This address does not point to a page or a tool. Pick up again from the start or open the tool desk.",
+    home: "Go back to the tools",
+    desk: "Open the tool desk",
+  },
 } as const;

@@ -297,28 +297,28 @@ export function AnimeFaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }
   const copy = {
     nav: "Tool navigation", allTools: "All tools", privacy: "Privacy", local: "Runs on this device",
     input: "YOU ADD", output: "YOU GET", boundary: "YOUR FILE", stays: "STAYS HERE",
-    noUpload: "Video, frames, character crops and feature data never leave your device.", preflight: "EXECUTION PLAN",
-    choose: "CHOOSE A VIDEO TO START", stageIdle: "LOCAL ENGINE READY", chooseStep: "STEP 01 / SOURCE",
-    chooseTitle: "Open your video here", chooseBody: "Choose a video up to 3 hours long. It opens in this tab and is never uploaded to Cutweave.",
-    chooseButton: "Choose a video", file: "FILE", size: "SIZE", duration: "DURATION", remove: "Remove video",
+    choose: "CHOOSE A VIDEO TO START", stageIdle: "LOCAL ENGINE READY",
+    chooseBody: "Choose a video up to 3 hours long. It opens in this tab and is never uploaded to Cutweave.",
+    chooseButton: "Choose a video", file: "FILE", size: "SIZE", remove: "Remove video",
     limitError: "This build processes videos up to 3 hours. Split this file and choose it again.",
     engineTitle: "PROCESSING MODE", gpu: "GPU", cpu: "CPU", fast: "Recommended · fastest",
     compatible: "Broader device compatibility", gpuMissing: "Fast mode is not available on this device.",
     refsTitle: "CHOOSE THREE REFERENCES", refsBody: "Seek to a clear view of the character. Capture the frame, then crop the character with the hairstyle visible.",
     capture: "Add reference from this frame", resetRefs: "Clear all", emptyRef: "REFERENCE",
-    faceFound: "character · reference agreement", settingsTitle: "SCAN SETTINGS",
-    sceneCount: "Scene count", clipLength: "Length of each clip", threshold: "Match sensitivity", auto: "automatic",
-    seconds: "seconds", run: "Start scan", cancel: "Stop analysis", preparing: "Preparing the local anime character engine",
+    settingsTitle: "SCAN SETTINGS",
+    sceneCount: "Scene count", clipLength: "Length of each clip", threshold: "Match sensitivity",
+    seconds: "seconds", run: "Start scan", preparing: "Preparing the local anime character engine",
     analyzing: "Scanning the video at optimized intervals on this device", post: "Verifying candidates and preparing unique scenes for review", processed: "frames processed",
     verifying: "VERIFYING", candidateScenesReviewed: "Possible matches reviewed",
     noResults: "No reliable character matches were found at this threshold. Choose clearer references with the hairstyle visible or lower the match threshold.",
     resultsTitle: "MATCHED SCENES", resultsBody: "Every clip opens with the target character. One long scene is counted once; when there are not enough distinct scenes, fewer results are returned.",
-    match: "identity score", checks: "character checks", strong: "strong", likely: "likely", review: "review", removeScene: "Remove scene", export: "Build MP4 clip ZIP", exportFallback: "This browser cannot render clips; use Chrome or Edge.",
+    export: "Build MP4 clip ZIP", exportFallback: "This browser cannot render clips; use Chrome or Edge.",
     exporting: "Building accelerated MP4 clips on this device", exportCancel: "Stop export", downloadAgain: "Download ZIP again",
     localProof: "MEDIA SENT TO SERVER", zero: "0 B", identityNote: "Cutweave does not research identity. It only tries to find the selected character again inside this video.",
     workflowSource: "Video", workflowRefs: "References", workflowSettings: "Settings", workflowScan: "Scan", workflowReview: "Review",
     intakeKicker: "LOCAL VIDEO SOURCE", intakeTitle: "Choose the video you want to search", intakePrivacy: "The file opens in this tab. It is not uploaded, copied or sent off your device.",
-    sourceReady: "VIDEO READY", referencesReady: "REFERENCES READY", settingsBody: "Choose the scene count, clip length, scan intensity and matching sensitivity before you scan.",
+    sourceReady: "VIDEO READY", sourceLoading: "LOADING VIDEO", sourceUnreadable: "CANNOT PLAY THIS FILE",
+    decodeError: "This browser cannot play this video file, so no frame can be captured. Chrome and Edge play MP4 (H.264); WebM (VP9) plays in every Chromium browser. Convert the file or open it in another browser.", referencesReady: "REFERENCES READY", settingsBody: "Choose the scene count, clip length, scan intensity and matching sensitivity before you scan.",
     removeReference: "Remove reference", referenceHint: "Move the video to the moment you want, then add a reference.",
     scanKicker: "LOCAL ANIME SCAN", scanTitle: "Searching the video for your selected character", scanKeep: "If you cancel, the video, references and every setting are preserved.", scanCancel: "Cancel scan and return to settings",
     performanceNotice: "ANIME ANALYSIS NOTICE", performanceNoticeTitle: "This tool is more demanding than standard Face Recognition.",
@@ -806,6 +806,15 @@ export function AnimeFaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }
     setFile(selectedFile);
     setMediaUrl(url);
     setPhase("source-ready");
+  }
+
+  /* A file the browser cannot decode never reaches loadedmetadata; say so instead of waiting forever. */
+  function reportDecodeError() {
+    const code = videoRef.current?.error?.code;
+    if (code !== MediaError.MEDIA_ERR_DECODE && code !== MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) return;
+    setVideoDuration(0);
+    setError(copy.decodeError);
+    setPhase("error");
   }
 
   function readMetadata() {
@@ -1438,8 +1447,8 @@ export function AnimeFaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }
         <section className={styles.setup} aria-label="Video and scan settings">
           <div className={styles.videoColumn}>
             <div className={styles.videoFrame}>
-              <div className={styles.videoFrameTop}><span>{copy.sourceReady}</span><b>{videoDuration ? formatTimecode(videoDuration) : "--:--:--"}</b></div>
-              <video ref={videoRef} src={mediaUrl ?? undefined} controls playsInline preload="metadata" onLoadedMetadata={readMetadata} />
+              <div className={styles.videoFrameTop}><span>{videoDuration ? copy.sourceReady : error === copy.decodeError ? copy.sourceUnreadable : copy.sourceLoading}</span><b>{videoDuration ? formatTimecode(videoDuration) : "--:--:--"}</b></div>
+              <video ref={videoRef} src={mediaUrl ?? undefined} controls playsInline preload="metadata" onLoadedMetadata={readMetadata} onError={reportDecodeError} />
             </div>
             <div className={styles.sourceMeta}>
               <div><small>{copy.file}</small><strong title={file.name}>{file.name}</strong></div>

@@ -392,9 +392,6 @@ button.reference-frame { padding: 0; cursor: pointer; text-align: left; }
 .crop-dialog > footer { min-height: 74px; padding: 16px 18px; display: flex; justify-content: flex-end; align-items: center; gap: 18px; border-top: 1px solid oklch(0.26 0.0112 265); }
 
 /* Utility pages */
-.not-found { min-height: 100vh; padding: 8vw; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; background: var(--paper); }
-.not-found .eyebrow { margin-top: 80px; }
-.not-found h1 { margin: 0 0 42px; font-size: clamp(54px, 9vw, 138px); line-height: .86; letter-spacing: -.07em; text-transform: uppercase; }
 
 :focus-visible { outline: 2px solid var(--rust); outline-offset: 4px; }
 
