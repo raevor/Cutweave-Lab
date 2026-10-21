@@ -27,21 +27,24 @@ Details: [`docs/PRIVACY.md`](docs/PRIVACY.md).
 
 The live app is tested with [TestSprite](https://www.testsprite.com). The TestSprite GitHub App runs the suite automatically against each pull request's Vercel preview deployment and reports the result on the PR. `main` is protected: a pull request can only be merged once the required **TestSprite V3** check passes, and force pushes to `main` are blocked.
 
-The suite has 39 browser tests in nine groups:
+The suite has 88 browser tests in twelve groups. Besides page structure, it now drives the real tool flows with files: the runner loads media, picks references, scans, reviews and reaches the export step.
 
 | Area | Tests | What they check |
 |---|---:|---|
-| Navigation & shell | 8 | Brand and hero, the header tools menu (open, launch a tool, close with Escape, open the tool desk), theme switch persisting after reload, the How it works and Roadmap links, and the right-edge section timeline |
-| Home page | 5 | Exactly three tool cards in order with working routes, the facts strip, footer links and Back to top, hero calls to action and the media boundary section |
-| Tool library | 5 | Exactly three tools, each Start tool link opening the right workspace, the tool desk summary and the privacy link |
-| Face Recognition | 5 | Empty source state, privacy copy, 0 B sent to server, no scan action before a video is chosen, no results shown before analysis, the All tools link |
-| Anime Face Recognition | 4 | The first-visit notice (dismiss, keep hidden after reload, reopen from the header) and the empty source state |
-| Music & Bass Markers | 3 | Empty state, no analysis or export before a file is loaded, accepted formats and the privacy link |
-| Privacy | 4 | Local processing and 0 B media transfer, no identity lookup or biometric database query, what the browser downloads versus what never leaves the tab, the Open local tools link |
+| Navigation & shell | 13 | Brand and hero, the header tools menu (open, launch each tool, close with Escape or an outside click, open the tool desk), theme switch, its accessible name and persistence after reload, the How it works, Roadmap and Privacy links, and the right-edge section timeline |
+| Home page | 11 | The three hero lines and both calls to action, all four facts, the four workflow steps, three tool cards in order with working routes, illustration captions, footer links and Back to top, and the media boundary section |
+| Tool library | 7 | Exactly three tools on tracks 01 to 03 with input and output details, each Start tool link, the heading, the tool desk summary and the privacy link |
+| Face Recognition | 7 | Empty source state, the five-step bar, privacy copy, 0 B sent to server, no scan action or results before a video is chosen, the All tools and Privacy links |
+| Face Recognition video flow | 13 | Loading a video, adding references through the crop dialog, repeated "Use this crop" clicks adding only one reference, crop errors shown inside the dialog, cancelling a crop, three references unlocking the settings, the match-sensitivity confirmation, staying on the settings step when switching GPU/CPU, starting and cancelling a scan, a full scan with matched scenes, excluding a scene from the ZIP, returning to the settings and removing the video |
+| Anime Face Recognition | 5 | The first-visit notice (dismiss, keep hidden after reload, reopen from the header), the empty source state, 0 B sent to server and the All tools link |
+| Anime video flow | 8 | Loading a video, adding a character reference, the repeated-click guard, crop errors inside the dialog, the anime scan intensities, the match-sensitivity confirmation, starting and cancelling a scan, and a full scan with matched scenes |
+| Music & Bass Markers | 4 | Empty state, the five-step bar, 0 B sent to server, no analysis or export before a file is loaded, accepted formats and the privacy link |
+| Music & Bass Markers audio flow | 8 | Loading audio, finding markers on the full track, removing and adding markers, the export options, returning to the review, cancelling an analysis and removing the source |
+| Privacy | 6 | Local processing and 0 B media transfer, no identity lookup or biometric database query, what the browser downloads versus what never leaves the tab, the summary values and both calls to action |
 | Roadmap | 2 | Exactly three shipped tools and the link to the tool library |
-| Not found | 3 | The custom 404 page for unknown tool and top-level routes and the way back home |
+| Not found | 4 | The custom 404 page for unknown tool and top-level routes, its label and the way back home |
 
-Cloud tests never receive personal media. Real face matching, model accuracy and GPU performance are out of scope for the remote runner; they are covered by the local unit tests and manual checks. The responsive layout is also checked locally: the cloud runner cannot resize its viewport, so a 390px mobile test was removed from the plan after it came back blocked.
+The flow tests use three files prepared only for this suite: a synthetic 120 BPM click track and two short test video clips. They are stored in the TestSprite project and are not part of this repository. Assertions check the workflow and its states, never how many scenes a scan finds: match counts and model accuracy depend on the runner's hardware and are covered by the local unit tests and manual checks. The responsive layout is also checked locally: the cloud runner cannot resize its viewport, so a 390px mobile test was removed from the plan after it came back blocked.
 
 Local checks:
 
