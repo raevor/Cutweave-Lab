@@ -28,8 +28,3 @@
   --tl-bg: oklch(0.985 0.004 265);
 }
 
-.band { opacity: .55; }
-
-@media (prefers-reduced-motion: reduce) {
-  .band { opacity: .4; }
-}
