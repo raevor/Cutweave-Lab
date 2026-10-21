@@ -10,9 +10,19 @@ The lab opens as a focused tool library, not a miniature NLE. Large interactive 
 
 Tool panels may visualize UI anatomy and data relationships. They must not use prepared footage, decorative waveforms or fabricated metrics as if they came from analysis.
 
-## Language control
+## Language
 
-The public product supports English and Turkish. English is the first-visit default. The header shows only the current language as a high-resolution circular flag; activating it opens a compact two-language control. The selector must remain visually subordinate to the product navigation, support keyboard/touch input and respect reduced motion.
+The public interface is English, and every label, status and tool screen ships in English only. Turkish is the planned optional locale. If it is added, the language control must stay visually subordinate to the product navigation, support keyboard and touch input and respect reduced motion.
+
+## Illustrations
+
+Home, `/lab` and `/roadmap` explain each tool with an animated illustration. The cast is original and drawn in code: people as HTML/CSS portraits, the anime cast as SVG line art with layered hair. Each portrait is exported once to a transparent WebP. No character depicts a real person or an existing character. The reference identity reappears in other outfits, so a scene can show the same face being found again.
+
+Illustrations carry an `Illustration:` accessible label and stay out of the tool workspaces. A workspace only ever shows results from a real local analysis.
+
+## Not found
+
+The 404 page uses the same frame as the public pages and the same visual language as the tool illustrations. The requested address is framed like a reference, the lab's three real tools are the frames, and a scan line checks each one and marks it as no match. The scene ends with "0 tools matched". With reduced motion, it shows the finished result.
 
 ## Token roles
 
