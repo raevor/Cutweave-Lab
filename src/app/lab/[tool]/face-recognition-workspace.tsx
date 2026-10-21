@@ -284,7 +284,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     chooseTitle: "Open your video here", chooseBody: "Choose a video up to 3 hours long. It opens in this tab and is never uploaded to Cutweave.",
     chooseButton: "Choose a video", file: "FILE", size: "SIZE", duration: "DURATION", remove: "Remove video",
     limitError: "This build processes videos up to 3 hours. Split this file and choose it again.",
-    engineTitle: "PROCESSING MODE", gpu: "GPU", cpu: "CPU", fast: "Fastest option",
+    engineTitle: "PROCESSING MODE", gpu: "GPU", cpu: "CPU", fast: "Recommended · fastest",
     compatible: "Broader device compatibility", gpuMissing: "Fast mode is not available on this device.",
     refsTitle: "CHOOSE THREE REFERENCES", refsBody: "Seek to a clear view of the face. Capture the frame, then crop only the person you want to find.",
     capture: "Add reference from this frame", resetRefs: "Clear all", emptyRef: "REFERENCE",
