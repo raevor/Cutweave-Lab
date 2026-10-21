@@ -300,7 +300,8 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     localProof: "MEDIA SENT TO SERVER", zero: "0 B", identityNote: "Cutweave does not research identity. It only tries to find the selected face again inside this video.",
     workflowSource: "Video", workflowRefs: "References", workflowSettings: "Settings", workflowScan: "Scan", workflowReview: "Review",
     intakeKicker: "LOCAL VIDEO SOURCE", intakeTitle: "Choose the video you want to search", intakePrivacy: "The file opens in this tab. It is not uploaded, copied or sent off your device.",
-    sourceReady: "VIDEO READY", referencesReady: "REFERENCES READY", settingsBody: "Choose the scene count, clip length, scan intensity and matching sensitivity before you scan.",
+    sourceReady: "VIDEO READY", sourceLoading: "LOADING VIDEO", sourceUnreadable: "CANNOT PLAY THIS FILE",
+    decodeError: "This browser cannot play this video file, so no frame can be captured. Chrome and Edge play MP4 (H.264); WebM (VP9) plays in every Chromium browser. Convert the file or open it in another browser.", referencesReady: "REFERENCES READY", settingsBody: "Choose the scene count, clip length, scan intensity and matching sensitivity before you scan.",
     profileTitle: "Scan intensity", profileHelp: "Efficient checks half as many timeline frames. Face matching, final verification and your sensitivity setting stay unchanged.",
     removeReference: "Remove reference", referenceHint: "Move the video to the moment you want, then add a reference.",
     scanKicker: "LOCAL FACE SCAN", scanTitle: "Searching the video for your selected face", scanKeep: "If you cancel, the video, references and every setting are preserved.", scanCancel: "Cancel scan and return to settings",
@@ -747,6 +748,15 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     setFile(selectedFile);
     setMediaUrl(url);
     setPhase("source-ready");
+  }
+
+  /* A file the browser cannot decode never reaches loadedmetadata; say so instead of waiting forever. */
+  function reportDecodeError() {
+    const code = videoRef.current?.error?.code;
+    if (code !== MediaError.MEDIA_ERR_DECODE && code !== MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) return;
+    setVideoDuration(0);
+    setError(copy.decodeError);
+    setPhase("error");
   }
 
   function readMetadata() {
@@ -1279,8 +1289,8 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
         <section className={styles.setup} aria-label="Video and scan settings">
           <div className={styles.videoColumn}>
             <div className={styles.videoFrame}>
-              <div className={styles.videoFrameTop}><span>{copy.sourceReady}</span><b>{videoDuration ? formatTimecode(videoDuration) : "--:--:--"}</b></div>
-              <video ref={videoRef} src={mediaUrl ?? undefined} controls playsInline preload="metadata" onLoadedMetadata={readMetadata} />
+              <div className={styles.videoFrameTop}><span>{videoDuration ? copy.sourceReady : error === copy.decodeError ? copy.sourceUnreadable : copy.sourceLoading}</span><b>{videoDuration ? formatTimecode(videoDuration) : "--:--:--"}</b></div>
+              <video ref={videoRef} src={mediaUrl ?? undefined} controls playsInline preload="metadata" onLoadedMetadata={readMetadata} onError={reportDecodeError} />
             </div>
             <div className={styles.sourceMeta}>
               <div><small>{copy.file}</small><strong title={file.name}>{file.name}</strong></div>
