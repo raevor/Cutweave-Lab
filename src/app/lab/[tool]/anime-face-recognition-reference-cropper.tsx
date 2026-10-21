@@ -48,6 +48,10 @@ export function AnimeFaceRecognitionReferenceCropper({
   keyboardHint,
   confirmLabel,
   cancelLabel,
+  busy = false,
+  busyLabel,
+  busyNote,
+  error,
   onConfirm,
   onCancel,
 }: {
@@ -57,6 +61,10 @@ export function AnimeFaceRecognitionReferenceCropper({
   keyboardHint: string;
   confirmLabel: string;
   cancelLabel: string;
+  busy?: boolean;
+  busyLabel?: string;
+  busyNote?: string;
+  error?: string | null;
   onConfirm: (crop: AnimeNormalizedCrop) => void;
   onCancel: () => void;
 }) {
@@ -67,6 +75,7 @@ export function AnimeFaceRecognitionReferenceCropper({
   const animationFrameRef = useRef<number | null>(null);
   const pendingCropRef = useRef<AnimeNormalizedCrop | null>(null);
   const onCancelRef = useRef(onCancel);
+  const busyRef = useRef(busy);
 
   const renderCrop = useCallback((next: AnimeNormalizedCrop) => {
     cropRef.current = next;
@@ -101,9 +110,13 @@ export function AnimeFaceRecognitionReferenceCropper({
   }, [onCancel]);
 
   useEffect(() => {
+    busyRef.current = busy;
+  }, [busy]);
+
+  useEffect(() => {
     renderCrop(DEFAULT_CROP);
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onCancelRef.current();
+      if (event.key === "Escape" && !busyRef.current) onCancelRef.current();
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => {
@@ -116,6 +129,7 @@ export function AnimeFaceRecognitionReferenceCropper({
   }, [imageUrl, renderCrop]);
 
   function confirmCrop() {
+    if (busy) return;
     if (animationFrameRef.current !== null) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
@@ -135,7 +149,7 @@ export function AnimeFaceRecognitionReferenceCropper({
   }
 
   function beginCrop(event: PointerEvent<HTMLDivElement>) {
-    if (event.button !== 0) return;
+    if (event.button !== 0 || busy) return;
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     const target = event.target as HTMLElement;
@@ -192,7 +206,7 @@ export function AnimeFaceRecognitionReferenceCropper({
     const direction = event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1
       : event.key === "ArrowRight" || event.key === "ArrowDown" ? 1
         : 0;
-    if (!direction) return;
+    if (!direction || busy) return;
     event.preventDefault();
     const amount = event.ctrlKey ? 0.03 : 0.01;
     const current = cropRef.current;
@@ -212,11 +226,12 @@ export function AnimeFaceRecognitionReferenceCropper({
   return (
     <div className={styles.backdrop} role="presentation">
       <section className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="crop-dialog-title">
-        <header className={styles.header}><div><p>REFERENCE CROP</p><h2 id="crop-dialog-title">{title}</h2></div><button type="button" onClick={onCancel} aria-label={cancelLabel}>×</button></header>
+        <header className={styles.header}><div><p>REFERENCE CROP</p><h2 id="crop-dialog-title">{title}</h2></div><button type="button" onClick={onCancel} aria-label={cancelLabel} disabled={busy}>×</button></header>
         <p className={styles.copy}>{instructions}</p>
         <div
           ref={stageRef}
           className={styles.stage}
+          aria-busy={busy}
           onPointerDown={beginCrop}
           onPointerMove={updateCrop}
           onPointerUp={finishCrop}
@@ -241,7 +256,13 @@ export function AnimeFaceRecognitionReferenceCropper({
           </div>
         </div>
         <p className={styles.keyboardHint}>{keyboardHint}</p>
-        <footer className={styles.footer}><button type="button" className={styles.cancel} onClick={onCancel}>{cancelLabel}</button><button type="button" className={styles.confirm} onClick={confirmCrop}>{confirmLabel}</button></footer>
+        <footer className={styles.footer}>
+          {error && !busy
+            ? <p className={styles.cropError} role="alert">{error}</p>
+            : <p className={styles.status} role="status">{busy ? busyNote : ""}</p>}
+          <button type="button" className={styles.cancel} onClick={onCancel} disabled={busy}>{cancelLabel}</button>
+          <button type="button" className={styles.confirm} onClick={confirmCrop} disabled={busy} aria-busy={busy}>{busy ? busyLabel ?? confirmLabel : confirmLabel}</button>
+        </footer>
       </section>
     </div>
   );

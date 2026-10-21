@@ -417,6 +417,24 @@
 .rangeSetting > span { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .rangeSetting strong { color: var(--anime-face-signal); font: 850 10px/1 var(--font-mono); white-space: nowrap; }
 .rangeSetting input { width: 100%; accent-color: var(--anime-face-signal); }
+.rangeSetting { position: relative; }
+.sensitivityValue { display: flex; align-items: center; gap: 10px; }
+.sensitivityReset { padding: 0; border: 0; border-bottom: 1px solid var(--anime-face-line); background: transparent; color: var(--anime-face-muted); cursor: pointer; font: 700 7px/1.4 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; }
+.sensitivityReset:hover { border-color: var(--anime-face-signal); color: var(--anime-face-signal); }
+.sensitivityControl { position: relative; }
+.sensitivityGuard { position: absolute; inset: -6px 0; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.sensitivityGuard:focus-visible { outline: 2px solid var(--anime-face-signal); outline-offset: 2px; }
+.sensitivityGuard:disabled { cursor: not-allowed; }
+.sensitivityPrompt { position: absolute; z-index: 20; right: -1px; bottom: calc(100% + 8px); width: min(320px, calc(100vw - 48px)); display: grid; gap: 8px; padding: 14px; border: 1px solid var(--anime-face-signal); background: var(--anime-face-panel); box-shadow: 8px 8px 0 color-mix(in oklch, var(--anime-face-signal) 16%, transparent); text-align: left; animation: sensitivityPromptIn 160ms ease-out; }
+.sensitivityPrompt > p { margin: 0; color: var(--anime-face-signal); font: 800 7px/1 var(--font-mono); letter-spacing: .14em; }
+.sensitivityPrompt > h3 { margin: 0; color: var(--anime-face-text); font-size: 15px; line-height: 1.15; letter-spacing: -.02em; }
+.sensitivityPrompt > span { color: var(--anime-face-muted); font-size: 11px; line-height: 1.5; }
+.sensitivityPrompt > div { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.sensitivityPrompt button { min-height: 34px; padding: 0 12px; border: 1px solid var(--anime-face-line); background: transparent; color: var(--anime-face-text); cursor: pointer; font: 800 8px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
+.sensitivityPrompt button:hover { border-color: var(--anime-face-muted); }
+.sensitivityPrompt .sensitivityConfirm { border-color: var(--anime-face-signal); background: var(--anime-face-signal); color: var(--anime-face-button-ink); }
+.sensitivityPrompt button:focus-visible { outline: 2px solid var(--anime-face-signal); outline-offset: 2px; }
+@keyframes sensitivityPromptIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 .error { margin: 0 28px 20px; padding: 13px 14px; border-left: 2px solid var(--anime-face-danger); background: var(--anime-face-error-bg); color: var(--anime-face-error-text); font-size: 12px; line-height: 1.45; }
 .runButton { width: calc(100% - 56px); min-height: 58px; display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 22px; margin: 0 28px 28px; padding: 0 18px; text-align: left; }
 .runButton b { font: 850 10px/1 var(--font-mono); }
@@ -456,6 +474,8 @@
   animation: scanLineSearch 3.2s ease-in-out infinite alternate;
 }
 .animeFaceScan > b { position: absolute; z-index: 6; right: 6%; bottom: 5%; padding: 8px 10px; border: 1px solid var(--anime-face-signal); background: oklch(0.07 0.008 265 / .92); color: var(--anime-face-signal); font: 900 24px/1 var(--font-mono); letter-spacing: -.05em; }
+.animeFaceScan > .scanSweep { top: 10%; bottom: 10%; left: 10%; right: 10%; height: auto; overflow: hidden; background: transparent; box-shadow: none; transition: none; }
+.animeFaceScan > .scanSweep::before { position: absolute; top: 0; bottom: 0; left: -100%; width: 100%; border-right: 1px solid var(--anime-face-signal); background: linear-gradient(90deg, transparent 62%, color-mix(in oklch, var(--anime-face-signal) 16%, transparent)); filter: drop-shadow(5px 0 9px color-mix(in oklch, var(--anime-face-signal) 55%, transparent)); content: ""; will-change: transform; animation: scanSweepFrames 2.4s cubic-bezier(.45, 0, .25, 1) infinite; }
 .animeFaceScan > .scanActivityBadge { min-width: 86px; padding-block: 10px; font-size: 9px; letter-spacing: .09em; text-align: center; }
 .scanPanel h2 { width: 100%; max-width: 560px; margin: 0; overflow-wrap: anywhere; font-size: clamp(26px, 2.5vw, 38px); line-height: 1.02; letter-spacing: -.05em; }
 .scanStage { min-height: 40px; max-width: 520px; margin: 14px 0 20px; color: var(--anime-face-muted); font-size: 12px; line-height: 1.45; }
@@ -470,6 +490,12 @@
 .verificationStatus span { min-width: 0; color: var(--anime-face-faint); font: 750 8px/1.3 var(--font-mono); letter-spacing: .07em; text-transform: uppercase; }
 .verificationStatus strong { color: var(--anime-face-signal); font: 900 17px/1 var(--font-mono); white-space: nowrap; }
 
+@keyframes scanSweepFrames {
+  0% { opacity: 0; transform: translate3d(0, 0, 0); }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(100%, 0, 0); }
+}
 @keyframes scanLineSearch {
   from { opacity: .58; transform: translate3d(0, 0, 0); }
   to { opacity: 1; transform: translate3d(0, calc(100% - 1px), 0); }
@@ -587,5 +613,6 @@
 @media (prefers-reduced-motion: reduce) {
   .workspace *, .workspace *::before, .workspace *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
   .workspace .scanLineActive::before { animation-duration: 5.6s !important; animation-iteration-count: infinite !important; }
+  .workspace .scanSweep::before { animation-duration: 4.8s !important; animation-iteration-count: infinite !important; }
   .pointerLight { transition-duration: .34s !important; }
 }
