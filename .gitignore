@@ -40,6 +40,7 @@
 /CODEX_REPORT.md
 /CUTWEAVE_PRD.md
 /HACKATHON_RULES_S4.md
+/TASKS.md
 /*HANDOFF*.md
 /*REPORT*.md
 
@@ -47,7 +48,7 @@
 # runners receive them directly; they are not part of the public source.
 /test-fixtures/
 
-# Previously tracked AGENTS.md, TASKS.md and README.md remain public.
+# Previously tracked AGENTS.md and README.md remain public.
 
 # Local AI/IDE state may contain machine paths, conversation history or keys.
 /.agents/

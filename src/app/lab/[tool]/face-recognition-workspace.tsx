@@ -272,6 +272,9 @@ function SceneClipPlayer({
   );
 }
 
+/* Tuned through long test runs on real footage; changing it needs an explicit confirmation. */
+const DEFAULT_MATCH_THRESHOLD = 0.38;
+
 export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
   const copy = {
     nav: "Tool navigation", allTools: "All tools", privacy: "Privacy", local: "Runs on this device",
@@ -303,6 +306,11 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     scanKicker: "LOCAL FACE SCAN", scanTitle: "Searching the video for your selected face", scanKeep: "If you cancel, the video, references and every setting are preserved.", scanCancel: "Cancel scan and return to settings",
     included: "Included in ZIP", excluded: "Excluded from ZIP", includeScene: "Include scene in ZIP", excludeScene: "Exclude from ZIP", previewScene: "Play or pause clip", exportSummary: "clips to download", backToSettings: "Change settings",
     cropTitle: "Frame only the face you want", cropInstructions: "Draw a rectangle around the face and nearby head area. Keep other people in the background outside the selection.", cropKeyboard: "Move with the arrow keys; resize with Shift + arrow keys.", cropConfirm: "Use this crop", cropCancel: "Cancel",
+    cropChecking: "Checking…", cropCheckingNote: "Checking the face in this crop on your device. This can take a few seconds.",
+    engineSwitching: "Loading this mode on your device…", scene: "SCENE",
+    sensitivityUnlock: "Change match sensitivity", sensitivityPromptKicker: "TUNED DEFAULT", sensitivityPromptTitle: "Change the match sensitivity?",
+    sensitivityPromptBody: "was tuned through long testing and already finds the selected face. Changing it can add scenes with other people or miss scenes where the face appears. Do you want to change it?",
+    sensitivityKeep: "No, keep", sensitivityConfirm: "Yes, change it", sensitivityReset: "Reset to",
   } as const;
 
   const [theme, setTheme] = useState<FaceTheme>("dark");
@@ -332,10 +340,20 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
   const [engine, setEngine] = useState<FaceEngine>("cpu");
   const [references, setReferences] = useState<ReferenceFrame[]>([]);
   const [referencesUpdating, setReferencesUpdating] = useState(false);
+  const [referenceChecking, setReferenceChecking] = useState(false);
+  const [cropError, setCropError] = useState<string | null>(null);
+  const [engineSwitching, setEngineSwitching] = useState(false);
+  const referenceCheckRef = useRef(false);
   const [cropDraft, setCropDraft] = useState<CropDraft | null>(null);
   const [sceneCount, setSceneCount] = useState(25);
   const [clipLength, setClipLength] = useState(5);
-  const [threshold, setThreshold] = useState(0.38);
+  const [threshold, setThreshold] = useState(DEFAULT_MATCH_THRESHOLD);
+  const [sensitivityUnlocked, setSensitivityUnlocked] = useState(false);
+  const [sensitivityPromptOpen, setSensitivityPromptOpen] = useState(false);
+  const sensitivityPromptRef = useRef<HTMLDivElement>(null);
+  const sensitivityKeepRef = useRef<HTMLButtonElement>(null);
+  const sensitivityGuardRef = useRef<HTMLButtonElement>(null);
+  const sensitivityInputRef = useRef<HTMLInputElement>(null);
   const [scanProfile, setScanProfile] = useState<FaceScanProfile>("maximum");
   const [phase, setPhase] = useState<Phase>("idle");
   const [progress, setProgress] = useState({ completed: 0, total: 0 });
@@ -540,6 +558,27 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     return () => window.removeEventListener("beforeunload", warnBeforeLeaving);
   }, [isBusy]);
 
+  useEffect(() => {
+    if (!sensitivityPromptOpen) return;
+    sensitivityKeepRef.current?.focus();
+    const closeOutside = (event: PointerEvent) => {
+      if (!sensitivityPromptRef.current?.contains(event.target as Node)) setSensitivityPromptOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    return () => document.removeEventListener("pointerdown", closeOutside);
+  }, [sensitivityPromptOpen]);
+
+  function keepTunedSensitivity() {
+    setSensitivityPromptOpen(false);
+    sensitivityGuardRef.current?.focus();
+  }
+
+  function unlockSensitivity() {
+    setSensitivityUnlocked(true);
+    setSensitivityPromptOpen(false);
+    window.requestAnimationFrame(() => sensitivityInputRef.current?.focus());
+  }
+
   function revokeUrl(url: string | null) {
     if (!url) return;
     URL.revokeObjectURL(url);
@@ -557,7 +596,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     });
   }
 
-  async function ensureWorker(selectedEngine: FaceEngine) {
+  async function ensureWorker(selectedEngine: FaceEngine, showScanStep = true) {
     if (workerRef.current && workerEngineRef.current === selectedEngine && engineBackend) return engineBackend;
     workerRef.current?.terminate();
     pendingCalls.current.forEach(({ reject }) => reject(new Error("The processing engine changed.")));
@@ -586,7 +625,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
       pendingCalls.current.clear();
     };
 
-    setPhase("engine-loading");
+    if (showScanStep) setPhase("engine-loading");
     const requestId = ++requestIdRef.current;
     const response = await sendWorker({ type: "init", requestId, engine: selectedEngine, origin: window.location.origin });
     if (response.type !== "ready") throw new Error("The local face engine did not finish loading.");
@@ -603,7 +642,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
       if (cancelledRef.current) throw new DOMException("Analysis cancelled", "AbortError");
       const bitmap = await createImageBitmap(reference.previewBlob);
       const requestId = ++requestIdRef.current;
-      const response = await sendWorker({ type: "reference", requestId, slot: reference.slot, bitmap }, [bitmap]);
+      const response = await sendWorker({ type: "reference", requestId, slot: reference.slot, bitmap, restore: true }, [bitmap]);
       if (response.type !== "reference-ready") throw new Error("A saved reference could not be restored before scanning.");
     }
   }
@@ -616,6 +655,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
   function closeCropDraft() {
     if (cropDraft) revokeUrl(cropDraft.previewUrl);
     setCropDraft(null);
+    setCropError(null);
   }
 
   async function resetReferences() {
@@ -659,7 +699,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
         for (const reference of remaining) {
           const bitmap = await createImageBitmap(reference.previewBlob);
           const requestId = ++requestIdRef.current;
-          const response = await sendWorker({ type: "reference", requestId, slot: reference.slot, bitmap }, [bitmap]);
+          const response = await sendWorker({ type: "reference", requestId, slot: reference.slot, bitmap, restore: true }, [bitmap]);
           if (response.type !== "reference-ready") throw new Error("A saved reference could not be restored.");
           refreshed.push({ ...reference, faceCount: response.faceCount, agreement: response.agreement });
         }
@@ -740,13 +780,14 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
       setPhase("source-ready");
       return;
     }
+    setEngineSwitching(true);
     try {
-      await ensureWorker(nextEngine);
+      await ensureWorker(nextEngine, false);
       const refreshed: ReferenceFrame[] = [];
       for (const reference of references) {
         const bitmap = await createImageBitmap(reference.previewBlob);
         const requestId = ++requestIdRef.current;
-        const response = await sendWorker({ type: "reference", requestId, slot: reference.slot, bitmap }, [bitmap]);
+        const response = await sendWorker({ type: "reference", requestId, slot: reference.slot, bitmap, restore: true }, [bitmap]);
         if (response.type !== "reference-ready") throw new Error("A saved reference could not be loaded into the new engine.");
         refreshed.push({ ...reference, faceCount: response.faceCount, agreement: response.agreement });
       }
@@ -755,6 +796,8 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
     } catch (engineError) {
       setError(engineError instanceof Error ? engineError.message : "The processing engine could not be changed.");
       setPhase("error");
+    } finally {
+      setEngineSwitching(false);
     }
   }
 
@@ -777,10 +820,14 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
   }
 
   async function confirmReferenceCrop(crop: NormalizedCrop) {
-    if (!cropDraft || references.length >= 3) return;
+    if (!cropDraft || references.length >= 3 || referenceCheckRef.current) return;
+    /* Repeated clicks while the worker reads the crop must not add extra references. */
+    referenceCheckRef.current = true;
+    setReferenceChecking(true);
+    setCropError(null);
     setError(null);
     try {
-      await ensureWorker(engine);
+      await ensureWorker(engine, false);
       const slot = references.length;
       const { previewBlob, bitmap } = await cropReferenceImage(cropDraft.previewBlob, crop);
       const requestId = ++requestIdRef.current;
@@ -798,9 +845,12 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
       }]);
       closeCropDraft();
       setPhase("source-ready");
-    } catch (cropError) {
-      setError(cropError instanceof Error ? cropError.message : "The cropped reference could not be analyzed.");
-      setPhase("error");
+    } catch (referenceError) {
+      /* Shown inside the open crop dialog, where the user can adjust the selection and try again. */
+      setCropError(referenceError instanceof Error ? referenceError.message : "The cropped reference could not be analyzed.");
+    } finally {
+      referenceCheckRef.current = false;
+      setReferenceChecking(false);
     }
   }
 
@@ -1146,8 +1196,9 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
           : file ? copy.choose : copy.stageIdle;
 
   const scanInProgress = phase === "engine-loading" || phase === "analyzing" || phase === "post-processing";
-  const controlsDisabled = isBusy || referencesUpdating;
+  const controlsDisabled = isBusy || referencesUpdating || referenceChecking || engineSwitching;
   const sensitivityPercent = Math.round(((threshold - 0.26) / (0.62 - 0.26)) * 100);
+  const defaultSensitivityPercent = Math.round(((DEFAULT_MATCH_THRESHOLD - 0.26) / (0.62 - 0.26)) * 100);
   const workflowStep = !file ? 0 : phase === "results" || phase === "exporting" ? 4 : scanInProgress ? 3 : references.length < 3 ? 1 : 2;
   const workflowLabels = [copy.workflowSource, copy.workflowRefs, copy.workflowSettings, copy.workflowScan, copy.workflowReview];
 
@@ -1252,10 +1303,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
                     </figure>
                   ))}
                 </div>
-                <i
-                  className={phase === "post-processing" ? styles.scanLineActive : undefined}
-                  style={phase === "post-processing" ? undefined : { top: `${Math.max(8, Math.min(88, progressPercent))}%` }}
-                />
+                <i className={phase === "post-processing" ? styles.scanLineActive : styles.scanSweep} />
                 <b className={phase === "post-processing" ? styles.scanActivityBadge : undefined}>
                   {phase === "post-processing" ? copy.verifying : `${progressPercent}%`}
                 </b>
@@ -1322,12 +1370,12 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
                     <em>{copy.referencesReady}</em>
                   </div>
 
-                  <div className={styles.engineChoice} role="radiogroup" aria-label={copy.engineTitle}>
+                  <div className={styles.engineChoice} role="radiogroup" aria-label={copy.engineTitle} aria-busy={engineSwitching}>
                     <button type="button" role="radio" aria-checked={engine === "gpu"} className={engine === "gpu" ? styles.engineActive : ""} disabled={!gpuAvailable || controlsDisabled} onClick={() => changeEngine("gpu")}>
-                      <span>{copy.gpu}</span><strong>{gpuAvailable ? copy.fast : copy.gpuMissing}</strong><i />
+                      <span>{copy.gpu}</span><strong>{engineSwitching && engine === "gpu" ? copy.engineSwitching : gpuAvailable ? copy.fast : copy.gpuMissing}</strong><i />
                     </button>
                     <button type="button" role="radio" aria-checked={engine === "cpu"} className={engine === "cpu" ? styles.engineActive : ""} disabled={controlsDisabled} onClick={() => changeEngine("cpu")}>
-                      <span>{copy.cpu}</span><strong>{copy.compatible}</strong><i />
+                      <span>{copy.cpu}</span><strong>{engineSwitching && engine === "cpu" ? copy.engineSwitching : copy.compatible}</strong><i />
                     </button>
                   </div>
 
@@ -1364,10 +1412,53 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
                       <span><b>{copy.clipLength}</b><strong>{clipLength} {copy.seconds}</strong></span>
                       <input type="range" min="3" max="10" step="1" value={clipLength} disabled={controlsDisabled} onChange={(event) => setClipLength(Number(event.target.value))} />
                     </label>
-                    <label className={styles.rangeSetting}>
-                      <span><b>{copy.threshold}</b><strong>%{sensitivityPercent}</strong></span>
-                      <input type="range" min="0.26" max="0.62" step="0.01" value={threshold} disabled={controlsDisabled} onChange={(event) => setThreshold(Number(event.target.value))} />
-                    </label>
+                    <div className={styles.rangeSetting}>
+                      <span>
+                        <b id="sensitivity-label">{copy.threshold}</b>
+                        <span className={styles.sensitivityValue}>
+                          {sensitivityUnlocked && threshold !== DEFAULT_MATCH_THRESHOLD && (
+                            <button type="button" className={styles.sensitivityReset} onClick={() => setThreshold(DEFAULT_MATCH_THRESHOLD)} disabled={controlsDisabled}>
+                              {copy.sensitivityReset} {defaultSensitivityPercent}%
+                            </button>
+                          )}
+                          <strong>{sensitivityPercent}%</strong>
+                        </span>
+                      </span>
+                      <div className={styles.sensitivityControl}>
+                        <input ref={sensitivityInputRef} type="range" min="0.26" max="0.62" step="0.01" value={threshold} aria-labelledby="sensitivity-label" tabIndex={sensitivityUnlocked ? undefined : -1} disabled={controlsDisabled} onChange={(event) => { if (sensitivityUnlocked) setThreshold(Number(event.target.value)); }} />
+                        {/* The tuned value only changes after the user confirms in the prompt. */}
+                        {!sensitivityUnlocked && (
+                          <button
+                            ref={sensitivityGuardRef}
+                            type="button"
+                            className={styles.sensitivityGuard}
+                            aria-label={copy.sensitivityUnlock}
+                            aria-haspopup="dialog"
+                            aria-expanded={sensitivityPromptOpen}
+                            disabled={controlsDisabled}
+                            onClick={() => setSensitivityPromptOpen(true)}
+                          />
+                        )}
+                      </div>
+                      {sensitivityPromptOpen && (
+                        <div
+                          ref={sensitivityPromptRef}
+                          className={styles.sensitivityPrompt}
+                          role="alertdialog"
+                          aria-labelledby="sensitivity-prompt-title"
+                          aria-describedby="sensitivity-prompt-body"
+                          onKeyDown={(event) => { if (event.key === "Escape") keepTunedSensitivity(); }}
+                        >
+                          <p>{copy.sensitivityPromptKicker}</p>
+                          <h3 id="sensitivity-prompt-title">{copy.sensitivityPromptTitle}</h3>
+                          <span id="sensitivity-prompt-body">{defaultSensitivityPercent}% {copy.sensitivityPromptBody}</span>
+                          <div>
+                            <button ref={sensitivityKeepRef} type="button" onClick={keepTunedSensitivity}>{copy.sensitivityKeep} {defaultSensitivityPercent}%</button>
+                            <button type="button" className={styles.sensitivityConfirm} onClick={unlockSensitivity}>{copy.sensitivityConfirm}</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </section>
               )}
@@ -1412,7 +1503,7 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
                       </div>
                     </div>
                     <div className={styles.sceneCardMeta}>
-                      <div><small>SAHNE #{String(index + 1).padStart(2, "0")}</small><span className={isExcluded ? styles.sceneStatusExcluded : ""}>{isExcluded ? copy.excluded : copy.included}</span></div>
+                      <div><small>{copy.scene} #{String(index + 1).padStart(2, "0")}</small><span className={isExcluded ? styles.sceneStatusExcluded : ""}>{isExcluded ? copy.excluded : copy.included}</span></div>
                       <strong>{formatTimecode(match.start)} → {formatTimecode(match.end)}</strong>
                       <em>{clipDuration.toFixed(1)} {copy.seconds}</em>
                     </div>
@@ -1445,6 +1536,10 @@ export function FaceRecognitionWorkspace({ tool }: { tool: ToolDefinition }) {
         keyboardHint={copy.cropKeyboard}
         confirmLabel={copy.cropConfirm}
         cancelLabel={copy.cropCancel}
+        busy={referenceChecking}
+        busyLabel={copy.cropChecking}
+        busyNote={copy.cropCheckingNote}
+        error={cropError}
         onConfirm={confirmReferenceCrop}
         onCancel={closeCropDraft}
       />}

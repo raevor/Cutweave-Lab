@@ -507,7 +507,7 @@ self.onmessage = async (event: MessageEvent<AnimeFaceWorkerRequest>) => {
         ...[...referenceEmbeddings.values()].map((reference) => reference.ccip),
         selected.ccipEmbeddings,
       ]);
-      if (referenceEmbeddings.size > 0 && agreement < 0.72) {
+      if (!message.restore && referenceEmbeddings.size > 0 && agreement < 0.72) {
         throw new Error("This crop does not look like the earlier anime character. Keep the same character and include the hairstyle.");
       }
       referenceEmbeddings.set(message.slot, {

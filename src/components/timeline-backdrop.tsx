@@ -4,10 +4,7 @@ import { useEffect, useRef } from "react";
 import { OUTFIT_COUNT, PORTRAIT_BOX, portraitSrc, type CharacterVariant } from "./character-portraits";
 import styles from "./timeline-backdrop.module.css";
 
-type Variant = "hero" | "band";
-
 type TimelineBackdropProps = {
-  variant?: Variant;
   className?: string;
   /** Element whose pointer movement scrubs the playhead. Defaults to the canvas wrapper. */
   scrubTarget?: React.RefObject<HTMLElement | null>;
@@ -178,7 +175,7 @@ function waveform(t: number) {
   return Math.min(1, bed + Math.abs(texture) + kick * 0.85);
 }
 
-export function TimelineBackdrop({ variant = "hero", className, scrubTarget }: TimelineBackdropProps) {
+export function TimelineBackdrop({ className, scrubTarget }: TimelineBackdropProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -196,9 +193,9 @@ export function TimelineBackdrop({ variant = "hero", className, scrubTarget }: T
     let frame: number | null = null;
     let visible = true;
     let last = performance.now();
-    let clock = variant === "hero" ? 14.2 : 31.6;
+    let clock = 14.2;
     let scrubX: number | null = null;
-    let playheadFrac = variant === "hero" ? 0.62 : 0.5;
+    let playheadFrac = 0.62;
 
     /* Horizontal position only changes on resize, so pointer moves never force a layout. */
     let wrapLeft = 0;
@@ -224,7 +221,6 @@ export function TimelineBackdrop({ variant = "hero", className, scrubTarget }: T
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, width, height);
 
-      const isHero = variant === "hero";
       const compact = width < 720;
       const pps = PX_PER_SECOND * (compact ? 0.78 : 1);
       const headX = width * playheadFrac;
@@ -232,18 +228,18 @@ export function TimelineBackdrop({ variant = "hero", className, scrubTarget }: T
       const xOf = (t: number) => headX + (t - headTime) * pps;
       const tOf = (x: number) => headTime + (x - headX) / pps;
 
-      const rulerH = isHero ? 26 : 18;
-      const laneH = isHero ? Math.min(62, Math.max(40, height * 0.07)) : Math.max(14, (height - rulerH) / 3 - 4);
-      const laneGap = isHero ? 10 : 4;
+      const rulerH = 26;
+      const laneH = Math.min(62, Math.max(40, height * 0.07));
+      const laneGap = 10;
       const stackH = rulerH + laneH * 3 + laneGap * 3;
-      const top = isHero ? height - stackH - Math.min(44, height * 0.05) : 0;
-      const labelW = compact ? 0 : isHero ? 118 : 0;
+      const top = height - stackH - Math.min(44, height * 0.05);
+      const labelW = compact ? 0 : 118;
 
       /* Vertical frame grid across the whole surface, fading upward for the hero. */
       const t0 = Math.floor(tOf(0));
       const t1 = Math.ceil(tOf(width));
       /* One gradient and two batched paths per frame instead of one per line. */
-      const gridStyle = isHero ? ctx.createLinearGradient(0, 0, 0, top + stackH) : palette.line;
+      const gridStyle = ctx.createLinearGradient(0, 0, 0, top + stackH);
       if (typeof gridStyle !== "string") {
         gridStyle.addColorStop(0, "transparent");
         gridStyle.addColorStop(0.55, palette.line);
@@ -257,7 +253,7 @@ export function TimelineBackdrop({ variant = "hero", className, scrubTarget }: T
         for (let s = t0; s <= t1; s += 1) {
           if ((s % 5 === 0) !== major) continue;
           const x = Math.round(xOf(s)) + 0.5;
-          ctx.moveTo(x, isHero ? 0 : rulerH);
+          ctx.moveTo(x, 0);
           ctx.lineTo(x, top + stackH);
         }
         ctx.stroke();
@@ -266,12 +262,12 @@ export function TimelineBackdrop({ variant = "hero", className, scrubTarget }: T
 
       /* Ruler with frame ticks and timecodes. */
       ctx.fillStyle = palette.muted;
-      ctx.font = `${isHero ? 10 : 8}px ${palette.mono}`;
+      ctx.font = `10px ${palette.mono}`;
       ctx.textBaseline = "middle";
       for (let s = t0; s <= t1; s += 1) {
         const x = xOf(s);
         ctx.globalAlpha = 0.85;
-        if (isHero && s % 5 === 0 && x > labelW + 6) ctx.fillText(timecode(s).slice(3), x + 5, top + rulerH / 2);
+        if (s % 5 === 0 && x > labelW + 6) ctx.fillText(timecode(s).slice(3), x + 5, top + rulerH / 2);
         for (let f = 0; f < 5; f += 1) {
           const fx = x + (f / 5) * pps;
           ctx.globalAlpha = f === 0 ? 0.8 : 0.3;
@@ -329,7 +325,7 @@ export function TimelineBackdrop({ variant = "hero", className, scrubTarget }: T
               ctx.fill();
               ctx.globalAlpha = placed ? 0.8 : 0.3;
               ctx.fillRect(Math.round(x) - (placed ? 0.5 : 0), y + 9, placed ? 2 : 1, laneH - 10);
-              if (placed && since < 0.5 && isHero) {
+              if (placed && since < 0.5) {
                 ctx.globalAlpha = (0.5 - since) * 1.6;
                 ctx.strokeStyle = palette.playhead;
                 ctx.lineWidth = 1.5;
@@ -360,7 +356,7 @@ export function TimelineBackdrop({ variant = "hero", className, scrubTarget }: T
               ctx.globalAlpha = 0.9;
               ctx.fillRect(x + 1, y, w - 2, 2);
 
-              if (isHero && w > 40) {
+              if (w > 40) {
                 /* Thumbnails: the clip's character repeated like an NLE filmstrip, clipped to the clip. */
                 const scale = (laneH * 1.05) / 120;
                 const thumbW = 100 * scale;
@@ -442,40 +438,38 @@ export function TimelineBackdrop({ variant = "hero", className, scrubTarget }: T
       ctx.globalAlpha = 1;
       ctx.fillStyle = palette.playhead;
       ctx.fillRect(Math.round(headX) - 1, top, 2, stackH);
-      if (isHero) {
-        /* Soft glow without shadowBlur, which is costly on a large canvas. */
-        ctx.globalAlpha = 0.18;
-        ctx.fillRect(Math.round(headX) - 5, top + rulerH, 10, stackH - rulerH);
-        ctx.globalAlpha = 0.1;
-        ctx.fillRect(Math.round(headX) - 10, top + rulerH, 20, stackH - rulerH);
-        ctx.globalAlpha = 1;
-        const label = timecode(headTime);
-        ctx.font = `600 12px ${palette.mono}`;
-        const tw = ctx.measureText(label).width + 16;
-        const lx = Math.min(width - tw - 6, Math.max(6, headX - tw / 2));
-        roundRect(ctx, lx, top - 30, tw, 22, 4);
-        ctx.fill();
-        ctx.fillStyle = palette.bg;
-        ctx.textBaseline = "middle";
-        ctx.fillText(label, lx + 8, top - 19);
-        ctx.fillStyle = palette.playhead;
-        ctx.beginPath();
-        ctx.moveTo(headX - 6, top - 8);
-        ctx.lineTo(headX + 6, top - 8);
-        ctx.lineTo(headX, top);
-        ctx.closePath();
-        ctx.fill();
-      }
+      /* Soft glow without shadowBlur, which is costly on a large canvas. */
+      ctx.globalAlpha = 0.18;
+      ctx.fillRect(Math.round(headX) - 5, top + rulerH, 10, stackH - rulerH);
+      ctx.globalAlpha = 0.1;
+      ctx.fillRect(Math.round(headX) - 10, top + rulerH, 20, stackH - rulerH);
+      ctx.globalAlpha = 1;
+      const label = timecode(headTime);
+      ctx.font = `600 12px ${palette.mono}`;
+      const tw = ctx.measureText(label).width + 16;
+      const lx = Math.min(width - tw - 6, Math.max(6, headX - tw / 2));
+      roundRect(ctx, lx, top - 30, tw, 22, 4);
+      ctx.fill();
+      ctx.fillStyle = palette.bg;
+      ctx.textBaseline = "middle";
+      ctx.fillText(label, lx + 8, top - 19);
+      ctx.fillStyle = palette.playhead;
+      ctx.beginPath();
+      ctx.moveTo(headX - 6, top - 8);
+      ctx.lineTo(headX + 6, top - 8);
+      ctx.lineTo(headX, top);
+      ctx.closePath();
+      ctx.fill();
     };
 
     const tick = (now: number) => {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
-      const target = scrubX !== null ? Math.min(0.88, Math.max(0.18, scrubX / width)) : variant === "hero" ? 0.62 : 0.5;
+      const target = scrubX !== null ? Math.min(0.88, Math.max(0.18, scrubX / width)) : 0.62;
       const before = playheadFrac;
       playheadFrac += (target - playheadFrac) * Math.min(1, dt * 6);
       /* Moving the playhead across the frame scrubs time, like dragging it in an editor. */
-      clock += dt * (variant === "hero" ? 1 : 0.6) + ((playheadFrac - before) * width) / PX_PER_SECOND;
+      clock += dt + ((playheadFrac - before) * width) / PX_PER_SECOND;
       draw();
       frame = visible && !document.hidden ? requestAnimationFrame(tick) : null;
     };
@@ -507,7 +501,7 @@ export function TimelineBackdrop({ variant = "hero", className, scrubTarget }: T
 
     const target = scrubTarget?.current ?? wrap;
     const onMove = (event: PointerEvent) => {
-      if (variant !== "hero" || event.pointerType === "touch") return;
+      if (event.pointerType === "touch") return;
       scrubX = event.clientX - wrapLeft;
       if (reducedMotion.matches) {
         /* No autoplay, but the pointer still scrubs the timeline directly. */
@@ -538,10 +532,10 @@ export function TimelineBackdrop({ variant = "hero", className, scrubTarget }: T
       document.removeEventListener("visibilitychange", onVisibility);
       reducedMotion.removeEventListener("change", onMotion);
     };
-  }, [variant, scrubTarget]);
+  }, [scrubTarget]);
 
   return (
-    <div ref={wrapRef} className={`${styles.backdrop} ${variant === "band" ? styles.band : styles.hero} ${className ?? ""}`} aria-hidden="true">
+    <div ref={wrapRef} className={`${styles.backdrop} ${className ?? ""}`} aria-hidden="true">
       <canvas ref={canvasRef} />
     </div>
   );

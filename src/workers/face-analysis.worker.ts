@@ -128,7 +128,7 @@ self.onmessage = async (event: MessageEvent<FaceWorkerRequest>) => {
       if (!selected?.descriptor?.length) throw new Error("No clear face was found in this crop. Try a closer, front-facing shot.");
       const embedding = prepareFaceEmbedding(Array.from(selected.descriptor));
       const agreement = referenceAgreement(embedding);
-      if (referenceEmbeddings.size > 0 && agreement < 0.28) {
+      if (!message.restore && referenceEmbeddings.size > 0 && agreement < 0.28) {
         throw new Error("This crop does not look like the earlier reference face. Crop the same person more closely.");
       }
       referenceEmbeddings.set(message.slot, embedding);

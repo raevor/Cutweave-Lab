@@ -1,12 +1,13 @@
 /*
  * Original illustrated characters used in the tool scenes, the empty source
- * slots and the hero timeline. Each portrait was drawn with HTML and CSS and
- * exported once to a transparent image; none depicts a real person or an
+ * slots and the hero timeline. Each portrait was drawn in code (HTML/CSS for
+ * people, SVG line art for the anime cast) and exported once to a transparent
+ * image; none depicts a real person or an
  * existing character. They are illustrations of the workflow, never analysis
  * output.
  *
  * Variant 0 is the reference identity a tool searches for (Sera for people,
- * Kaien for anime). It reappears in other scenes with a different outfit and
+ * Rowan for anime). It reappears in other scenes with a different outfit and
  * hair, so the illustrations show the same face being found again.
  */
 
@@ -14,16 +15,16 @@ export type CharacterKind = "person" | "character";
 export type CharacterVariant = 0 | 1 | 2;
 
 /* Bump when the images are re-exported so browsers do not keep stale copies. */
-const PORTRAIT_VERSION = 13;
+const PORTRAIT_VERSION = 20;
 
 const PORTRAITS: Record<CharacterKind, readonly string[]> = {
   person: ["sera", "ozan", "maya"],
-  character: ["kaien", "seraphine", "akio"],
+  character: ["rowan-a", "fenrik", "sylas"],
 };
 
 const OUTFITS: Record<CharacterKind, readonly string[]> = {
   person: ["sera-a", "sera-b", "sera-c"],
-  character: ["kaien-a", "kaien-b", "kaien-c"],
+  character: ["rowan", "rowan-b", "rowan-c"],
 };
 
 export const OUTFIT_COUNT = 3;

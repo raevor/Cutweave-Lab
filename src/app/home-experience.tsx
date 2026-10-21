@@ -320,7 +320,7 @@ export function HomeExperience() {
         </header>
 
         <section className={styles.hero} aria-labelledby="hero-title" ref={heroRef}>
-          <TimelineBackdrop variant="hero" scrubTarget={heroRef} className={styles.heroTimeline} />
+          <TimelineBackdrop scrubTarget={heroRef} className={styles.heroTimeline} />
 
           <div className={styles.heroCopy}>
             <h1 id="hero-title">

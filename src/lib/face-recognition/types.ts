@@ -11,7 +11,8 @@ export type VisualFingerprint = {
 
 export type FaceWorkerRequest =
   | { type: "init"; requestId: number; engine: FaceEngine; origin: string }
-  | { type: "reference"; requestId: number; slot: number; bitmap: ImageBitmap }
+  /* `restore` reloads a reference the user already accepted (engine switch, removal, scan start); it skips the same-person gate. */
+  | { type: "reference"; requestId: number; slot: number; bitmap: ImageBitmap; restore?: boolean }
   | { type: "scan"; requestId: number; jobId: string; timestamp: number; threshold: number; mode: FaceScanMode; bitmap: ImageBitmap }
   | { type: "cancel"; jobId: string }
   | { type: "clear-references"; requestId: number };

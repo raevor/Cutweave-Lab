@@ -28,6 +28,14 @@
   56%, 68% { transform: translate(110px, 153px); }
   84%, 100% { transform: translate(60px, 92px); }
 }
+/* The anime reference's face sits lower in its portrait (centre about 150, 223). */
+.searchCharacter { animation-name: searchCharacter; }
+@keyframes searchCharacter {
+  0%, 12% { transform: translate(60px, 116px); }
+  28%, 40% { transform: translate(166px, 230px); }
+  56%, 68% { transform: translate(110px, 177px); }
+  84%, 100% { transform: translate(60px, 116px); }
+}
 
 .scan { fill: var(--slot-accent); opacity: .7; animation: scan 3.4s ease-in-out infinite alternate; }
 @keyframes scan { to { transform: translateY(258px); } }
@@ -45,5 +53,6 @@
 @media (prefers-reduced-motion: reduce) {
   .holes, .ghost, .search, .scan, .glint, .idleHead { animation: none; }
   .search { transform: translate(110px, 153px); }
+  .searchCharacter { transform: translate(110px, 177px); }
   .scan { transform: translateY(130px); }
 }

@@ -58,7 +58,7 @@ export function SourceSlot({ kind, className }: Props) {
           <Portrait kind={kind} variant={0} />
         </g>
       </g>
-      <g className={styles.search}>
+      <g className={`${styles.search} ${kind === "character" ? styles.searchCharacter : ""}`}>
         <path d="M 0 20 V 0 H 20 M 60 0 H 80 V 20 M 80 72 V 92 H 60 M 20 92 H 0 V 72" />
       </g>
       <rect className={styles.scan} x="44" y="70" width="212" height="2" />

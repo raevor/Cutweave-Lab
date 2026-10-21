@@ -26,7 +26,7 @@ export default function LabPage() {
         <aside className={styles.dispatch} aria-label="Cutweave tool desk overview">
           <header><span>CUT/WEAVE / TOOL DESK</span><b>{String(primaryTools.length).padStart(2, "0")} FOCUSED ROUTES</b></header>
           <div className={styles.dispatchScreen} aria-hidden="true">
-            <TimelineBackdrop variant="hero" className={styles.dispatchTimeline} />
+            <TimelineBackdrop className={styles.dispatchTimeline} />
             <span className={styles.dispatchLabel}>Choose the job<br />before the source</span>
           </div>
           <div className={styles.dispatchTracks} aria-hidden="true">
