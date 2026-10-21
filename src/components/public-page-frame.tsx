@@ -25,7 +25,7 @@ type ActivePage = "tools" | "privacy" | "roadmap";
 type TrailPoint = { x: number; y: number; createdAt: number };
 
 type PublicPageFrameProps = {
-  activePage: ActivePage;
+  activePage?: ActivePage;
   children: ReactNode;
 };
 
