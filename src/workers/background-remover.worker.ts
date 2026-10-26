@@ -6,14 +6,18 @@ import type { RemoverEngine, RemoverWorkerRequest, RemoverWorkerResponse } from 
 const workerScope = self as DedicatedWorkerGlobalScope;
 
 /*
- * BiRefNet lite (MIT), pinned so every visitor gets the same weights. The official
- * ONNX export cannot run on WebGPU (its Split nodes need more storage buffers than
- * a shader stage allows), so the GPU path uses an MIT re-export with the same
- * weights and a rewritten graph. The CPU path keeps the official export.
+ * Pinned models, so every visitor gets the same weights.
+ * GPU: BiRefNet lite (MIT). The official ONNX export cannot run on WebGPU (its
+ * Split nodes need more storage buffers than a shader stage allows), so this is
+ * an MIT re-export with the same weights and a rewritten graph. Its matte is in
+ * logits and needs a sigmoid.
+ * CPU: BiRefNet lite at 1024 x 1024 needs more than WebAssembly's 4 GB and fails
+ * with std::bad_alloc, so the CPU path uses ormbg (Apache-2.0, an ISNet trained
+ * for background removal), 8-bit, whose matte is already 0 to 1.
  */
 const MODELS = {
-  gpu: { id: "jiabins0303/birefnet-lite-1024-webgpu", revision: "1ad01cef0f4101a285c5a3e0bd7f15597d93403f" },
-  cpu: { id: "onnx-community/BiRefNet_lite-ONNX", revision: "de15b22ba131738a16dff04aab8bdf8dc32e3ac1" },
+  gpu: { id: "jiabins0303/birefnet-lite-1024-webgpu", revision: "1ad01cef0f4101a285c5a3e0bd7f15597d93403f", logits: true },
+  cpu: { id: "onnx-community/ormbg-ONNX", revision: "034e2d884afbab897e10e78fc5bb566b29533fd6", logits: false },
 } as const;
 
 // Only model files come from Hugging Face. The ONNX Runtime files are the ones Auto Subtitles serves.
@@ -56,7 +60,7 @@ async function load(engine: RemoverEngine, jobId: string) {
     revision: source.revision,
     device: engine === "gpu" ? "webgpu" : "wasm",
     // The GPU file is already fp16; naming it directly stops the library adding a dtype suffix.
-    ...(engine === "gpu" ? { dtype: "fp32" as const, model_file_name: "model_fp16" } : { dtype: "fp32" as const }),
+    ...(engine === "gpu" ? { dtype: "fp32" as const, model_file_name: "model_fp16" } : { dtype: "q8" as const }),
     progress_callback,
   });
   const processor = await AutoProcessor.from_pretrained(source.id, { revision: source.revision });
@@ -70,10 +74,13 @@ async function remove(request: RemoverWorkerRequest) {
   post({ type: "processing", jobId: request.jobId });
   const image = new RawImage(new Uint8ClampedArray(request.pixels), request.width, request.height, 4);
   const { pixel_values } = await processor(image.rgb());
-  const { output_image } = await model({ input_image: pixel_values }) as { output_image: Tensor };
+  // The two models name their input differently; each has a single image input.
+  const inputName = (model as unknown as { sessions: { model: { inputNames: string[] } } }).sessions.model.inputNames[0];
+  const outputs = await model({ [inputName]: pixel_values }) as Record<string, Tensor>;
   // The model works at 1024 x 1024; the matte is scaled back to the image's own size.
-  const first = (output_image as unknown as Tensor[])[0];
-  const matte = await RawImage.fromTensor(first.sigmoid().mul(255).to("uint8")).resize(request.width, request.height);
+  const first = (Object.values(outputs)[0] as unknown as Tensor[])[0];
+  const alpha = MODELS[request.engine].logits ? first.sigmoid() : first;
+  const matte = await RawImage.fromTensor(alpha.mul(255).to("uint8")).resize(request.width, request.height);
   const mask = new Uint8Array(matte.data);
   post({ type: "result", jobId: request.jobId, mask: mask.buffer, width: request.width, height: request.height, seconds: (performance.now() - started) / 1000 });
 }
