@@ -131,7 +131,7 @@ privacy: {
         { tool: "Face Recognition", model: "face-api" },
         { tool: "Anime Face Recognition", model: "Anime head detector + CCIP" },
         { tool: "Auto Subtitles", model: "Whisper base.en" },
-        { tool: "Background Remover", model: "BiRefNet lite" },
+        { tool: "Background Remover", model: "BiRefNet lite (GPU), ormbg (CPU)" },
       ],
     },
     outbound: {

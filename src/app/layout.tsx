@@ -11,8 +11,8 @@ const themeBootstrapScript = `(function(){try{var t=localStorage.getItem(${JSON.
 
 export const metadata: Metadata = {
   title: {
-    default: "CUT/WEAVE LAB — Faster prep for editors",
-    template: "%s — CUT/WEAVE LAB",
+    default: "CUT/WEAVE — Keep the cut.",
+    template: "%s — CUT/WEAVE",
   },
   description:
     "Find face-matched scenes and character appearances, and create music and bass markers without sending your media away.",

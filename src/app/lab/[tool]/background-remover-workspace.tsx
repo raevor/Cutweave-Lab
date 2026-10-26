@@ -24,7 +24,7 @@ const MAX_FILE_BYTES = 50 * 1024 * 1024;
 /** Larger photos are scaled to this budget so the matte and export stay within browser memory. */
 const MAX_PIXELS = 24_000_000;
 const ACCEPTED_IMAGES = "image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp";
-const MODEL_SIZE: Record<RemoverEngine, string> = { gpu: "about 115 MB", cpu: "about 225 MB" };
+const MODEL_SIZE: Record<RemoverEngine, string> = { gpu: "about 115 MB", cpu: "about 45 MB" };
 
 function formatBytes(bytes: number) {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
