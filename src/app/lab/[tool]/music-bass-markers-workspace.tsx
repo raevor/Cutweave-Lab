@@ -19,6 +19,7 @@ import darkThemeIcon from "../../../../assets/dark-theme.png";
 import lightThemeIcon from "../../../../assets/light-theme.png";
 import { BrandMark } from "@/components/brand-mark";
 import { selectMusicMarkers } from "@/lib/music-bass-markers/analysis";
+import { canEncodeMp3, createMarkerMp3 } from "@/lib/music-bass-markers/mp3-export";
 import { chooseAnalysisChannel, createAnalysisResampler } from "@/lib/music-bass-markers/signal";
 import {
   createMarkerCsv,
@@ -325,6 +326,7 @@ export function MusicBassMarkersWorkspace({ tool }: { tool: ToolDefinition }) {
   const [timelineView, setTimelineView] = useState({ zoom: 1, start: 0 });
   const [exportFrameRateKey, setExportFrameRateKey] = useState("30");
   const [error, setError] = useState<string | null>(null);
+  const [exportKind, setExportKind] = useState<"mp3" | "wav">("mp3");
 
   const stopScrubPreview = useCallback(() => {
     const source = scrubAudioSourceRef.current;
@@ -652,7 +654,7 @@ export function MusicBassMarkersWorkspace({ tool }: { tool: ToolDefinition }) {
     setTrimEnd(nextDuration);
     setAnalysisEnd(nextDuration);
     if (nextDuration > MAX_AUDIO_DURATION_SECONDS) {
-      setError("This audio is longer than two hours. Shorter sources keep browser memory bounded and reliable.");
+      setError("This audio is longer than two hours. Trim it first so the browser does not run out of memory.");
       setPhase("error");
     }
   }
@@ -677,7 +679,7 @@ export function MusicBassMarkersWorkspace({ tool }: { tool: ToolDefinition }) {
 
     try {
       const AudioContextClass = window.AudioContext;
-      if (!AudioContextClass) throw new Error("This browser does not provide the Web Audio decoder required for local analysis.");
+      if (!AudioContextClass) throw new Error("This browser cannot decode audio, so the analysis cannot run. Try Chrome or Edge.");
       const context = new AudioContextClass();
       let decoded: AudioBuffer;
       try {
@@ -689,17 +691,17 @@ export function MusicBassMarkersWorkspace({ tool }: { tool: ToolDefinition }) {
       }
       if (activeJobRef.current !== jobId) return;
       if (decoded.duration > MAX_AUDIO_DURATION_SECONDS) {
-        throw new Error("This audio is longer than two hours. Shorter sources keep browser memory bounded and reliable.");
+        throw new Error("This audio is longer than two hours. Trim it first so the browser does not run out of memory.");
       }
       audioBufferRef.current = decoded;
       setDuration(decoded.duration);
       setTrimStart(0);
       setTrimEnd(decoded.duration);
-      setProgress({ completed: 0, total: 1, label: "Preparing a bounded analysis signal" });
+      setProgress({ completed: 0, total: 1, label: "Preparing the audio for analysis" });
       const samples = await prepareAnalysisSamples(
         decoded,
         (fraction) => {
-          if (activeJobRef.current === jobId) setProgress({ completed: fraction, total: 1, label: "Preparing a bounded analysis signal" });
+          if (activeJobRef.current === jobId) setProgress({ completed: fraction, total: 1, label: "Preparing the audio for analysis" });
         },
         () => activeJobRef.current === jobId,
       );
@@ -865,18 +867,21 @@ export function MusicBassMarkersWorkspace({ tool }: { tool: ToolDefinition }) {
     });
   }
 
-  async function exportWav() {
+  async function exportAudio(kind: "mp3" | "wav") {
     const audio = audioBufferRef.current;
     if (!audio || !file || phase === "exporting") return;
+    setExportKind(kind);
     setPhase("exporting");
     setError(null);
     await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
     try {
-      const blob = createMarkerRichWav(audio, markersInExport, trimStart, trimEnd, exportFrameRate);
-      downloadBlob(blob, `${fileBase(file.name)}-cutweave-marked.wav`);
+      const blob = kind === "mp3"
+        ? await createMarkerMp3(audio, markersInExport, trimStart, trimEnd, exportFrameRate)
+        : createMarkerRichWav(audio, markersInExport, trimStart, trimEnd, exportFrameRate);
+      downloadBlob(blob, `${fileBase(file.name)}-cutweave-marked.${kind}`);
       setPhase("export-ready");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "The marker-rich WAV could not be created.");
+      setError(caught instanceof Error ? caught.message : `The ${kind.toUpperCase()} with markers could not be created.`);
       setPhase("export-ready");
     }
   }
@@ -949,7 +954,7 @@ export function MusicBassMarkersWorkspace({ tool }: { tool: ToolDefinition }) {
           <div className={styles.intakeCopy}>
             <p>01 / Choose the source</p>
             <h2 id="music-intake-title">Drop the track you want to mark</h2>
-            <span>MP3, WAV, M4A, AAC, OGG, Opus, FLAC and AIFF are accepted when your browser can decode them. The file never leaves this tab.</span>
+            <span>MP3, WAV, M4A, AAC, OGG, Opus, FLAC and AIFF all work, as long as your browser can play them. The file never leaves this tab.</span>
             <input ref={inputRef} className="sr-only" id="music-audio-input" type="file" accept={ACCEPTED_AUDIO} onChange={chooseFile} />
             <button className={styles.primaryAction} type="button" onClick={() => inputRef.current?.click()}>Choose audio <span>↗</span></button>
             {/* Wrapped so the intake's eyebrow style for direct paragraphs does not apply. */}
@@ -958,7 +963,7 @@ export function MusicBassMarkersWorkspace({ tool }: { tool: ToolDefinition }) {
           <aside className={styles.intakeFacts}>
             <div><small>INPUT</small><strong>One local audio file</strong></div>
             <div><small>ANALYSIS</small><strong>Impacts + bass entries</strong></div>
-            <div><small>OUTPUT</small><strong>Marker-rich WAV + data</strong></div>
+            <div><small>OUTPUT</small><strong>WAV with markers + data</strong></div>
             <div><small>MEDIA ROUTE</small><strong><i /> On device</strong></div>
           </aside>
         </section>
@@ -1065,7 +1070,7 @@ export function MusicBassMarkersWorkspace({ tool }: { tool: ToolDefinition }) {
                 <div>
                   <p>REVIEW COMPLETE</p>
                   <h2>Choose your export</h2>
-                  <span>The WAV contains the trimmed audio and unnamed edit markers. Marker times snap to your selected composition frame rate so the After Effects playhead can land on every one.</span>
+                  <span>The MP3 and WAV both carry the trimmed audio and edit markers that Premiere Pro and After Effects read on import. MP3 is much smaller; WAV is lossless. Marker times snap to your selected composition frame rate so the After Effects playhead can land on every one.</span>
                 </div>
                 <div className={styles.exportControls}>
                   <label className={styles.frameRateControl}>
@@ -1076,7 +1081,8 @@ export function MusicBassMarkersWorkspace({ tool }: { tool: ToolDefinition }) {
                     <small>Choose the same FPS as your AE or Premiere composition before downloading.</small>
                   </label>
                   <div className={styles.exportActions}>
-                    <button className={styles.primaryAction} type="button" onClick={exportWav} disabled={!markersInExport.length || phase === "exporting"}>{phase === "exporting" ? "Building WAV…" : "Download marker-rich WAV"}<span>↓</span></button>
+                    <button className={styles.primaryAction} type="button" onClick={() => exportAudio("mp3")} disabled={!markersInExport.length || phase === "exporting" || !canEncodeMp3(audioBufferRef.current?.sampleRate ?? 0)}>{phase === "exporting" && exportKind === "mp3" ? "Building MP3…" : "Download MP3 with markers"}<span>↓</span></button>
+                    <button type="button" onClick={() => exportAudio("wav")} disabled={!markersInExport.length || phase === "exporting"}>{phase === "exporting" && exportKind === "wav" ? "Building WAV…" : "Download WAV with markers"}</button>
                     <button type="button" onClick={() => exportText("xmp")} disabled={!markersInExport.length || phase === "exporting"}>Source XMP sidecar</button>
                     <button type="button" onClick={() => exportText("json")} disabled={!markersInExport.length || phase === "exporting"}>Marker JSON</button>
                     <button type="button" onClick={() => exportText("csv")} disabled={!markersInExport.length || phase === "exporting"}>Marker CSV</button>
