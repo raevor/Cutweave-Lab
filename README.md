@@ -1,6 +1,6 @@
 # CUT/WEAVE LAB
 
-**Local browser tools for the repetitive prep work before a creative edit.** Find a face or an animated character across a long video, and turn a song's impacts and bass hits into markers your editor can use. Everything runs on your device. Your footage is never uploaded.
+**Local browser tools for the repetitive prep work before a creative edit.** Find a face or an animated character across a long video, turn a song's impacts and bass hits into markers your editor can use, and turn spoken English into subtitle files. Everything runs on your device. Your footage is never uploaded.
 
 **Live app:** https://cutweave-lab.vercel.app
 
@@ -11,6 +11,7 @@
 | Face Recognition | [`/lab/face-recognition`](https://cutweave-lab.vercel.app/lab/face-recognition) | One local video and three reference frames you crop yourself | Matched scenes with timecodes you can review, then an MP4 clip ZIP with JSON/CSV cut plans |
 | Anime Face Recognition | [`/lab/anime-face-recognition`](https://cutweave-lab.vercel.app/lab/anime-face-recognition) | One local animated video and three character references | Character-matched scenes and a clip ZIP, using an anime-specific local model |
 | Music & Bass Markers | [`/lab/bass-markers`](https://cutweave-lab.vercel.app/lab/bass-markers) | One local audio file | Adjustable impact and bass markers on a real waveform, exported as a marker-rich WAV, XMP sidecar, JSON or CSV |
+| Auto Subtitles | [`/lab/auto-subtitles`](https://cutweave-lab.vercel.app/lab/auto-subtitles) | One local video or audio file with spoken English, whole or a chosen part | Word-timed subtitle lines you can correct, exported as SRT (Premiere Pro, DaVinci Resolve, Final Cut Pro), an After Effects script, WebVTT or a plain transcript |
 
 Other pages: the tool library ([`/lab`](https://cutweave-lab.vercel.app/lab)), the privacy boundary ([`/privacy`](https://cutweave-lab.vercel.app/privacy)) and the roadmap ([`/roadmap`](https://cutweave-lab.vercel.app/roadmap)).
 
@@ -19,7 +20,7 @@ Other pages: the tool library ([`/lab`](https://cutweave-lab.vercel.app/lab)), t
 - The app has no media upload route, storage bucket, account or database.
 - A selected file opens as a browser object URL. Frames, waveforms, crops and face descriptors are created and used only inside the tab, in dedicated Web Workers.
 - Face Recognition is a similarity search within the one video you opened. It never identifies a person and never queries an external database.
-- The browser downloads only application code, WASM runtimes and model files from this site. Those requests never contain your media.
+- The browser downloads only application code, WASM runtimes and model files. They come from this site, except the English speech model for Auto Subtitles (`onnx-community/whisper-base.en_timestamped`), which is downloaded once from Hugging Face at a pinned revision and cached by the browser. Those requests never contain your media.
 
 Details: [`docs/PRIVACY.md`](docs/PRIVACY.md).
 
@@ -27,23 +28,24 @@ Details: [`docs/PRIVACY.md`](docs/PRIVACY.md).
 
 The live app is tested with [TestSprite](https://www.testsprite.com). The TestSprite GitHub App runs the suite automatically against each pull request's Vercel preview deployment and reports the result on the PR. `main` is protected: a pull request can only be merged once the required **TestSprite V3** check passes, and force pushes to `main` are blocked.
 
-The suite has 65 browser tests in eleven groups. Besides page structure, it drives real tool flows with files: the runner loads a video into Face Recognition and takes audio markers from analysis to the export step.
+The suite has 72 browser tests in twelve groups. Besides page structure, it drives real tool flows with files: the runner loads a video into Face Recognition and takes audio markers from analysis to the export step.
 
 | Area | Tests | What they check |
 |---|---:|---|
-| Navigation & shell | 13 | Brand and hero, the header tools menu (open, launch each tool, close with Escape or an outside click, open the tool desk), theme switch, its accessible name and persistence after reload, the How it works, Roadmap and Privacy links, and the right-edge section timeline |
-| Home page | 11 | The three hero lines and both calls to action, all four facts, the four workflow steps, three tool cards in order with working routes, illustration captions, footer links and Back to top, and the media boundary section |
-| Tool library | 7 | Exactly three tools on tracks 01 to 03 with input and output details, each Start tool link, the heading, the tool desk summary and the privacy link |
+| Navigation & shell | 14 | Brand and hero, the header tools menu (open, launch each of the four tools, close with Escape or an outside click, open the tool desk), theme switch, its accessible name and persistence after reload, the How it works, Roadmap and Privacy links, and the right-edge section timeline |
+| Home page | 11 | The three hero lines and both calls to action, all four facts, the four workflow steps, four tool cards in order with working routes, illustration captions, footer links and Back to top, and the media boundary section |
+| Tool library | 8 | Exactly four tools on tracks 01 to 04 with input and output details, each Start tool link, the heading, the tool desk summary and the privacy link |
 | Face Recognition | 7 | Empty source state, the five-step bar, privacy copy, 0 B sent to server, no scan action or results before a video is chosen, the All tools and Privacy links |
 | Face Recognition video flow | 1 | Loading a video into the workspace and reaching the references step |
 | Anime Face Recognition | 5 | The first-visit notice (dismiss, keep hidden after reload, reopen from the header), the empty source state, 0 B sent to server and the All tools link |
 | Music & Bass Markers | 4 | Empty state, the five-step bar, 0 B sent to server, no analysis or export before a file is loaded, accepted formats and the privacy link |
 | Music & Bass Markers audio flow | 5 | Loading audio, finding markers on the full track, adding a marker, the export options and cancelling an analysis |
+| Auto Subtitles | 5 | Empty source state, the five-step bar, 0 B sent to server, English speech and SRT/VTT output, no transcription or export before a file is chosen, the All tools and Privacy links |
 | Privacy | 6 | Local processing and 0 B media transfer, no identity lookup or biometric database query, what the browser downloads versus what never leaves the tab, the summary values and both calls to action |
-| Roadmap | 2 | Exactly three shipped tools and the link to the tool library |
+| Roadmap | 2 | Exactly four shipped tools and the link to the tool library |
 | Not found | 4 | The custom 404 page for unknown tool and top-level routes, its label and the way back home |
 
-The flow tests use three files prepared only for this suite: a synthetic 120 BPM click track and two short test video clips. They are stored in the TestSprite project and are not part of this repository. Twenty-three video flow tests (single and multi-reference setups, cancelled and full face scans, crop-error and repeated-click checks) were removed from the cloud plan after the runner repeatedly blocked them, reporting that file uploads were not permitted although the same upload step passed in other tests of the same run. Those flows are covered by manual checks. Assertions check the workflow and its states, never how many scenes a scan finds: match counts and model accuracy depend on the runner's hardware and are covered by the local unit tests and manual checks. The responsive layout is also checked locally: the cloud runner cannot resize its viewport, so a 390px mobile test was removed from the plan after it came back blocked.
+The flow tests use three files prepared only for this suite: a synthetic 120 BPM click track and two short test video clips. They are stored in the TestSprite project and are not part of this repository. Twenty-three video flow tests (single and multi-reference setups, cancelled and full face scans, crop-error and repeated-click checks) were removed from the cloud plan after the runner repeatedly blocked them, reporting that file uploads were not permitted although the same upload step passed in other tests of the same run. Those flows are covered by manual checks. Assertions check the workflow and its states, never how many scenes a scan finds: match counts and model accuracy depend on the runner's hardware and are covered by the local unit tests and manual checks. Auto Subtitles is tested in the cloud only up to its empty state: a transcription first downloads an 80 to 210 MB speech model, so its flow (full source, a chosen part, cancel, editing and every export) is checked locally, against the Tears of Steel open movie (CC BY 3.0, Blender Foundation) and a synthetic speech clip, and its decoding rules are covered by unit tests. The responsive layout is also checked locally: the cloud runner cannot resize its viewport, so a 390px mobile test was removed from the plan after it came back blocked.
 
 Local checks:
 
