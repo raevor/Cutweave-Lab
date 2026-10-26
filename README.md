@@ -12,6 +12,7 @@
 <p align="center">
   <a href="https://cutweave-lab.vercel.app"><b>Open the live app</b></a> ·
   <a href="#automated-testing-with-testsprite">See how we test it</a> ·
+  <a href="#what-is-automated-and-what-is-verified-by-hand">What is verified by hand</a> ·
   <a href="docs/PRIVACY.md">Read the privacy boundary</a>
 </p>
 
@@ -140,8 +141,21 @@ The current TestSprite plan has 92 browser tests in fourteen groups. Besides pag
 | Roadmap | 3 | Exactly five shipped tools, Video Enhancer shown only as coming soon, and the link to the tool library |
 | Not found | 4 | The custom 404 page for unknown tool and top-level routes, its label and the way back home |
 
+### What is automated, and what is verified by hand
+
+Some flows are easy for a person but hard for an automated browser agent: the face tools need a person to seek to the right moments in a long video and frame one face in a crop dialog, and two tools download a large model before they can run. TestSprite runs every flow it can complete reliably; the rest are verified by hand, in several browsers on different computers, with no application errors. Nothing below is hidden from the suite to make it pass: each item was tried in the cloud first, or would need a model download the runner cannot finish.
+
+| Flow | In the TestSprite suite | Why the rest is not automated | How it is verified instead |
+|---|---|---|---|
+| Face Recognition: three references, full scan, scene review, MP4 clip ZIP | Loading the video, the references step and adding one reference through the crop dialog | The agent could not seek to the three reference moments in a 5:22 video and stalled at 0/3 references, so it never reached the scan | Full flow by hand on several machines and browsers; matching and scene selection covered by unit tests |
+| Anime Face Recognition: references, scan, review, clips | Empty state, the first-visit notice and its controls | Same reference-selection steps as Face Recognition, and only three test files fit in the TestSprite project | Full flow by hand with an anime test clip; detector and encoder assets covered by unit tests |
+| Auto Subtitles: transcription, editing, SRT / After Effects / WebVTT / transcript export | Empty state, steps, language and output facts | A transcription first downloads an 80 to 210 MB speech model | By hand on the Tears of Steel open movie (CC BY 3.0) and a synthetic speech clip; decoding rules covered by unit tests |
+| Background Remover: GPU engine, edge adjustments, downloaded PNGs | A complete CPU removal, the comparison, export controls and background choice | Cloud browsers have no WebGPU, and the runner does not open downloaded files | GPU run by hand on the live site; the three PNG exports downloaded and checked for size, transparency and matte format |
+| Exported files: clip ZIP, MP3/WAV markers, SRT, PNG | Export controls shown and enabled | The runner stops before downloads | Formats covered by unit tests (marker XMP and ID3 tags, WAV cues, subtitle files, mattes); exported files checked by hand during development |
+| Phone layout | Not in the cloud plan | The cloud runner cannot resize its viewport; a 390 px test came back blocked | Checked locally at 390 px with no horizontal overflow on any page |
+
 <details>
-<summary><b>What the cloud suite does not cover, and why</b></summary>
+<summary><b>Full notes on the cloud scope and the blocked runs</b></summary>
 
 The flow tests use three files prepared only for this suite: a synthetic 120 BPM click track, a short test video clip and a test image. They are stored in the TestSprite project and are not part of this repository. Earlier video flow tests were removed after the runner repeatedly treated file selection as a forbidden upload. The current plan includes video loading and one face reference. A newly attempted full Face Recognition scan was removed after the runner could not seek to the three requested reference times and left the reference count at 0/3; it did not reach the scan. Full face and anime scans, match quality and clip exports remain local manual checks, supported by unit tests of matching and scene selection. Music marker timing is checked against the known kicks in the synthetic track. Auto Subtitles is tested in the cloud only up to its empty state: a transcription first downloads an 80 to 210 MB speech model, so its flow (full source, a chosen part, cancel, editing and every export) is checked locally, against the Tears of Steel open movie (CC BY 3.0, Blender Foundation) and a synthetic speech clip, and its decoding rules are covered by unit tests. The Background Remover tests complete a CPU run with the pinned ormbg model (about 45 MB on first use), check the comparison and export controls, and select a background colour; GPU quality, edge adjustments and the downloaded PNG files are checked locally. Cloud tests stop at export controls and do not download or validate the exported files. The responsive layout is also checked locally: the cloud runner cannot resize its viewport, so a 390px mobile test was removed from the plan after it came back blocked.
 
