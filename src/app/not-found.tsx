@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicPageFrame } from "@/components/public-page-frame";
 import { siteCopy as text } from "@/i18n/messages/en";
 import { NotFoundScene } from "./not-found-scene";
 import styles from "./not-found.module.css";
+
+export const metadata: Metadata = { title: "Not found" };
 
 export default function NotFound() {
   const copy = text.notFound;
