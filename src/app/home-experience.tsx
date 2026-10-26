@@ -32,6 +32,7 @@ const SEQUENCE = [
   { id: "tool-anime-face-recognition", label: "Anime Face Recognition", tool: "anime-face-recognition" },
   { id: "tool-bass-markers", label: "Music & Bass Markers", tool: "bass-markers" },
   { id: "tool-auto-subtitles", label: "Auto Subtitles", tool: "auto-subtitles" },
+  { id: "tool-background-remover", label: "Background Remover", tool: "background-remover" },
   { id: "workflow", label: "How it works" },
   { id: "local", label: "Local by design" },
 ];

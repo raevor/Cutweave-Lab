@@ -45,7 +45,7 @@ export default function LabPage() {
       <section className={styles.facts} aria-label="Tool library facts">
         <div><small>01</small><strong>Local source</strong><span>No media upload</span></div>
         <div><small>02</small><strong>Focused analysis</strong><span>No all-purpose dashboard</span></div>
-        <div><small>03</small><strong>Reviewable output</strong><span>You decide what leaves</span></div>
+        <div><small>03</small><strong>Output you review</strong><span>You decide what you keep</span></div>
       </section>
 
       <section className={`${styles.launcher} ambient-host`} aria-labelledby="launcher-title">
@@ -55,7 +55,7 @@ export default function LabPage() {
             <p className={styles.kicker}>Tool desk / {String(primaryTools.length).padStart(2, "0")} routes</p>
             <h2 id="launcher-title">Choose the job.<br /><em>Enter its workspace.</em></h2>
           </div>
-          <p>Each route opens around one preparation task, one local source and one result you can inspect before export.</p>
+          <p>Each route is one prep job: one file in, one result you check before exporting.</p>
         </header>
 
         <div className={styles.toolStack}>
@@ -130,6 +130,7 @@ export default function LabPage() {
           { id: "tool-anime-face-recognition", label: "Anime Face Recognition", tool: "anime-face-recognition" },
           { id: "tool-bass-markers", label: "Music & Bass Markers", tool: "bass-markers" },
           { id: "tool-auto-subtitles", label: "Auto Subtitles", tool: "auto-subtitles" },
+          { id: "tool-background-remover", label: "Background Remover", tool: "background-remover" },
           { id: "guide", label: "Picking a tool" },
         ]}
       />

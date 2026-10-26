@@ -1,4 +1,4 @@
-import { Portrait, SUBTITLE_SPEAKER } from "./character-portraits";
+import { Portrait, REMOVER_SUBJECT, SUBTITLE_SPEAKER } from "./character-portraits";
 import styles from "./source-slot.module.css";
 
 /*
@@ -6,7 +6,7 @@ import styles from "./source-slot.module.css";
  * waiting for media and never shows analysis results.
  */
 
-type Props = { kind: "person" | "character" | "audio" | "subtitles"; className?: string };
+type Props = { kind: "person" | "character" | "audio" | "subtitles" | "image"; className?: string };
 
 const HOLES = Array.from({ length: 21 }, (_, i) => -22 + i * 22);
 const TRACK_STEPS = 56;
@@ -43,6 +43,28 @@ export function SourceSlot({ kind, className }: Props) {
           <rect x="88" y="84" width="2" height="232" />
           <path d="M 82 78 H 96 L 89 87 Z" />
         </g>
+      </svg>
+    );
+  }
+  if (kind === "image") {
+    return (
+      <svg className={`${styles.slot} ${className ?? ""}`} viewBox="0 0 300 400" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <defs>
+          <clipPath id="slot-image"><rect x="44" y="70" width="212" height="260" rx="10" /></clipPath>
+          <pattern id="slot-checker" width="20" height="20" patternUnits="userSpaceOnUse">
+            <rect width="10" height="10" className={styles.checker} /><rect x="10" y="10" width="10" height="10" className={styles.checker} />
+          </pattern>
+        </defs>
+        <rect className={styles.frame} x="44" y="70" width="212" height="260" rx="10" />
+        <g clipPath="url(#slot-image)">
+          <rect x="44" y="70" width="212" height="260" fill="url(#slot-checker)" />
+          <g className={styles.ghost} transform="translate(50 90) scale(2)">
+            <Portrait kind="person" variant={0} name={REMOVER_SUBJECT} />
+          </g>
+          {/* A dashed cut line waits around the subject. */}
+          <rect className={styles.scan} x="44" y="70" width="212" height="2" />
+        </g>
+        <text className={styles.caption} x="150" y="368" textAnchor="middle">Waiting for your image</text>
       </svg>
     );
   }
