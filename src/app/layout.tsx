@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     template: "%s — CUT/WEAVE",
   },
   description:
-    "Find face-matched scenes and character appearances, and create music and bass markers without sending your media away.",
+    "Find a face or an animated character across a video, mark the beats, write subtitles and cut out a subject, all in your browser. Your media never leaves the device.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

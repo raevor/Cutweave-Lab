@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { PublicPageFrame } from "@/components/public-page-frame";
@@ -9,6 +10,11 @@ import { isToolAvailable, primaryTools } from "@/lib/tool-catalog";
 import { AmbientLayer } from "@/components/ambient-layer";
 import { SequenceNav } from "@/components/sequence-nav";
 import styles from "./lab.module.css";
+
+export const metadata: Metadata = {
+  title: "Tools",
+  description: "Five focused editing tools that run on your device: Face Recognition, Anime Face Recognition, Music & Bass Markers, Auto Subtitles and Background Remover.",
+};
 
 export default function LabPage() {
   const copy = text.library;
