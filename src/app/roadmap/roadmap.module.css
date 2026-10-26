@@ -80,7 +80,7 @@
   padding: 42px 30px 42px 108px;
   position: relative;
   display: grid;
-  grid-template-columns: minmax(200px, .6fr) 1.1fr minmax(240px, 300px);
+  grid-template-columns: 170px minmax(0, 1fr) 300px;
   grid-template-rows: auto 1fr;
   align-items: start;
   column-gap: clamp(42px, 7vw, 110px);
@@ -163,7 +163,7 @@
   grid-column: 2;
   grid-row: 1;
   color: var(--ink-strong);
-  font-size: clamp(34px, 4.1vw, 64px);
+  font-size: clamp(34px, 3.7vw, 56px);
   font-weight: 800;
   line-height: .98;
   letter-spacing: -.055em;
@@ -180,14 +180,128 @@
   line-height: 1.62;
 }
 
+/* Every preview sits in the same 300 x 178 box, top-aligned with the title. */
 .itemScene {
   width: 100%;
-  height: auto;
+  aspect-ratio: 640 / 380;
   grid-column: 3;
   grid-row: 1 / 3;
+  align-self: start;
+  overflow: hidden;
   border-radius: 10px;
   background: color-mix(in oklch, var(--tool-label, var(--accent)) 6%, var(--surface));
 }
+
+.itemScene > svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Coming soon: an outlined title, a dashed track and a live "in development" pill. */
+.soon {
+  border-bottom-style: dashed;
+  background: repeating-linear-gradient(135deg, transparent 0 14px, color-mix(in oklch, var(--line) 35%, transparent) 14px 15px);
+}
+
+.soon .marker i {
+  background: none;
+  border-left: 1px dashed var(--line-strong);
+}
+
+.soon .marker i::before {
+  background: var(--surface);
+  border: 1px solid var(--accent-deep);
+  box-shadow: none;
+}
+
+.soon .marker span { color: var(--accent-deep); }
+
+.soon .itemHead > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-style: dashed;
+  border-color: var(--accent-deep);
+  color: var(--accent-deep);
+}
+
+.soonPulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: soonPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes soonPulse {
+  0%, 100% { opacity: .35; box-shadow: 0 0 0 0 color-mix(in oklch, var(--accent) 60%, transparent); }
+  50% { opacity: 1; box-shadow: 0 0 0 5px color-mix(in oklch, var(--accent) 0%, transparent); }
+}
+
+.soon h2 {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--ink-strong);
+}
+
+.soon .itemScene {
+  border: 1px dashed var(--line-strong);
+  background: var(--surface);
+}
+
+/* One 7 s loop: the pass sweeps (12-56%), the restored frame holds, then fades back to soft. */
+.enhancerReveal {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: enhancerReveal 7s cubic-bezier(.45, 0, .55, 1) infinite;
+}
+
+.enhancerRestored { animation: enhancerRestored 7s linear infinite; }
+.enhancerPass { animation: enhancerPass 7s cubic-bezier(.45, 0, .55, 1) infinite; }
+
+.enhancerProgress {
+  fill: #7fe3ff;
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: enhancerReveal 7s cubic-bezier(.45, 0, .55, 1) infinite;
+}
+
+.enhancerTrack { fill: var(--line); }
+.enhancerTagText { font: 850 10px var(--font-mono); letter-spacing: .1em; }
+.enhancerSoftTag { animation: enhancerSoftTag 7s linear infinite; }
+.enhancerDoneTag { animation: enhancerDoneTag 7s linear infinite; }
+
+@keyframes enhancerReveal {
+  0%, 12% { transform: scaleX(0); }
+  56%, 100% { transform: scaleX(1); }
+}
+
+@keyframes enhancerRestored {
+  0%, 84% { opacity: 1; }
+  96%, 100% { opacity: 0; }
+}
+
+@keyframes enhancerPass {
+  0%, 10% { transform: translateX(0); opacity: 0; }
+  12% { transform: translateX(0); opacity: 1; }
+  56% { transform: translateX(520px); opacity: 1; }
+  60%, 100% { transform: translateX(520px); opacity: 0; }
+}
+
+@keyframes enhancerSoftTag {
+  0%, 54% { opacity: 1; }
+  58%, 94% { opacity: 0; }
+  98%, 100% { opacity: 1; }
+}
+
+@keyframes enhancerDoneTag {
+  0%, 54% { opacity: 0; }
+  58%, 92% { opacity: 1; }
+  96%, 100% { opacity: 0; }
+}
+
+.enhancerEdge { fill: none; stroke: var(--line-strong); stroke-width: 1.5; }
+.enhancerCaption { fill: var(--muted); font: 600 15px var(--font-sans); }
 
 .more {
   margin-top: clamp(70px, 10vw, 120px);
@@ -257,7 +371,7 @@
   .marker i { height: calc(100% - 48px); }
   .item h2 { margin-top: 28px; }
   .itemCopy { margin-top: 18px; font-size: 15px; }
-  .itemScene { margin-top: 24px; }
+  .itemScene { margin-top: 24px; max-width: 420px; }
   .more { padding: 32px 26px; align-items: stretch; flex-direction: column; }
   .more a { width: 100%; min-width: 0; }
 }
@@ -265,4 +379,6 @@
 @media (prefers-reduced-motion: reduce) {
   .item,
   .more a { transition: none; }
+  .soonPulse, .enhancerReveal, .enhancerRestored, .enhancerPass, .enhancerProgress, .enhancerSoftTag, .enhancerDoneTag { animation: none; }
+  .enhancerPass, .enhancerSoftTag { opacity: 0; }
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, type CSSProperties } from "react";
 import type { ToolSlug } from "@/lib/tool-catalog";
-import { Portrait, SUBTITLE_SPEAKER, type CharacterKind } from "./character-portraits";
+import { Portrait, REMOVER_SUBJECT, SUBTITLE_SPEAKER, type CharacterKind } from "./character-portraits";
 import styles from "./tool-illustration.module.css";
 
 /*
@@ -251,11 +251,89 @@ function SubtitleScene({ id }: { id: string }) {
   );
 }
 
+const CUT_CYCLE = 7;
+
+/* A dusk landscape behind the subject, drawn in a 300 x 220 box and cropped to each frame. */
+function Scenery({ id, x, y, width, height }: { id: string; x: number; y: number; width: number; height: number }) {
+  return (
+    <svg x={x} y={y} width={width} height={height} viewBox="0 0 300 220" preserveAspectRatio="xMidYMid slice">
+      <rect width="300" height="220" fill={`url(#${id}-sky)`} />
+      <circle cx="214" cy="104" r="34" fill="#ffe2a8" opacity=".35" />
+      <circle cx="214" cy="104" r="22" fill="#ffe7b4" />
+      <path d="M0 132 L48 96 L84 120 L128 82 L176 124 L222 98 L262 126 L300 106 V220 H0 Z" fill="#7a6aa0" opacity=".8" />
+      <path d="M0 158 C40 138 86 140 120 152 S210 138 300 150 V220 H0 Z" fill="#4f7d6a" />
+      <path d="M0 186 C60 170 120 176 170 184 S250 172 300 180 V220 H0 Z" fill="#6c9b5e" />
+      {[[22, 150, 1], [40, 156, .8], [262, 146, 1.1], [282, 154, .8]].map(([tx, ty, k]) => (
+        <path key={`${tx}`} d={`M${tx} ${ty - 34 * k} L${tx + 13 * k} ${ty} H${tx - 13 * k} Z`} fill="#2f5848" />
+      ))}
+    </svg>
+  );
+}
+
+function CutoutScene({ id }: { id: string }) {
+  const css = [
+    `.${id}-scan{animation:${id}-scan ${CUT_CYCLE}s linear infinite}`,
+    `@keyframes ${id}-scan{0%,8%{transform:translateX(0);opacity:0}10%{opacity:1}58%{transform:translateX(292px);opacity:1}62%,100%{transform:translateX(292px);opacity:0}}`,
+    /* The background of the cut-out is wiped away in step with the scan; the subject never moves. */
+    `.${id}-wipe{animation:${id}-wipe ${CUT_CYCLE}s linear infinite}`,
+    `@keyframes ${id}-wipe{0%,10%{clip-path:inset(0 0 0 0)}58%,90%{clip-path:inset(0 0 0 100%)}96%,100%{clip-path:inset(0 0 0 0)}}`,
+    `.${id}-chip{animation:${id}-chip ${CUT_CYCLE}s cubic-bezier(.3,1.6,.5,1) infinite;transform-box:fill-box;transform-origin:center}`,
+    `@keyframes ${id}-chip{0%,58%{transform:scale(0)}63%,90%{transform:scale(1)}95%,100%{transform:scale(0)}}`,
+    `@media (prefers-reduced-motion:reduce){.${id} *{animation:none!important}.${id}-scan{opacity:0}.${id}-wipe{clip-path:inset(0 0 0 100%)}}`,
+  ].join("");
+  return (
+    <g className={id}>
+      <style>{css}</style>
+      <defs>
+        <linearGradient id={`${id}-sky`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#36447e" />
+          <stop offset=".55" stopColor="#d9826f" />
+          <stop offset="1" stopColor="#f6c48a" />
+        </linearGradient>
+        <clipPath id={`${id}-left`}><rect x="28" y="44" width="300" height="220" rx="12" /></clipPath>
+        <clipPath id={`${id}-right`}><rect x="352" y="44" width="260" height="220" rx="12" /></clipPath>
+        <pattern id={`${id}-checker`} width="16" height="16" patternUnits="userSpaceOnUse">
+          <rect width="16" height="16" className={styles.checkerB} />
+          <rect width="8" height="8" className={styles.checkerA} /><rect x="8" y="8" width="8" height="8" className={styles.checkerA} />
+        </pattern>
+      </defs>
+
+      {/* The original image, scanned left to right. */}
+      <g clipPath={`url(#${id}-left)`}>
+        <Scenery id={id} x={28} y={44} width={300} height={220} />
+        <g transform="translate(178 76) scale(1.6) translate(-50 0)"><Portrait kind="person" variant={0} name={REMOVER_SUBJECT} /></g>
+        <rect className={`${styles.scan} ${id}-scan`} x="30" y="40" width="3" height="228" rx="1.5" />
+      </g>
+      <rect className={styles.frameEdge} x="28" y="44" width="300" height="220" rx="12" />
+      <text className={styles.caption} x="30" y="288">Your image</text>
+
+      {/* The same subject on transparency: its background is removed as the scan passes. */}
+      <g clipPath={`url(#${id}-right)`}>
+        <rect x="352" y="44" width="260" height="220" fill={`url(#${id}-checker)`} />
+        <g className={`${id}-wipe`}><Scenery id={id} x={352} y={44} width={260} height={220} /></g>
+        <g transform="translate(482 76) scale(1.6) translate(-50 0)"><Portrait kind="person" variant={0} name={REMOVER_SUBJECT} /></g>
+      </g>
+      <rect className={styles.frameEdge} x="352" y="44" width="260" height="220" rx="12" />
+      <text className={styles.caption} x="354" y="288">Cut-out</text>
+      <g className={`${id}-chip`}>
+        <rect className={styles.chip} x="532" y="56" width="68" height="24" rx="5" />
+        <text className={styles.chipText} x="566" y="72" textAnchor="middle">PNG</text>
+      </g>
+
+      <text className={styles.caption} x="30" y="346">
+        <tspan className={styles.okText}>Background removed</tspan>
+        <tspan dx="10">edge kept, matte ready</tspan>
+      </text>
+    </g>
+  );
+}
+
 const ACCENT: Record<ToolSlug, string> = {
   "face-recognition": styles.face,
   "anime-face-recognition": styles.anime,
   "bass-markers": styles.bass,
   "auto-subtitles": styles.subtitles,
+  "background-remover": styles.remover,
 };
 
 const LABEL: Record<ToolSlug, string> = {
@@ -263,6 +341,7 @@ const LABEL: Record<ToolSlug, string> = {
   "anime-face-recognition": "Illustration: a reference frame being matched across video frames",
   "bass-markers": "Illustration: markers dropping on the hits of a waveform",
   "auto-subtitles": "Illustration: spoken lines on a soundtrack becoming subtitle lines on the video",
+  "background-remover": "Illustration: a subject lifted out of a busy image onto a transparent background",
 };
 
 export function ToolIllustration({ tool, className }: Props) {
@@ -279,7 +358,7 @@ export function ToolIllustration({ tool, className }: Props) {
 
   return (
     <svg ref={ref} className={`${styles.scene} ${ACCENT[tool]} ${className ?? ""}`} viewBox="0 0 640 380" role="img" aria-label={LABEL[tool]}>
-      {tool === "bass-markers" ? <BeatScene /> : tool === "auto-subtitles" ? <SubtitleScene id="cw-auto-subtitles" /> : <MatchScene kind={tool === "face-recognition" ? "person" : "character"} id={`cw-${tool}`} />}
+      {tool === "bass-markers" ? <BeatScene /> : tool === "auto-subtitles" ? <SubtitleScene id="cw-auto-subtitles" /> : tool === "background-remover" ? <CutoutScene id="cw-background-remover" /> : <MatchScene kind={tool === "face-recognition" ? "person" : "character"} id={`cw-${tool}`} />}
     </svg>
   );
 }

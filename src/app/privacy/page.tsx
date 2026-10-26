@@ -52,6 +52,14 @@ export default function PrivacyPage() {
               <h3>{copy.inbound.title}</h3>
               <ul>{copy.inbound.items.map((item) => <li key={item}>{item}</li>)}</ul>
               <p>{copy.inbound.note}</p>
+              <div className={styles.credits}>
+                <h4>{copy.inbound.creditsTitle}</h4>
+                <dl>
+                  {copy.inbound.credits.map((credit) => (
+                    <div key={credit.tool}><dt>{credit.tool}</dt><dd>{credit.model}</dd></div>
+                  ))}
+                </dl>
+              </div>
             </article>
             <article className={styles.outbound}>
               <div className={styles.flowIcon} aria-hidden="true">
