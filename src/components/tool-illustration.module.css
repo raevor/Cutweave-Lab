@@ -30,9 +30,11 @@
 .face { --ill-accent: oklch(0.74 0.15 295); }
 .anime { --ill-accent: oklch(0.82 0.12 168); }
 .bass { --ill-accent: oklch(0.75 0.16 32); }
+.subtitles { --ill-accent: oklch(0.78 0.13 230); }
 :global(html[data-theme="light"]) .face { --ill-accent: oklch(0.55 0.18 295); }
 :global(html[data-theme="light"]) .anime { --ill-accent: oklch(0.56 0.11 170); }
 :global(html[data-theme="light"]) .bass { --ill-accent: oklch(0.6 0.17 32); }
+:global(html[data-theme="light"]) .subtitles { --ill-accent: oklch(0.52 0.14 240); }
 
 .panel { fill: var(--ill-panel); stroke: var(--ill-line); stroke-width: 1.5; }
 .track { fill: var(--ill-panel); stroke: var(--ill-line); stroke-width: 1.5; }
@@ -62,6 +64,13 @@
 .scanGlow { fill: var(--ill-playhead); opacity: .16; }
 .tick { fill: var(--ill-line); }
 .chip { fill: var(--ill-accent); }
+
+.subtitlePlate { fill: oklch(0.12 0.02 265 / .8); }
+.subtitleText { fill: oklch(0.99 0 0); font-size: 13.5px; font-weight: 650; }
+.cueRow { fill: var(--ill-card); stroke: var(--ill-line); stroke-width: 1.2; }
+.cueTime { fill: var(--ill-accent); font: 700 10px var(--font-mono); }
+.cueText { fill: var(--ill-ink); font-size: 12px; font-weight: 550; }
+.speechBar { fill: var(--ill-accent); opacity: .85; }
 
 .bar {
   fill: var(--ill-dim);

@@ -15,7 +15,7 @@ export type CharacterKind = "person" | "character";
 export type CharacterVariant = 0 | 1 | 2;
 
 /* Bump when the images are re-exported so browsers do not keep stale copies. */
-const PORTRAIT_VERSION = 20;
+const PORTRAIT_VERSION = 21;
 
 const PORTRAITS: Record<CharacterKind, readonly string[]> = {
   person: ["sera", "ozan", "maya"],
@@ -44,11 +44,18 @@ export function portraitSrc(kind: CharacterKind, variant: CharacterVariant, outf
   return `/characters/${name}${small ? "-sm" : ""}.webp?v=${PORTRAIT_VERSION}`;
 }
 
-/* SVG figure in the 100 x 120 box. */
-export function Portrait({ kind, variant, outfit, small = false }: { kind: CharacterKind; variant: CharacterVariant; outfit?: number; small?: boolean }) {
+/* Alin speaks for Auto Subtitles; she is not part of the face-matching cast. */
+export const SUBTITLE_SPEAKER = "alin";
+
+export function namedPortraitSrc(name: string, small = false) {
+  return `/characters/${name}${small ? "-sm" : ""}.webp?v=${PORTRAIT_VERSION}`;
+}
+
+/* SVG figure in the 100 x 120 box. `name` picks a single portrait outside the cast. */
+export function Portrait({ kind, variant, outfit, small = false, name }: { kind: CharacterKind; variant: CharacterVariant; outfit?: number; small?: boolean; name?: string }) {
   return (
     <image
-      href={portraitSrc(kind, variant, outfit, small)}
+      href={name ? namedPortraitSrc(name, small) : portraitSrc(kind, variant, outfit, small)}
       x={PORTRAIT_BOX.x}
       y={PORTRAIT_BOX.y}
       width={PORTRAIT_BOX.width}

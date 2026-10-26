@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, type CSSProperties } from "react";
 import type { ToolSlug } from "@/lib/tool-catalog";
-import { Portrait, type CharacterKind } from "./character-portraits";
+import { Portrait, SUBTITLE_SPEAKER, type CharacterKind } from "./character-portraits";
 import styles from "./tool-illustration.module.css";
 
 /*
@@ -175,10 +175,94 @@ function BeatScene() {
   );
 }
 
+/* Spoken lines on the speech strip, as start and end x positions. */
+const SPEECH = [
+  { from: 44, to: 168, text: "We start by the river.", time: "00:01.2" },
+  { from: 190, to: 300, text: "Keep the camera low.", time: "00:04.8" },
+  { from: 326, to: 452, text: "Then cut to the bridge.", time: "00:08.1" },
+  { from: 474, to: 596, text: "That is our opening shot.", time: "00:11.6" },
+];
+const SPEECH_X0 = 40;
+const SPEECH_X1 = 600;
+const SUB_CYCLE = 9;
+const SUB_SWEEP = 72;
+
+function SubtitleScene({ id }: { id: string }) {
+  const toPct = (x: number) => ((x - SPEECH_X0) / (SPEECH_X1 - SPEECH_X0)) * SUB_SWEEP;
+  const bars = Array.from({ length: 70 }, (_, i) => {
+    const x = SPEECH_X0 + 4 + i * 8;
+    const speaking = SPEECH.some((line) => x >= line.from && x <= line.to);
+    const h = speaking ? 9 + 13 * Math.abs(Math.sin(i * 1.7)) * Math.abs(Math.cos(i * 0.45)) : 1.5;
+    return { x, h: Math.round(h * 10) / 10 };
+  });
+  const css = [
+    `.${id}-sweep{animation:${id}-sweep ${SUB_CYCLE}s linear infinite}`,
+    `@keyframes ${id}-sweep{0%{transform:translateX(0);opacity:1}${pct(SUB_SWEEP)}{transform:translateX(${SPEECH_X1 - SPEECH_X0}px);opacity:1}${pct(SUB_SWEEP + 1)},100%{transform:translateX(${SPEECH_X1 - SPEECH_X0}px);opacity:0}}`,
+    ...SPEECH.flatMap((line, i) => {
+      const start = toPct(line.from);
+      const end = toPct(line.to);
+      return [
+        `.${id}-c${i}{animation:${id}-c${i} ${SUB_CYCLE}s ease infinite}`,
+        `@keyframes ${id}-c${i}{0%,${pct(start)}{opacity:0}${pct(start + 1)},${pct(end + 2)}{opacity:1}${pct(end + 3)},100%{opacity:0}}`,
+        `.${id}-r${i}{animation:${id}-r${i} ${SUB_CYCLE}s cubic-bezier(.2,.8,.2,1) infinite}`,
+        `@keyframes ${id}-r${i}{0%,${pct(start)}{opacity:0;transform:translateX(10px)}${pct(start + 3)},92%{opacity:1;transform:none}97%,100%{opacity:0}}`,
+      ];
+    }),
+    // Reduced motion shows the finished state: every line listed, the last one on screen.
+    `@media (prefers-reduced-motion:reduce){.${id} *{animation:none!important}.${id}-sweep{opacity:0}${SPEECH.slice(0, -1).map((_, i) => `.${id}-c${i}`).join(",")}{opacity:0}}`,
+  ].join("");
+
+  return (
+    <g className={id}>
+      <style>{css}</style>
+      <defs><clipPath id={`${id}-frame`}><rect x="28" y="40" width="320" height="196" rx="12" /></clipPath></defs>
+
+      {/* The source video with the current line on screen. */}
+      <rect className={styles.frame} x="28" y="40" width="320" height="196" rx="12" />
+      <g clipPath={`url(#${id}-frame)`}>
+        <g transform="translate(188 44) scale(1.6) translate(-50 0)"><Portrait kind="person" variant={0} name={SUBTITLE_SPEAKER} /></g>
+      </g>
+      {SPEECH.map((line, i) => (
+        <g key={line.time} className={`${id}-c${i}`}>
+          <rect className={styles.subtitlePlate} x={188 - line.text.length * 3.9 - 10} y="198" width={line.text.length * 7.8 + 20} height="26" rx="4" />
+          <text className={styles.subtitleText} x="188" y="216" textAnchor="middle">{line.text}</text>
+        </g>
+      ))}
+
+      {/* Subtitle lines written as the speech is heard. */}
+      <text className={styles.caption} x="370" y="54">Subtitle lines</text>
+      {SPEECH.map((line, i) => (
+        <g key={`r${line.time}`} className={`${id}-r${i}`}>
+          <rect className={styles.cueRow} x="368" y={68 + i * 42} width="244" height="34" rx="6" />
+          <text className={styles.cueTime} x="380" y={89 + i * 42}>{line.time}</text>
+          <text className={styles.cueText} x="438" y={89 + i * 42}>{line.text}</text>
+        </g>
+      ))}
+
+      {/* The soundtrack: speech shows as dense bars, pauses stay flat. */}
+      <rect className={styles.track} x="28" y="258" width="584" height="52" rx="9" />
+      {bars.map((bar) => <rect key={bar.x} className={styles.speechBar} x={bar.x} y={284 - bar.h} width="4" height={bar.h * 2} rx="2" />)}
+      <rect className={`${styles.scan} ${id}-sweep`} x={SPEECH_X0 - 1} y="250" width="3" height="68" rx="1.5" />
+      <text className={styles.caption} x="30" y="346">
+        <tspan className={styles.okText}>{SPEECH.length} lines written</tspan>
+        <tspan dx="10">every word editable before export</tspan>
+      </text>
+    </g>
+  );
+}
+
 const ACCENT: Record<ToolSlug, string> = {
   "face-recognition": styles.face,
   "anime-face-recognition": styles.anime,
   "bass-markers": styles.bass,
+  "auto-subtitles": styles.subtitles,
+};
+
+const LABEL: Record<ToolSlug, string> = {
+  "face-recognition": "Illustration: a reference frame being matched across video frames",
+  "anime-face-recognition": "Illustration: a reference frame being matched across video frames",
+  "bass-markers": "Illustration: markers dropping on the hits of a waveform",
+  "auto-subtitles": "Illustration: spoken lines on a soundtrack becoming subtitle lines on the video",
 };
 
 export function ToolIllustration({ tool, className }: Props) {
@@ -194,8 +278,8 @@ export function ToolIllustration({ tool, className }: Props) {
   }, []);
 
   return (
-    <svg ref={ref} className={`${styles.scene} ${ACCENT[tool]} ${className ?? ""}`} viewBox="0 0 640 380" role="img" aria-label={tool === "bass-markers" ? "Illustration: markers dropping on the hits of a waveform" : "Illustration: a reference frame being matched across video frames"}>
-      {tool === "bass-markers" ? <BeatScene /> : <MatchScene kind={tool === "face-recognition" ? "person" : "character"} id={`cw-${tool}`} />}
+    <svg ref={ref} className={`${styles.scene} ${ACCENT[tool]} ${className ?? ""}`} viewBox="0 0 640 380" role="img" aria-label={LABEL[tool]}>
+      {tool === "bass-markers" ? <BeatScene /> : tool === "auto-subtitles" ? <SubtitleScene id="cw-auto-subtitles" /> : <MatchScene kind={tool === "face-recognition" ? "person" : "character"} id={`cw-${tool}`} />}
     </svg>
   );
 }

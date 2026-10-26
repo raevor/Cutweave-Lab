@@ -1,4 +1,4 @@
-export type ToolSlug = "face-recognition" | "bass-markers" | "anime-face-recognition";
+export type ToolSlug = "face-recognition" | "bass-markers" | "anime-face-recognition" | "auto-subtitles";
 
 export type ToolDefinition = {
   slug: ToolSlug;
@@ -33,6 +33,12 @@ export const primaryTools: ToolDefinition[] = [
     promise: "Let the rhythm points arrive before you start cutting.", input: "One local audio file", output: "Marker-rich WAV + timing data", accent: "blue",
     results: ["Bass and impact candidates", "Sensitivity and spacing controls", "Editable marker timeline", "WAV, XMP, JSON and CSV export"],
   },
+  {
+    slug: "auto-subtitles", index: "04", title: "Auto Subtitles", shortTitle: "Turn English speech into subtitles",
+    eyebrow: "Speech / subtitle lines", description: "Transcribe spoken English into timed subtitle lines you can correct and export.",
+    promise: "Stop typing subtitles by hand while scrubbing back and forth.", input: "One local video or audio file", output: "Timed English subtitles", accent: "blue",
+    results: ["Local English transcription", "Timed, readable subtitle lines", "Editable text for every line", "SRT, VTT and transcript export"],
+  },
 ];
 
 export function getTool(slug: string) {
@@ -40,5 +46,5 @@ export function getTool(slug: string) {
 }
 
 export function isToolAvailable(slug: ToolSlug) {
-  return slug === "face-recognition" || slug === "anime-face-recognition" || slug === "bass-markers";
+  return slug === "face-recognition" || slug === "anime-face-recognition" || slug === "bass-markers" || slug === "auto-subtitles";
 }

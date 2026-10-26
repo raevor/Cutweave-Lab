@@ -952,7 +952,8 @@ export function MusicBassMarkersWorkspace({ tool }: { tool: ToolDefinition }) {
             <span>MP3, WAV, M4A, AAC, OGG, Opus, FLAC and AIFF are accepted when your browser can decode them. The file never leaves this tab.</span>
             <input ref={inputRef} className="sr-only" id="music-audio-input" type="file" accept={ACCEPTED_AUDIO} onChange={chooseFile} />
             <button className={styles.primaryAction} type="button" onClick={() => inputRef.current?.click()}>Choose audio <span>↗</span></button>
-            {error ? <p className={styles.error} role="alert">{error}</p> : null}
+            {/* Wrapped so the intake's eyebrow style for direct paragraphs does not apply. */}
+            {error ? <div className={styles.intakeError}><p className={styles.error} role="alert">{error}</p></div> : null}
           </div>
           <aside className={styles.intakeFacts}>
             <div><small>INPUT</small><strong>One local audio file</strong></div>

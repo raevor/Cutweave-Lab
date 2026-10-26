@@ -140,7 +140,8 @@ export function AmbientLayer({ seed = 7, density = 1 }: { seed?: number; density
       ctx.lineWidth = 1.8;
       ctx.lineCap = "round";
       for (const g of glyphs) {
-        const py = ((g.y + scroll * g.depth) % height + height) % height - offset;
+        /* Background parallax: a mark moves a little slower than the page, never faster. */
+        const py = ((g.y - scroll * g.depth) % height + height) % height - offset;
         if (py < -30 || py > viewH + 30) continue;
         const dx = g.x - pointerX;
         const dy = py - pointerY;
@@ -208,11 +209,23 @@ export function AmbientLayer({ seed = 7, density = 1 }: { seed?: number; density
     const onVisibility = () => start();
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("pointermove", onPointer, { passive: true });
-    const onScroll = () => { if (frame === null) draw(); };
+    /*
+     * Mark positions depend on the scroll, so they must be redrawn on every scrolled
+     * frame. The 30 fps drift loop alone made them stutter behind a 60-144 Hz scroll.
+     */
+    let scrollFrame: number | null = null;
+    const onScroll = () => {
+      if (scrollFrame !== null) return;
+      scrollFrame = requestAnimationFrame(() => {
+        scrollFrame = null;
+        draw();
+      });
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
 
     return () => {
       if (frame !== null) cancelAnimationFrame(frame);
+      if (scrollFrame !== null) cancelAnimationFrame(scrollFrame);
       ro.disconnect();
       window.removeEventListener("resize", resize);
       io.disconnect();

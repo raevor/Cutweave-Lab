@@ -129,6 +129,7 @@ export default function LabPage() {
           { id: "tool-face-recognition", label: "Face Recognition", tool: "face-recognition" },
           { id: "tool-anime-face-recognition", label: "Anime Face Recognition", tool: "anime-face-recognition" },
           { id: "tool-bass-markers", label: "Music & Bass Markers", tool: "bass-markers" },
+          { id: "tool-auto-subtitles", label: "Auto Subtitles", tool: "auto-subtitles" },
           { id: "guide", label: "Picking a tool" },
         ]}
       />

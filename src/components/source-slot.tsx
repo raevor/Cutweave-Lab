@@ -1,4 +1,4 @@
-import { Portrait } from "./character-portraits";
+import { Portrait, SUBTITLE_SPEAKER } from "./character-portraits";
 import styles from "./source-slot.module.css";
 
 /*
@@ -6,7 +6,7 @@ import styles from "./source-slot.module.css";
  * waiting for media and never shows analysis results.
  */
 
-type Props = { kind: "person" | "character" | "audio"; className?: string };
+type Props = { kind: "person" | "character" | "audio" | "subtitles"; className?: string };
 
 const HOLES = Array.from({ length: 21 }, (_, i) => -22 + i * 22);
 const TRACK_STEPS = 56;
@@ -43,6 +43,27 @@ export function SourceSlot({ kind, className }: Props) {
           <rect x="88" y="84" width="2" height="232" />
           <path d="M 82 78 H 96 L 89 87 Z" />
         </g>
+      </svg>
+    );
+  }
+  if (kind === "subtitles") {
+    return (
+      <svg className={`${styles.slot} ${className ?? ""}`} viewBox="0 0 300 400" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <Film />
+        <defs>
+          <clipPath id="slot-subtitles"><rect x="44" y="70" width="212" height="260" rx="10" /></clipPath>
+        </defs>
+        <rect className={styles.frame} x="44" y="70" width="212" height="260" rx="10" />
+        <g clipPath="url(#slot-subtitles)">
+          <g className={styles.ghost} transform="translate(50 90) scale(2)">
+            <Portrait kind="person" variant={0} name={SUBTITLE_SPEAKER} />
+          </g>
+        </g>
+        {/* An empty subtitle line with a waiting cursor. */}
+        <rect className={styles.captionSlot} x="74" y="282" width="152" height="18" rx="3" />
+        <rect className={styles.captionSlot} x="96" y="304" width="108" height="12" rx="3" />
+        <rect className={styles.idleHead} x="80" y="285" width="2" height="12" />
+        <text className={styles.caption} x="150" y="368" textAnchor="middle">Waiting for your video</text>
       </svg>
     );
   }

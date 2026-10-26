@@ -168,6 +168,7 @@
 .primaryAction:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
 .primaryAction:active:not(:disabled) { transform: translateY(1px) scale(.985); }
 .primaryAction:disabled { opacity: .46; cursor: not-allowed; }
+.intakeError { width: 100%; }
 .intakeFacts { display: grid; grid-template-rows: repeat(4, 1fr); border-left: 1px solid var(--music-line); }
 .intakeFacts > div { padding: 22px; display: flex; flex-direction: column; justify-content: center; gap: 10px; border-bottom: 1px solid var(--music-line); }
 .intakeFacts > div:last-child { border-bottom: 0; }

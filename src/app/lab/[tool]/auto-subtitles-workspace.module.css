@@ -1,0 +1,89 @@
+/* Shares the music workspace's tokens and layout; only subtitle-specific parts live here. */
+/* Same layout as the music tool, with the subtitle tool's own blue signal. */
+main.workspace {
+  --music-signal: oklch(0.78 0.13 230);
+  --music-signal-deep: oklch(0.68 0.13 235);
+  --music-glow: oklch(0.38 0.08 235 / .27);
+  --toggle-inner: oklch(0.74 0.12 230 / .42);
+  --toggle-edge: oklch(0.52 0.12 235);
+  --caption-ink: oklch(0.99 0 0);
+  --caption-plate: oklch(0.12 0.02 265 / .82);
+}
+:global(html[data-theme="light"]) main.workspace {
+  --music-signal: oklch(0.52 0.14 240);
+  --music-signal-deep: oklch(0.44 0.14 245);
+  --music-glow: oklch(0.78 0.08 235 / .22);
+  --toggle-edge: oklch(0.6 0.12 240);
+  --toggle-drop: oklch(0.35 0.1 245);
+}
+
+.aeHint { margin: 4px 0 0; padding: 12px 14px; border: 1px solid var(--music-line); background: var(--music-visual); color: var(--music-muted); font-size: 11px; line-height: 1.5; }
+.aeHint strong { color: var(--music-text); }
+
+.sourceNote { padding: 20px; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+.sourceNote small { color: var(--music-signal); font: 800 7px/1 var(--font-mono); letter-spacing: .1em; }
+.sourceNote strong { color: var(--music-text); font-size: 15px; }
+.sourceNote span { color: var(--music-faint); font-size: 11px; line-height: 1.45; }
+
+.preview { min-height: 440px; padding: clamp(20px, 3vw, 36px); display: flex; flex-direction: column; justify-content: center; gap: 16px; border-right: 1px solid var(--music-line); background: var(--music-visual); }
+.video { width: 100%; max-height: 420px; display: block; background: oklch(0.08 0.01 265); }
+.audioPlayer { width: 100%; }
+
+.liveFeed { padding: 14px 16px; display: grid; gap: 8px; border: 1px solid var(--music-line); background: var(--music-panel); }
+.liveFeed p { margin: 0; color: var(--music-signal); font: 800 7px/1 var(--font-mono); letter-spacing: .1em; }
+.liveFeed div { color: var(--music-text); font-size: 12px; line-height: 1.45; animation: lineIn .3s ease both; }
+.liveFeed span { margin-right: 10px; color: var(--music-faint); font: 750 8px/1 var(--font-mono); }
+@keyframes lineIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.rangeBlock { width: 100%; margin-top: 26px; padding: 16px; border: 1px solid var(--music-line); background: var(--music-panel); }
+.rangeHead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.rangeHead small { color: var(--music-signal); font: 800 7px/1 var(--font-mono); letter-spacing: .1em; }
+.rangeHead strong { color: var(--music-text); font: 800 12px/1 var(--font-mono); }
+.rangeHead span { color: var(--music-faint); font: 700 8px/1 var(--font-mono); }
+.rangeBlock > div[aria-hidden] { height: 26px; margin-top: 14px; }
+.rangeBlock > div:nth-child(3) { margin-top: 12px; }
+.rangeBlock > button { margin-top: 14px; }
+.engineChoice { width: 100%; margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.engineChoice button { min-height: 74px; padding: 14px 16px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 8px; border: 1px solid var(--music-line); background: var(--music-visual); color: var(--music-muted); text-align: left; cursor: pointer; transition: border-color 160ms ease, background-color 160ms ease; }
+.engineChoice button strong { color: var(--music-text); font: 850 12px/1 var(--font-mono); letter-spacing: .06em; }
+.engineChoice button small { font: 700 8px/1.3 var(--font-mono); }
+.engineChoice button[aria-checked="true"] { border-color: var(--music-signal); background: color-mix(in oklch, var(--music-signal) 10%, var(--music-visual)); box-shadow: inset 3px 0 0 var(--music-signal); }
+.engineChoice button:disabled { opacity: .45; cursor: not-allowed; }
+
+.reviewGrid { margin-top: 10px; display: grid; grid-template-columns: minmax(340px, 1.15fr) minmax(320px, .85fr); border: 1px solid var(--music-line); background: var(--music-panel); }
+.stage { min-width: 0; padding: 20px; display: flex; flex-direction: column; gap: 12px; border-right: 1px solid var(--music-line); background: var(--music-visual); }
+.stageFrame { position: relative; container-type: inline-size; }
+.stageFrame .video { max-height: 520px; }
+.caption { position: absolute; right: 6%; bottom: clamp(40px, 13cqw, 58px); left: 6%; margin: 0; display: flex; justify-content: center; pointer-events: none; text-align: center; }
+.caption span { max-width: 100%; padding: 5px 10px; background: var(--caption-plate); color: var(--caption-ink); font-size: clamp(11px, 2.9cqw, 22px); font-weight: 650; line-height: 1.3; white-space: pre-line; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.stageFrame:has(audio) .caption { min-height: 64px; position: static; margin-top: 14px; align-items: center; border: 1px solid var(--music-line); }
+.stageNote { color: var(--music-faint); font: 750 7px/1 var(--font-mono); letter-spacing: .09em; }
+
+.cuePanel { min-width: 0; padding: 24px; display: flex; flex-direction: column; }
+.cueList { max-height: 520px; margin-top: 17px; overflow: auto; border-top: 1px solid var(--music-line); scrollbar-color: var(--music-signal) var(--music-panel); }
+.cueList article { display: grid; grid-template-columns: 92px minmax(0, 1fr) 36px; border-bottom: 1px solid var(--music-line-soft); transition: background-color 160ms ease; }
+.cueList article > button:first-child { padding: 12px 10px 12px 14px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; border: 0; background: transparent; color: var(--music-text); text-align: left; cursor: pointer; }
+.cueList article > button:first-child span { color: var(--music-signal); font: 750 7px/1 var(--font-mono); }
+.cueList article > button:first-child strong { font: 800 10px/1 var(--font-mono); }
+.cueList article > button:first-child small { color: var(--music-faint); font: 700 7px/1 var(--font-mono); }
+.cueList textarea { width: 100%; min-height: 38px; margin: 8px 0; padding: 8px 10px; field-sizing: content; resize: vertical; border: 1px solid transparent; background: transparent; color: var(--music-text); font: 500 13px/1.45 var(--font-sans); }
+.cueList textarea:hover { border-color: var(--music-line-soft); }
+.cueList textarea:focus-visible { border-color: var(--music-signal); outline: none; background: var(--music-visual); }
+.cueActive { background: color-mix(in oklch, var(--music-signal) 9%, transparent); box-shadow: inset 3px 0 0 var(--music-signal); }
+.cuePanel > .textAction { align-self: flex-start; }
+
+@media (max-width: 1100px) {
+  .reviewGrid { grid-template-columns: 1fr; }
+  .stage { border-right: 0; border-bottom: 1px solid var(--music-line); }
+}
+
+@media (max-width: 760px) {
+  .preview { min-height: 0; border-right: 0; border-bottom: 1px solid var(--music-line); }
+  .engineChoice { grid-template-columns: 1fr; }
+  .cueList article { grid-template-columns: 74px minmax(0, 1fr) 32px; }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liveFeed div { animation: none; }
+}
