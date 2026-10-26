@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { OUTFIT_COUNT, PORTRAIT_BOX, portraitSrc, type CharacterVariant } from "./character-portraits";
+import { namedPortraitSrc, OUTFIT_COUNT, PORTRAIT_BOX, portraitSrc, SUBTITLE_SPEAKER, type CharacterVariant } from "./character-portraits";
 import styles from "./timeline-backdrop.module.css";
 
 type TimelineBackdropProps = {
@@ -14,6 +14,7 @@ type Palette = {
   face: string;
   anime: string;
   bass: string;
+  subs: string;
   playhead: string;
   ink: string;
   muted: string;
@@ -55,6 +56,13 @@ function buildClips(seedBase: number, minLen: number, maxLen: number, matchRate:
 
 const FACE_CLIPS = buildClips(11, 2.4, 5.4, 0.45);
 const ANIME_CLIPS = buildClips(53, 2, 4.6, 0.42);
+/* Subtitle blocks: every block is speech, so all of them get written. */
+const SUB_CLIPS = buildClips(97, 3.4, 5.8, 1);
+const SUB_LINES = [
+  "We start by the river.", "Keep the camera low.", "Then cut to the bridge.", "That's our opening shot.",
+  "Hold on her face.", "One more take.", "Let the music breathe.", "Now we are rolling.",
+  "Bring it in slowly.", "Cut on the beat.", "Again, from the top.", "That's a wrap.",
+];
 
 /* Portrait images shared by every timeline on the page; each loads once. */
 const imageCache = new Map<string, HTMLImageElement>();
@@ -104,6 +112,39 @@ function characterSprite(kind: "face" | "anime", who: CharacterVariant, outfit: 
   return canvas;
 }
 
+/* The subtitle speaker's face, cropped into a round avatar; grey until her line is heard. */
+function speakerAvatar(size: number, dpr: number, gray: boolean, onLoad: () => void) {
+  const key = `speaker:${size.toFixed(1)}:${dpr}:${gray ? 1 : 0}`;
+  const cached = spriteCache.get(key);
+  if (cached) return cached;
+  const image = portraitImage(namedPortraitSrc(SUBTITLE_SPEAKER, true), onLoad);
+  if (!image.complete || image.naturalWidth === 0) return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = Math.ceil(size * dpr);
+  const g = canvas.getContext("2d");
+  if (g) {
+    /* The whole head, hair included, with the top of the hoodie: the 176 x 176 square at (32, 14) of the 240 x 260 portrait. */
+    const unit = image.naturalWidth / 240;
+    g.beginPath();
+    g.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2, 0, Math.PI * 2);
+    g.clip();
+    g.fillStyle = "#eee1d8";
+    g.fillRect(0, 0, canvas.width, canvas.height);
+    g.drawImage(image, 32 * unit, 14 * unit, 176 * unit, 176 * unit, 0, 0, canvas.width, canvas.height);
+    if (gray) {
+      const data = g.getImageData(0, 0, canvas.width, canvas.height);
+      const px = data.data;
+      for (let i = 0; i < px.length; i += 4) {
+        const l = px[i] * 0.3 + px[i + 1] * 0.59 + px[i + 2] * 0.11;
+        px[i] = px[i + 1] = px[i + 2] = l * 0.6 + 50;
+      }
+      g.putImageData(data, 0, 0);
+    }
+  }
+  spriteCache.set(key, canvas);
+  return canvas;
+}
+
 /* Kick positions on a 118 BPM grid with a few syncopated hits. */
 const BEAT = 60 / 118;
 const KICKS: number[] = [];
@@ -130,6 +171,7 @@ function readPalette(el: HTMLElement): Palette {
     face: v("--tl-face", "#9b87f5"),
     anime: v("--tl-anime", "#5fd6b7"),
     bass: v("--tl-bass", "#f0806a"),
+    subs: v("--tl-subs", "#52b6e8"),
     playhead: v("--tl-playhead", "#f4b443"),
     ink: v("--tl-ink", "#e9ecf5"),
     muted: v("--tl-muted", "#8e95ab"),
@@ -228,10 +270,17 @@ export function TimelineBackdrop({ className, scrubTarget }: TimelineBackdropPro
       const xOf = (t: number) => headX + (t - headTime) * pps;
       const tOf = (x: number) => headTime + (x - headX) / pps;
 
+      const lanes: Array<{ key: "face" | "anime" | "bass" | "subs"; label: string; color: string }> = [
+        { key: "face", label: "Face", color: palette.face },
+        { key: "anime", label: "Anime", color: palette.anime },
+        { key: "bass", label: "Bass", color: palette.bass },
+        { key: "subs", label: "Subs", color: palette.subs },
+      ];
+
       const rulerH = 26;
-      const laneH = Math.min(62, Math.max(40, height * 0.07));
+      const laneH = Math.min(56, Math.max(36, height * 0.062));
       const laneGap = 10;
-      const stackH = rulerH + laneH * 3 + laneGap * 3;
+      const stackH = rulerH + (laneH + laneGap) * lanes.length;
       const top = height - stackH - Math.min(44, height * 0.05);
       const labelW = compact ? 0 : 118;
 
@@ -275,12 +324,6 @@ export function TimelineBackdrop({ className, scrubTarget }: TimelineBackdropPro
         }
       }
       ctx.globalAlpha = 1;
-
-      const lanes: Array<{ key: "face" | "anime" | "bass"; label: string; color: string }> = [
-        { key: "face", label: "Face", color: palette.face },
-        { key: "anime", label: "Anime", color: palette.anime },
-        { key: "bass", label: "Bass", color: palette.bass },
-      ];
 
       lanes.forEach((lane, index) => {
         const y = top + rulerH + laneGap + index * (laneH + laneGap);
@@ -335,6 +378,94 @@ export function TimelineBackdrop({ className, scrubTarget }: TimelineBackdropPro
               }
             }
           }
+        } else if (lane.key === "subs") {
+          /*
+           * Caption blocks: the speaker's avatar, the line and the speech under it.
+           * Ahead of the playhead the speech waits in grey; as the playhead crosses a
+           * block its speech lights up and the line is typed with a cursor.
+           */
+          const loopBase = Math.floor(tOf(labelW) / LOOP_SECONDS) * LOOP_SECONDS;
+          const avatar = laneH - 16;
+          const fontSize = Math.round(Math.min(13, laneH * 0.24));
+          for (let base = loopBase - LOOP_SECONDS; base < tOf(width) + LOOP_SECONDS; base += LOOP_SECONDS) {
+            SUB_CLIPS.forEach((clip, index) => {
+              const cs = base + clip.start;
+              const x = xOf(cs);
+              const w = clip.length * pps;
+              if (x > width || x + w < labelW) return;
+              const heard = headTime >= cs;
+              const written = Math.min(1, Math.max(0, (headTime - cs) / (clip.length * 0.75)));
+
+              ctx.globalAlpha = 1;
+              ctx.fillStyle = palette.clip;
+              roundRect(ctx, x + 1, y, w - 2, laneH, 6);
+              ctx.fill();
+              ctx.fillStyle = lane.color;
+              ctx.globalAlpha = heard ? 0.24 : 0.07;
+              ctx.fill();
+              ctx.globalAlpha = heard ? 1 : 0.5;
+              ctx.fillRect(x + 1, y, w - 2, 2);
+
+              ctx.save();
+              roundRect(ctx, x + 1, y, w - 2, laneH, 6);
+              ctx.clip();
+              const showAvatar = w > avatar + 56;
+              const tx = x + 8 + (showAvatar ? avatar + 9 : 2);
+              if (showAvatar) {
+                const sprite = speakerAvatar(avatar, dpr, !heard, requestRedraw);
+                if (sprite) {
+                  ctx.globalAlpha = heard ? 1 : 0.55;
+                  ctx.drawImage(sprite, x + 8, y + 8, avatar, avatar);
+                  ctx.globalAlpha = heard ? 0.9 : 0.35;
+                  ctx.strokeStyle = heard ? lane.color : palette.muted;
+                  ctx.lineWidth = 1.5;
+                  ctx.beginPath();
+                  ctx.arc(x + 8 + avatar / 2, y + 8 + avatar / 2, avatar / 2, 0, Math.PI * 2);
+                  ctx.stroke();
+                }
+              }
+
+              /* The speech: syllable-like bars that light up as they are heard. */
+              const barsTop = y + laneH * 0.58;
+              const barsH = laneH * 0.3;
+              const right = x + w - 10;
+              for (let bx = tx, i = 0; bx < right; bx += 3, i += 1) {
+                const syllable = Math.abs(Math.sin(i * 0.55 + clip.seed)) * (0.35 + 0.65 * rand(clip.seed * 31 + i));
+                const pause = Math.sin(i * 0.17 + clip.seed * 2) > 0.82 ? 0.15 : 1;
+                const a = Math.max(1.5, syllable * pause * barsH);
+                const lit = bx < headX;
+                ctx.globalAlpha = lit ? 0.85 : 0.22;
+                ctx.fillStyle = lit ? lane.color : palette.muted;
+                ctx.fillRect(bx, barsTop + (barsH - a) / 2, 2, a);
+              }
+
+              ctx.font = `600 ${fontSize}px ${palette.sans}`;
+              ctx.textBaseline = "middle";
+              const textY = y + laneH * 0.33;
+              if (written > 0) {
+                const full = SUB_LINES[(clip.seed + index) % SUB_LINES.length];
+                /* A line wider than its block ends in an ellipsis, as an NLE caption track shows it. */
+                let line = full;
+                while (line.length > 1 && ctx.measureText(line).width > right - tx) line = line.slice(0, -1);
+                if (line !== full) line = `${line.trimEnd()}…`;
+                const typed = line.slice(0, Math.ceil(line.length * written));
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = palette.ink;
+                ctx.fillText(typed, tx, textY);
+                if (written < 1 && Math.floor(headTime * 3) % 2 === 0) {
+                  ctx.fillStyle = lane.color;
+                  ctx.fillRect(tx + ctx.measureText(typed).width + 2, textY - fontSize / 2, 2, fontSize);
+                }
+              } else {
+                /* Not heard yet: where the line will be written. */
+                ctx.globalAlpha = 0.22;
+                ctx.fillStyle = palette.muted;
+                roundRect(ctx, tx, textY - 3, Math.max(8, Math.min(right - tx, (right - tx) * 0.62)), 6, 3);
+                ctx.fill();
+              }
+              ctx.restore();
+            });
+          }
         } else {
           const clips = lane.key === "face" ? FACE_CLIPS : ANIME_CLIPS;
           const loopBase = Math.floor(tOf(labelW) / LOOP_SECONDS) * LOOP_SECONDS;
@@ -366,7 +497,7 @@ export function TimelineBackdrop({ className, scrubTarget }: TimelineBackdropPro
                 /* Matched clips show the reference character in one of its outfits, varied per clip. */
                 const look = clip.seed % (OUTFIT_COUNT + 1);
                 const outfit = clip.who === 0 && look < OUTFIT_COUNT ? look : undefined;
-                const sprite = characterSprite(lane.key, clip.who, outfit, scale, dpr, rejected, requestRedraw);
+                const sprite = characterSprite(lane.key as "face" | "anime", clip.who, outfit, scale, dpr, rejected, requestRedraw);
                 if (sprite) {
                   ctx.save();
                   roundRect(ctx, x + 1, y, w - 2, laneH, 6);
