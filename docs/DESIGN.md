@@ -45,6 +45,8 @@ The 404 page uses the same frame as the public pages and the same visual languag
 
 Tokens are declared in OKLCH in `src/app/globals.css`. Body copy and controls target WCAG AA contrast. Motion is limited to interactive feedback and disabled through `prefers-reduced-motion`.
 
+Browser tabs use the ivory-and-amber C mark, supplied as `src/app/favicon.ico` and `src/app/icon.svg` through Next.js file metadata. The default title is "CUT/WEAVE — Keep the cut."; pages with their own title use the shorter "Page title — CUT/WEAVE" format.
+
 ## Rejected patterns
 
 - Pixel art, pixel fonts, mascots and game-room composition.
