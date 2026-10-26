@@ -38,6 +38,15 @@ const roadmap = [
     copy: "A local audio workspace for finding useful impacts and bass entries, reviewing every marker, trimming the source and exporting marker timing for the edit.",
     tone: "ready",
   },
+  {
+    index: "04",
+    slug: "auto-subtitles",
+    phase: "Available now",
+    status: "Local beta",
+    title: "Auto Subtitles",
+    copy: "English speech becomes timed subtitle lines inside the browser with a Whisper model. Every line can be corrected before exporting SRT, WebVTT or a plain transcript.",
+    tone: "ready",
+  },
 ] as const;
 
 export default function RoadmapPage() {

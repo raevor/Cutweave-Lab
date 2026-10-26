@@ -9,7 +9,7 @@ export const siteCopy = {
   home: {
     eyebrowA: "For editors", eyebrowB: "Local browser tools",
     titleLine1: "Find the shot.", titleLine2: "Mark the beat.", titleLine3: "Keep the cut.",
-    lede: "Cutweave is a local toolkit for repetitive prep before the creative edit. Face Recognition, Anime Face Recognition and Music & Bass Markers are ready to use.",
+    lede: "Cutweave is a local toolkit for repetitive prep before the creative edit. Face Recognition, Anime Face Recognition, Music & Bass Markers and Auto Subtitles are ready to use.",
     primaryAction: "Start Face Recognition", secondaryAction: "Explore all tools",
     privacyNote: "Your working media stays on this device.",
     heroMapAria: "A product map showing three focused Cutweave tools leading from source media to an editor-reviewed result",
@@ -19,7 +19,7 @@ export const siteCopy = {
     principlesLabel: "Cutweave product facts",
     facts: [
       { value: "0 B", label: "media sent to Cutweave" },
-      { value: "03", label: "focused editing tools" },
+      { value: "04", label: "focused editing tools" },
       { value: "01", label: "job on screen at a time" },
       { value: "100%", label: "final choice stays yours" },
     ],
@@ -44,7 +44,7 @@ export const siteCopy = {
     eyebrowA: "Tool library", eyebrowB: "Choose the job first", titleA: "Pick the task.", titleB: "Open the right tool.",
     intro: "Start with the result you need. Every Cutweave tool has its own focused workspace, local media intake and review path.",
     localNote: "Your working media stays in this tab", toolsLabel: "Cutweave focused editing tools",
-    launcherLabel: "FOCUSED TOOL LAUNCHER", launcherHint: "SELECT A ROW TO OPEN ITS WORKSPACE", launcherCount: "03 TOOLS",
+    launcherLabel: "FOCUSED TOOL LAUNCHER", launcherHint: "SELECT A ROW TO OPEN ITS WORKSPACE", launcherCount: "04 TOOLS",
     inputLabel: "INPUT", outputLabel: "OUTPUT", startTool: "Start tool", previewTool: "View preview", available: "Available now", inBuild: "In development",
     guideEyebrow: "The shared discipline", guideTitle: "Different job. Same clear path.",
     guideSteps: [
@@ -78,6 +78,13 @@ export const siteCopy = {
       anatomy: "PREVIEW / ANIME CHARACTER MATCHING", anatomyOutput: "ANIME MATCHES READY TO REVIEW",
       results: ["A local animated-character picker", "Scenes where the chosen character appears", "Timecodes you can correct before export", "A scene list ready for the next editing step"],
     },
+    "auto-subtitles": {
+      title: "Auto Subtitles", shortTitle: "Turn English speech into subtitles", eyebrow: "Speech / subtitle lines",
+      description: "Add a local video or audio file with spoken English. A Whisper speech model in your browser writes timed subtitle lines that you can correct and export as SRT or VTT.",
+      promise: "Stop typing subtitles by hand while scrubbing back and forth.", input: "One local video or audio file", output: "Timed English subtitles",
+      anatomy: "PREVIEW / AUTO SUBTITLES", anatomyOutput: "LINES READY TO CORRECT",
+      results: ["English speech transcribed on this device", "Timed lines split for easy reading", "Every word editable before export", "SRT, WebVTT and plain transcript export"],
+    },
   },
   focused: {
     navLabel: "Tool navigation", markerAxisLabel: "TIMECODE / MARKER CANDIDATES",
@@ -110,12 +117,12 @@ privacy: {
     flowIntro: "Like any website, Cutweave sends its own code to your browser. Your media takes no part in that traffic.",
     inbound: {
       title: "Comes to your browser",
-      items: ["App code", "Background workers", "Recognition models"],
-      note: "Downloaded so the tools can run on your device.",
+      items: ["App code", "Background workers", "Recognition and speech models"],
+      note: "Downloaded so the tools can run on your device. The English speech model comes from Hugging Face; only the model is downloaded.",
     },
     outbound: {
       title: "Never leaves this tab",
-      items: ["Your video or audio file", "File names and folder paths", "Frames, crops and waveforms", "Face descriptors and character features", "Clips and exports"],
+      items: ["Your video or audio file", "File names and folder paths", "Frames, crops and waveforms", "Face descriptors and character features", "Speech audio and transcripts", "Clips and exports"],
       note: "There is no upload endpoint to send them to.",
     },
     stepsTitle: "Every step stays on the device.",

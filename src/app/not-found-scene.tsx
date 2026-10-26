@@ -13,13 +13,14 @@ const TOOLS = [
   { slug: "face-recognition", title: ["Face", "Recognition"] },
   { slug: "anime-face-recognition", title: ["Anime Face", "Recognition"] },
   { slug: "bass-markers", title: ["Music & Bass", "Markers"] },
+  { slug: "auto-subtitles", title: ["Auto", "Subtitles"] },
 ];
 
-const FRAME_X = 222;
+const FRAME_X = 190;
 const FRAME_Y = 64;
-const FRAME_W = 112;
+const FRAME_W = 92;
 const FRAME_H = 118;
-const GAP = 11;
+const GAP = 8;
 
 function shorten(path: string) {
   return path.length > 20 ? `${path.slice(0, 19)}…` : path;
@@ -30,10 +31,10 @@ export function NotFoundScene() {
   return (
     <svg className={styles.scene} viewBox="0 0 600 340" role="img" aria-label="Illustration: the requested address is checked against every tool and no match is found">
       {/* The requested address, framed like a reference. */}
-      <rect className={styles.refCard} x="20" y="40" width="170" height="166" rx="12" />
-      <path className={styles.corners} d="M 34 70 V 54 H 50 M 160 54 H 176 V 70 M 176 176 V 192 H 160 M 50 192 H 34 V 176" />
-      <text className={styles.refMark} x="105" y="128" textAnchor="middle">?</text>
-      <text className={styles.refPath} x="105" y="160" textAnchor="middle">{shorten(pathname)}</text>
+      <rect className={styles.refCard} x="20" y="40" width="150" height="166" rx="12" />
+      <path className={styles.corners} d="M 34 70 V 54 H 50 M 140 54 H 156 V 70 M 156 176 V 192 H 140 M 50 192 H 34 V 176" />
+      <text className={styles.refMark} x="95" y="128" textAnchor="middle">?</text>
+      <text className={styles.refPath} x="95" y="160" textAnchor="middle">{shorten(pathname)}</text>
       <text className={styles.caption} x="22" y="232">Your request</text>
 
       {/* The lab's tools, checked left to right. */}

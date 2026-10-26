@@ -105,7 +105,7 @@
 .frameBar { fill: color-mix(in oklch, var(--accent) 55%, var(--surface)); }
 .frameLine { fill: color-mix(in oklch, var(--muted) 35%, var(--surface)); }
 .frameTitle { fill: var(--ink-strong); font: 700 10.5px var(--font-sans); }
-.framePath { fill: var(--muted); font: 600 7px var(--font-mono); }
+.framePath { fill: var(--muted); font: 600 6px var(--font-mono); }
 .noTint { fill: color-mix(in oklch, var(--danger) 10%, transparent); opacity: 0; }
 .noRing { fill: none; stroke: var(--danger); stroke-width: 2.5; stroke-dasharray: 6 4; opacity: 0; }
 .noBadge { fill: var(--danger); }
@@ -118,22 +118,26 @@
 @keyframes scan {
   0%, 8% { transform: translateX(0); opacity: 0; }
   9% { opacity: 1; }
-  63% { transform: translateX(369px); opacity: 1; }
-  65%, 100% { transform: translateX(369px); opacity: 0; }
+  63% { transform: translateX(404px); opacity: 1; }
+  65%, 100% { transform: translateX(404px); opacity: 0; }
 }
 
 .hit0 { animation: hit0 7s ease infinite; }
-@keyframes hit0 { 0%, 17.24% { opacity: 0; } 19.24%, 90% { opacity: 1; } 95%, 100% { opacity: 0; } }
+@keyframes hit0 { 0%, 15.08% { opacity: 0; } 17.08%, 90% { opacity: 1; } 95%, 100% { opacity: 0; } }
 .pop0 { transform-box: fill-box; transform-origin: center; animation: pop0 7s cubic-bezier(.3, 1.6, .5, 1) infinite; }
-@keyframes pop0 { 0%, 17.24% { transform: scale(0); } 20.24%, 90% { transform: scale(1); } 95%, 100% { transform: scale(0); } }
+@keyframes pop0 { 0%, 15.08% { transform: scale(0); } 18.08%, 90% { transform: scale(1); } 95%, 100% { transform: scale(0); } }
 .hit1 { animation: hit1 7s ease infinite; }
-@keyframes hit1 { 0%, 35.57% { opacity: 0; } 37.57%, 90% { opacity: 1; } 95%, 100% { opacity: 0; } }
+@keyframes hit1 { 0%, 28.69% { opacity: 0; } 30.69%, 90% { opacity: 1; } 95%, 100% { opacity: 0; } }
 .pop1 { transform-box: fill-box; transform-origin: center; animation: pop1 7s cubic-bezier(.3, 1.6, .5, 1) infinite; }
-@keyframes pop1 { 0%, 35.57% { transform: scale(0); } 38.57%, 90% { transform: scale(1); } 95%, 100% { transform: scale(0); } }
+@keyframes pop1 { 0%, 28.69% { transform: scale(0); } 31.69%, 90% { transform: scale(1); } 95%, 100% { transform: scale(0); } }
 .hit2 { animation: hit2 7s ease infinite; }
-@keyframes hit2 { 0%, 53.91% { opacity: 0; } 55.91%, 90% { opacity: 1; } 95%, 100% { opacity: 0; } }
+@keyframes hit2 { 0%, 42.31% { opacity: 0; } 44.31%, 90% { opacity: 1; } 95%, 100% { opacity: 0; } }
 .pop2 { transform-box: fill-box; transform-origin: center; animation: pop2 7s cubic-bezier(.3, 1.6, .5, 1) infinite; }
-@keyframes pop2 { 0%, 53.91% { transform: scale(0); } 56.91%, 90% { transform: scale(1); } 95%, 100% { transform: scale(0); } }
+@keyframes pop2 { 0%, 42.31% { transform: scale(0); } 45.31%, 90% { transform: scale(1); } 95%, 100% { transform: scale(0); } }
+.hit3 { animation: hit3 7s ease infinite; }
+@keyframes hit3 { 0%, 55.92% { opacity: 0; } 57.92%, 90% { opacity: 1; } 95%, 100% { opacity: 0; } }
+.pop3 { transform-box: fill-box; transform-origin: center; animation: pop3 7s cubic-bezier(.3, 1.6, .5, 1) infinite; }
+@keyframes pop3 { 0%, 55.92% { transform: scale(0); } 58.92%, 90% { transform: scale(1); } 95%, 100% { transform: scale(0); } }
 
 .track { fill: color-mix(in oklch, var(--line) 18%, transparent); stroke: var(--line); }
 .tick { fill: var(--line); }
@@ -146,6 +150,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .scan { animation: none; opacity: 0; }
-  .hit0, .hit1, .hit2 { animation: none; opacity: 1; }
-  .pop0, .pop1, .pop2 { animation: none; transform: scale(1); }
+  .hit0, .hit1, .hit2, .hit3 { animation: none; opacity: 1; }
+  .pop0, .pop1, .pop2, .pop3 { animation: none; transform: scale(1); }
 }

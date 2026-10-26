@@ -528,9 +528,11 @@ button.reference-frame { padding: 0; cursor: pointer; text-align: left; }
 [data-tool-key="face-recognition"] { --tool-label: oklch(0.74 0.15 295); }
 [data-tool-key="anime-face-recognition"] { --tool-label: oklch(0.82 0.12 168); }
 [data-tool-key="bass-markers"] { --tool-label: oklch(0.75 0.16 32); }
+[data-tool-key="auto-subtitles"] { --tool-label: oklch(0.78 0.13 230); }
 html[data-theme="light"] [data-tool-key="face-recognition"] { --tool-label: oklch(0.55 0.18 295); }
 html[data-theme="light"] [data-tool-key="anime-face-recognition"] { --tool-label: oklch(0.56 0.11 170); }
 html[data-theme="light"] [data-tool-key="bass-markers"] { --tool-label: oklch(0.6 0.17 32); }
+html[data-theme="light"] [data-tool-key="auto-subtitles"] { --tool-label: oklch(0.52 0.14 240); }
 
 /* Narrow-width accents squeeze the space glyph; give words room to breathe. */
 h1 em, h2 em { word-spacing: .16em; }
