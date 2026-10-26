@@ -133,7 +133,9 @@
 .caption { fill: var(--muted); font-size: 13px; }
 
 .frame { fill: var(--bg-soft); stroke: var(--line); stroke-width: 1.5; animation: lit 7s ease infinite both; }
-.frameHead { fill: color-mix(in oklch, var(--ink) 30%, transparent); }
+.frameEdge { fill: none; stroke: var(--line); stroke-width: 1.5; animation: litEdge 7s ease infinite both; }
+.exportSlot { fill: none; stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.slotText { fill: var(--muted); font-size: 13px; opacity: .5; }
 .scanLine { fill: var(--accent); animation: scanMove 7s linear infinite; }
 .progressTrack { fill: var(--bg-soft); }
 .progress { fill: var(--accent); transform-box: fill-box; transform-origin: left center; animation: progress 7s linear infinite; }
@@ -157,6 +159,11 @@
 .downDot { fill: var(--accent); animation: download 2.7s linear infinite; }
 .downLabel { fill: var(--muted); font-size: 12px; }
 
+@keyframes litEdge {
+  0% { stroke: var(--line); }
+  3%, 52% { stroke: var(--accent); }
+  60%, 100% { stroke: var(--line); }
+}
 @keyframes lit {
   0% { fill: var(--bg-soft); stroke: var(--line); }
   3%, 52% { fill: color-mix(in oklch, var(--accent) 16%, var(--bg-soft)); stroke: var(--accent); }
@@ -244,6 +251,13 @@
 .outbound li::before { border-radius: 3px; background: var(--pv-ok); }
 .inbound p,
 .outbound p { margin: 26px 0 0; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+.credits { margin-top: 18px; }
+.credits h4 { margin: 0 0 10px; color: var(--accent-deep); font: 850 9px/1 var(--font-mono); letter-spacing: .11em; text-transform: uppercase; }
+.credits dl { margin: 0; display: grid; gap: 6px; }
+.credits dl > div { display: grid; grid-template-columns: minmax(130px, auto) 1fr; gap: 12px; font-size: 13px; line-height: 1.4; }
+.credits dt { color: var(--ink); }
+.credits dd { margin: 0; color: var(--muted); }
+@media (max-width: 560px) { .credits dl > div { grid-template-columns: 1fr; gap: 0; } }
 
 /* Steps */
 .steps { padding: clamp(80px, 9vw, 150px) clamp(20px, 5.5vw, 104px); border-block: 1px solid var(--line); background: var(--surface); }
@@ -328,6 +342,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .frame, .scanLine, .progress, .fileChip, .exportChip, .packet, .downDot, .stepHead { animation: none; }
+  .frame, .frameEdge, .scanLine, .progress, .fileChip, .exportChip, .packet, .downDot, .stepHead { animation: none; }
   .scanLine, .packet, .downDot { opacity: 0; }
 }

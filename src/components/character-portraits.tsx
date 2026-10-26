@@ -47,6 +47,9 @@ export function portraitSrc(kind: CharacterKind, variant: CharacterVariant, outf
 /* Alin speaks for Auto Subtitles; she is not part of the face-matching cast. */
 export const SUBTITLE_SPEAKER = "alin";
 
+/* Kian is the subject of the Background Remover scenes. */
+export const REMOVER_SUBJECT = "kian";
+
 export function namedPortraitSrc(name: string, small = false) {
   return `/characters/${name}${small ? "-sm" : ""}.webp?v=${PORTRAIT_VERSION}`;
 }

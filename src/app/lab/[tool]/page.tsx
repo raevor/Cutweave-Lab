@@ -5,6 +5,7 @@ import { FaceRecognitionWorkspace } from "./face-recognition-workspace";
 import { AnimeFaceRecognitionWorkspace } from "./anime-face-recognition-workspace";
 import { MusicBassMarkersWorkspace } from "./music-bass-markers-workspace";
 import { AutoSubtitlesWorkspace } from "./auto-subtitles-workspace";
+import { BackgroundRemoverWorkspace } from "./background-remover-workspace";
 import { ToolWorkspace } from "./tool-workspace";
 
 export function generateStaticParams() {
@@ -26,5 +27,6 @@ export default async function FocusedToolPage({ params }: { params: Promise<{ to
   if (tool.slug === "anime-face-recognition") return <AnimeFaceRecognitionWorkspace tool={tool} />;
   if (tool.slug === "bass-markers") return <MusicBassMarkersWorkspace tool={tool} />;
   if (tool.slug === "auto-subtitles") return <AutoSubtitlesWorkspace tool={tool} />;
+  if (tool.slug === "background-remover") return <BackgroundRemoverWorkspace tool={tool} />;
   return <ToolWorkspace tool={tool} />;
 }

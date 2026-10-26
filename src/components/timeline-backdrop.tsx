@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { preload } from "react-dom";
 import { namedPortraitSrc, OUTFIT_COUNT, PORTRAIT_BOX, portraitSrc, SUBTITLE_SPEAKER, type CharacterVariant } from "./character-portraits";
 import styles from "./timeline-backdrop.module.css";
 
@@ -15,6 +16,7 @@ type Palette = {
   anime: string;
   bass: string;
   subs: string;
+  cut: string;
   playhead: string;
   ink: string;
   muted: string;
@@ -39,25 +41,128 @@ function rand(seed: number) {
 
 const LOOP_SECONDS = 120;
 
-/* Clips never overlap, and the last clip ends before the loop wraps. */
-function buildClips(seedBase: number, minLen: number, maxLen: number, matchRate: number): Clip[] {
+/* Every lane shares one grid of equal clips, so the tracks line up like an edit. */
+const CLIP_LENGTH = 4.2;
+const CLIP_GAP = 0.8;
+
+function buildClips(seedBase: number, matchRate: number): Clip[] {
   const clips: Clip[] = [];
-  let t = 0;
-  for (let i = 0; ; i += 1) {
-    const gap = 0.35 + rand(seedBase + i * 3.1) * 1.3;
-    const length = minLen + rand(seedBase + i * 7.7) * (maxLen - minLen);
-    if (t + gap + length > LOOP_SECONDS - 0.4) break;
+  for (let i = 0, t = CLIP_GAP; t + CLIP_LENGTH <= LOOP_SECONDS; i += 1, t += CLIP_LENGTH + CLIP_GAP) {
     const match = rand(seedBase + i * 5.3) < matchRate;
-    clips.push({ start: t + gap, length, match, seed: seedBase + i, who: match ? 0 : rand(seedBase + i * 2.9) < 0.5 ? 1 : 2 });
-    t += gap + length;
+    clips.push({ start: t, length: CLIP_LENGTH, match, seed: seedBase + i, who: match ? 0 : rand(seedBase + i * 2.9) < 0.5 ? 1 : 2 });
   }
   return clips;
 }
 
-const FACE_CLIPS = buildClips(11, 2.4, 5.4, 0.45);
-const ANIME_CLIPS = buildClips(53, 2, 4.6, 0.42);
+const FACE_CLIPS = buildClips(11, 0.45);
+const ANIME_CLIPS = buildClips(53, 0.42);
 /* Subtitle blocks: every block is speech, so all of them get written. */
-const SUB_CLIPS = buildClips(97, 3.4, 5.8, 1);
+const SUB_CLIPS = buildClips(97, 1);
+/* Cut-out clips: stills whose background is keyed out as the playhead crosses them. */
+const CUT_CLIPS = buildClips(131, 1);
+/* One subject per still. Backdrops step by 3 through 8, cast by 1 through 4, so pairs keep changing. */
+const CUT_CAST = ["kian", "noor", "theo", "yara"];
+type Backdrop = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) => void;
+
+function gradient(ctx: CanvasRenderingContext2D, y: number, h: number, stops: string[]) {
+  const fill = ctx.createLinearGradient(0, y, 0, y + h);
+  stops.forEach((color, index) => fill.addColorStop(index / (stops.length - 1), color));
+  return fill;
+}
+
+function ridge(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string, low: number, high: number, step: number) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x, y + h);
+  for (let px = 0; px <= w + step; px += step) ctx.lineTo(x + px, y + h * ((px / step) % 2 ? high : low));
+  ctx.lineTo(x + w + step, y + h);
+  ctx.closePath();
+  ctx.fill();
+}
+
+const CUT_BACKDROPS: Backdrop[] = [
+  /* Dusk mountains. */
+  (ctx, x, y, w, h) => {
+    ctx.fillStyle = gradient(ctx, y, h, ["#36447e", "#d9826f", "#f6c48a"]);
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = "#ffe7b4";
+    ctx.beginPath(); ctx.arc(x + w * 0.8, y + h * 0.42, h * 0.15, 0, Math.PI * 2); ctx.fill();
+    ridge(ctx, x, y, w, h, "#7a6aa0", 0.62, 0.4, 30);
+    ctx.fillStyle = "#4f7d6a"; ctx.fillRect(x, y + h * 0.82, w, h * 0.18);
+  },
+  /* City at night with lit windows. */
+  (ctx, x, y, w, h) => {
+    ctx.fillStyle = gradient(ctx, y, h, ["#0f1633", "#2a2f5e", "#4a3f73"]);
+    ctx.fillRect(x, y, w, h);
+    for (let bx = 0, i = 0; bx < w; bx += 14 + (i % 3) * 6, i += 1) {
+      const bh = h * (0.35 + rand(i * 3.7) * 0.45);
+      const bw = 12 + (i % 3) * 6;
+      ctx.fillStyle = "#1a1f3d";
+      ctx.fillRect(x + bx, y + h - bh, bw, bh);
+      ctx.fillStyle = "#f7d27a";
+      for (let wy = y + h - bh + 4; wy < y + h - 3; wy += 6) if (rand(bx * 1.3 + wy) > 0.55) ctx.fillRect(x + bx + 3, wy, 2, 2);
+    }
+  },
+  /* Beach: sky, sea and sand. */
+  (ctx, x, y, w, h) => {
+    ctx.fillStyle = gradient(ctx, y, h, ["#7cc4ea", "#c8ecf6"]);
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = "#2f8fb8"; ctx.fillRect(x, y + h * 0.55, w, h * 0.2);
+    ctx.fillStyle = "#e9d4a4"; ctx.fillRect(x, y + h * 0.75, w, h * 0.25);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.6)"; ctx.fillRect(x, y + h * 0.74, w, 1.5);
+  },
+  /* Studio backdrop with soft light spots. */
+  (ctx, x, y, w, h) => {
+    ctx.fillStyle = gradient(ctx, y, h, ["#5b3f86", "#b45a8c"]);
+    ctx.fillRect(x, y, w, h);
+    for (let i = 0; i < 6; i += 1) {
+      ctx.fillStyle = `rgba(255, 220, 240, ${0.12 + rand(i * 5.1) * 0.15})`;
+      ctx.beginPath(); ctx.arc(x + rand(i * 2.3) * w, y + rand(i * 7.9) * h, h * (0.12 + rand(i) * 0.12), 0, Math.PI * 2); ctx.fill();
+    }
+  },
+  /* Pine forest. */
+  (ctx, x, y, w, h) => {
+    ctx.fillStyle = gradient(ctx, y, h, ["#a9d6c2", "#5f9a7d"]);
+    ctx.fillRect(x, y, w, h);
+    for (let tx = -6, i = 0; tx < w + 10; tx += 16, i += 1) {
+      const th = h * (0.45 + rand(i * 4.4) * 0.35);
+      ctx.fillStyle = i % 2 ? "#2f5f47" : "#3d7458";
+      ctx.beginPath(); ctx.moveTo(x + tx, y + h - th); ctx.lineTo(x + tx + 10, y + h); ctx.lineTo(x + tx - 10, y + h); ctx.closePath(); ctx.fill();
+    }
+  },
+  /* Desert dunes under a warm sky. */
+  (ctx, x, y, w, h) => {
+    ctx.fillStyle = gradient(ctx, y, h, ["#f3b06b", "#f7d9a0"]);
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = "#fff1c9";
+    ctx.beginPath(); ctx.arc(x + w * 0.25, y + h * 0.35, h * 0.12, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#d9944f";
+    ctx.beginPath(); ctx.ellipse(x + w * 0.3, y + h, w * 0.5, h * 0.36, 0, Math.PI, 0); ctx.fill();
+    ctx.fillStyle = "#c27a3c";
+    ctx.beginPath(); ctx.ellipse(x + w * 0.85, y + h, w * 0.45, h * 0.28, 0, Math.PI, 0); ctx.fill();
+  },
+  /* Snowy peaks. */
+  (ctx, x, y, w, h) => {
+    ctx.fillStyle = gradient(ctx, y, h, ["#9fbfe0", "#e4eef7"]);
+    ctx.fillRect(x, y, w, h);
+    ridge(ctx, x, y, w, h, "#7f93ad", 0.7, 0.3, 26);
+    ridge(ctx, x, y, w, h, "#f4f8fc", 0.92, 0.6, 20);
+  },
+  /* Aurora night. */
+  (ctx, x, y, w, h) => {
+    ctx.fillStyle = gradient(ctx, y, h, ["#081329", "#13284a"]);
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    for (let i = 0; i < 10; i += 1) ctx.fillRect(x + rand(i * 9.1) * w, y + rand(i * 3.3) * h * 0.5, 1.2, 1.2);
+    ctx.strokeStyle = "rgba(110, 240, 180, 0.45)";
+    ctx.lineWidth = h * 0.12;
+    ctx.beginPath();
+    ctx.moveTo(x, y + h * 0.45);
+    ctx.bezierCurveTo(x + w * 0.3, y + h * 0.1, x + w * 0.6, y + h * 0.6, x + w, y + h * 0.25);
+    ctx.stroke();
+    ridge(ctx, x, y, w, h, "#0b1a2e", 0.85, 0.7, 24);
+  },
+];
 const SUB_LINES = [
   "We start by the river.", "Keep the camera low.", "Then cut to the bridge.", "That's our opening shot.",
   "Hold on her face.", "One more take.", "Let the music breathe.", "Now we are rolling.",
@@ -66,16 +171,23 @@ const SUB_LINES = [
 
 /* Portrait images shared by every timeline on the page; each loads once. */
 const imageCache = new Map<string, HTMLImageElement>();
+/*
+ * Portraits load and decode off the main thread. A sprite is only built from a
+ * decoded image, so drawing it never stalls a frame on a synchronous decode.
+ */
+const decodedImages = new WeakSet<HTMLImageElement>();
+
 function portraitImage(src: string, onLoad: () => void) {
   let image = imageCache.get(src);
   if (!image) {
-    image = new Image();
-    image.decoding = "async";
-    image.src = src;
-    imageCache.set(src, image);
+    const created = new Image();
+    created.decoding = "async";
+    created.src = src;
+    created.decode().then(() => decodedImages.add(created), () => undefined).finally(onLoad);
+    imageCache.set(src, created);
+    image = created;
   }
-  if (!image.complete) image.addEventListener("load", onLoad, { once: true });
-  return image;
+  return decodedImages.has(image) ? image : null;
 }
 
 /*
@@ -89,7 +201,7 @@ function characterSprite(kind: "face" | "anime", who: CharacterVariant, outfit: 
   const cached = spriteCache.get(key);
   if (cached) return cached;
   const image = portraitImage(portraitSrc(kind === "face" ? "person" : "character", who, outfit, true), onLoad);
-  if (!image.complete || image.naturalWidth === 0) return null;
+  if (!image) return null;
   if (spriteCache.size > 64) spriteCache.clear();
   const canvas = document.createElement("canvas");
   canvas.width = Math.ceil(100 * scale * dpr);
@@ -97,16 +209,28 @@ function characterSprite(kind: "face" | "anime", who: CharacterVariant, outfit: 
   const g = canvas.getContext("2d");
   if (g) {
     g.scale(scale * dpr, scale * dpr);
+    /* A filter greys the sprite on the GPU; reading pixels back would stall the frame. */
+    if (gray) g.filter = "grayscale(1) contrast(.7) brightness(1.15)";
     g.drawImage(image, PORTRAIT_BOX.x, PORTRAIT_BOX.y, PORTRAIT_BOX.width, PORTRAIT_BOX.height);
-    if (gray) {
-      const data = g.getImageData(0, 0, canvas.width, canvas.height);
-      const px = data.data;
-      for (let i = 0; i < px.length; i += 4) {
-        const l = px[i] * 0.3 + px[i + 1] * 0.59 + px[i + 2] * 0.11;
-        px[i] = px[i + 1] = px[i + 2] = l * 0.7 + 60;
-      }
-      g.putImageData(data, 0, 0);
-    }
+  }
+  spriteCache.set(key, canvas);
+  return canvas;
+}
+
+/* A named portrait (outside the matching cast) as a filmstrip thumbnail. */
+function namedSprite(name: string, scale: number, dpr: number, onLoad: () => void) {
+  const key = `named:${name}:${scale.toFixed(3)}:${dpr}`;
+  const cached = spriteCache.get(key);
+  if (cached) return cached;
+  const image = portraitImage(namedPortraitSrc(name, true), onLoad);
+  if (!image) return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.ceil(100 * scale * dpr);
+  canvas.height = Math.ceil(120 * scale * dpr);
+  const g = canvas.getContext("2d");
+  if (g) {
+    g.scale(scale * dpr, scale * dpr);
+    g.drawImage(image, PORTRAIT_BOX.x, PORTRAIT_BOX.y, PORTRAIT_BOX.width, PORTRAIT_BOX.height);
   }
   spriteCache.set(key, canvas);
   return canvas;
@@ -118,7 +242,7 @@ function speakerAvatar(size: number, dpr: number, gray: boolean, onLoad: () => v
   const cached = spriteCache.get(key);
   if (cached) return cached;
   const image = portraitImage(namedPortraitSrc(SUBTITLE_SPEAKER, true), onLoad);
-  if (!image.complete || image.naturalWidth === 0) return null;
+  if (!image) return null;
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = Math.ceil(size * dpr);
   const g = canvas.getContext("2d");
@@ -128,21 +252,32 @@ function speakerAvatar(size: number, dpr: number, gray: boolean, onLoad: () => v
     g.beginPath();
     g.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2, 0, Math.PI * 2);
     g.clip();
+    if (gray) g.filter = "grayscale(1) contrast(.6) brightness(1.05)";
     g.fillStyle = "#eee1d8";
     g.fillRect(0, 0, canvas.width, canvas.height);
     g.drawImage(image, 32 * unit, 14 * unit, 176 * unit, 176 * unit, 0, 0, canvas.width, canvas.height);
-    if (gray) {
-      const data = g.getImageData(0, 0, canvas.width, canvas.height);
-      const px = data.data;
-      for (let i = 0; i < px.length; i += 4) {
-        const l = px[i] * 0.3 + px[i + 1] * 0.59 + px[i + 2] * 0.11;
-        px[i] = px[i + 1] = px[i + 2] = l * 0.6 + 50;
-      }
-      g.putImageData(data, 0, 0);
-    }
   }
   spriteCache.set(key, canvas);
   return canvas;
+}
+
+/* One 12 x 12 tile of 6 px squares, reused as a pattern instead of hundreds of rects a frame. */
+let checkerCache: { key: string; pattern: CanvasPattern | null } | null = null;
+function checkerPattern(ctx: CanvasRenderingContext2D, a: string, b: string) {
+  const key = `${a}|${b}`;
+  if (checkerCache?.key === key) return checkerCache.pattern;
+  const tile = document.createElement("canvas");
+  tile.width = tile.height = 12;
+  const g = tile.getContext("2d");
+  if (g) {
+    g.fillStyle = b;
+    g.fillRect(0, 0, 12, 12);
+    g.fillStyle = a;
+    g.fillRect(6, 0, 6, 6);
+    g.fillRect(0, 6, 6, 6);
+  }
+  checkerCache = { key, pattern: ctx.createPattern(tile, "repeat") };
+  return checkerCache.pattern;
 }
 
 /* Kick positions on a 118 BPM grid with a few syncopated hits. */
@@ -172,6 +307,7 @@ function readPalette(el: HTMLElement): Palette {
     anime: v("--tl-anime", "#5fd6b7"),
     bass: v("--tl-bass", "#f0806a"),
     subs: v("--tl-subs", "#52b6e8"),
+    cut: v("--tl-cut", "#ec8dbd"),
     playhead: v("--tl-playhead", "#f4b443"),
     ink: v("--tl-ink", "#e9ecf5"),
     muted: v("--tl-muted", "#8e95ab"),
@@ -205,6 +341,24 @@ function drawReticle(ctx: CanvasRenderingContext2D, x: number, y: number, w: num
   ctx.stroke();
 }
 
+/* A small verdict chip that drops into the clip corner. */
+function drawTag(ctx: CanvasRenderingContext2D, x: number, y: number, text: string, fill: string, ink: string, laneH: number, font: string, since: number, alignRight: boolean) {
+  const size = Math.round(Math.max(8, Math.min(10, laneH * 0.19)));
+  const appear = Math.min(1, since / 0.2);
+  ctx.font = `700 ${size}px ${font}`;
+  const tw = ctx.measureText(text).width + 8;
+  const th = size + 6;
+  const left = alignRight ? x - tw : x;
+  const top = y - 4 * (1 - appear);
+  ctx.globalAlpha = appear;
+  ctx.fillStyle = fill;
+  roundRect(ctx, left, top, tw, th, 3);
+  ctx.fill();
+  ctx.fillStyle = ink;
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, left + 4, top + th / 2 + 0.5);
+}
+
 function waveform(t: number) {
   let nearest = Infinity;
   for (const k of KICKS) {
@@ -217,7 +371,18 @@ function waveform(t: number) {
   return Math.min(1, bed + Math.abs(texture) + kick * 0.85);
 }
 
+/* Every thumbnail the lanes draw, so the server can list them for an early download. */
+const LANE_PORTRAITS = [
+  ...(["person", "character"] as const).flatMap((kind) => [
+    ...([0, 1, 2] as const).map((who) => portraitSrc(kind, who, undefined, true)),
+    ...Array.from({ length: OUTFIT_COUNT }, (_, outfit) => portraitSrc(kind, 0, outfit, true)),
+  ]),
+  ...[...CUT_CAST, SUBTITLE_SPEAKER].map((name) => namedPortraitSrc(name, true)),
+];
+
 export function TimelineBackdrop({ className, scrubTarget }: TimelineBackdropProps) {
+  /* Start the thumbnails with the page instead of after hydration, so clips are not drawn empty. */
+  LANE_PORTRAITS.forEach((src) => preload(src, { as: "image", fetchPriority: "low" }));
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -239,11 +404,15 @@ export function TimelineBackdrop({ className, scrubTarget }: TimelineBackdropPro
     let scrubX: number | null = null;
     let playheadFrac = 0.62;
 
-    /* Horizontal position only changes on resize, so pointer moves never force a layout. */
+    /* Position only changes on resize, so pointer moves never force a layout. */
     let wrapLeft = 0;
+    let wrapPageTop = 0;
+    /* The timeline band (timecode, ruler and lanes) in wrapper pixels; only it scrubs. */
+    let bandTop = 0;
     const resize = () => {
       const rect = wrap.getBoundingClientRect();
       wrapLeft = rect.left;
+      wrapPageTop = rect.top + window.scrollY;
       dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       width = Math.max(1, rect.width);
       height = Math.max(1, rect.height);
@@ -270,18 +439,21 @@ export function TimelineBackdrop({ className, scrubTarget }: TimelineBackdropPro
       const xOf = (t: number) => headX + (t - headTime) * pps;
       const tOf = (x: number) => headTime + (x - headX) / pps;
 
-      const lanes: Array<{ key: "face" | "anime" | "bass" | "subs"; label: string; color: string }> = [
+      const lanes: Array<{ key: "face" | "anime" | "bass" | "subs" | "cut"; label: string; color: string }> = [
         { key: "face", label: "Face", color: palette.face },
         { key: "anime", label: "Anime", color: palette.anime },
         { key: "bass", label: "Bass", color: palette.bass },
         { key: "subs", label: "Subs", color: palette.subs },
+        { key: "cut", label: "Cutout", color: palette.cut },
       ];
 
       const rulerH = 26;
-      const laneH = Math.min(56, Math.max(36, height * 0.062));
-      const laneGap = 10;
+      const laneGap = 7;
+      /* Five lanes share about 30% of the hero, so the stack never climbs under the hero buttons. */
+      const laneH = Math.min(52, Math.max(30, (height * 0.3 - rulerH) / lanes.length - laneGap));
       const stackH = rulerH + (laneH + laneGap) * lanes.length;
       const top = height - stackH - Math.min(44, height * 0.05);
+      bandTop = top - 34;
       const labelW = compact ? 0 : 118;
 
       /* Vertical frame grid across the whole surface, fading upward for the hero. */
@@ -376,6 +548,44 @@ export function TimelineBackdrop({ className, scrubTarget }: TimelineBackdropPro
                 ctx.arc(x, y + 6, 6 + since * 34, 0, Math.PI * 2);
                 ctx.stroke();
               }
+            }
+          }
+        } else if (lane.key === "cut") {
+          /*
+           * One subject per still, each in front of its own backdrop. Left of the playhead the
+           * background is already keyed out to transparency; right of it the
+           * still waits untouched, so the playhead reads as the cut being made.
+           */
+          const loopBase = Math.floor(tOf(labelW) / LOOP_SECONDS) * LOOP_SECONDS;
+          const scale = (laneH * 1.05) / 120;
+          const thumbW = 100 * scale;
+          for (let base = loopBase - LOOP_SECONDS; base < tOf(width) + LOOP_SECONDS; base += LOOP_SECONDS) {
+            for (const [index, clip] of CUT_CLIPS.entries()) {
+              const x = xOf(base + clip.start);
+              const w = clip.length * pps;
+              if (x > width || x + w < labelW) continue;
+              ctx.save();
+              roundRect(ctx, x + 1, y, w - 2, laneH, 6);
+              ctx.clip();
+              ctx.globalAlpha = 1;
+              CUT_BACKDROPS[(index * 3) % CUT_BACKDROPS.length](ctx, x, y, w, laneH);
+              /* The keyed part: transparency shown as a checkerboard. */
+              const keyedEnd = Math.min(headX, x + w);
+              if (keyedEnd > x) {
+                const checker = checkerPattern(ctx, palette.clip, palette.line);
+                if (checker) {
+                  /* Anchor the pattern to the clip so the squares travel with it. */
+                  checker.setTransform(new DOMMatrix([1, 0, 0, 1, x, y]));
+                  ctx.fillStyle = checker;
+                  ctx.fillRect(x, y, keyedEnd - x, laneH);
+                }
+              }
+              const sprite = namedSprite(CUT_CAST[index % CUT_CAST.length], scale, dpr, requestRedraw);
+              if (sprite) ctx.drawImage(sprite, x + w / 2 - thumbW / 2, y + laneH - 120 * scale + 3, thumbW, 120 * scale);
+              ctx.restore();
+              ctx.globalAlpha = 1;
+              ctx.fillStyle = lane.color;
+              ctx.fillRect(x + 1, y, w - 2, 2);
             }
           }
         } else if (lane.key === "subs") {
@@ -475,67 +685,103 @@ export function TimelineBackdrop({ className, scrubTarget }: TimelineBackdropPro
               const x = xOf(cs);
               const w = clip.length * pps;
               if (x > width || x + w < labelW) continue;
-              const reached = headTime >= cs + Math.min(clip.length * 0.5, 0.8);
+              /*
+               * Each clip is checked as the playhead crosses it: a scan line sweeps the
+               * face, then the clip either locks on (match) or greys out (no match).
+               */
+              const t = headTime - cs;
+              const decideAt = Math.min(clip.length * 0.5, 0.8);
+              const scanning = t >= 0 && t < decideAt;
+              const since = t - decideAt;
+              const matched = clip.match && since >= 0;
+              const rejected = !clip.match && since >= 0;
+              const scale = (laneH * 1.05) / 120;
+              const faceW = 50 * scale;
+              const faceX = x + w / 2 - faceW / 2;
+              const faceTop = Math.max(y + 3, y + laneH - 120 * scale + 3 + 14 * scale);
+              const faceH = Math.min(y + laneH - 3 - faceTop, 62 * scale);
 
               ctx.globalAlpha = 1;
               ctx.fillStyle = palette.clip;
               roundRect(ctx, x + 1, y, w - 2, laneH, 6);
               ctx.fill();
               ctx.fillStyle = lane.color;
-              ctx.globalAlpha = clip.match && reached ? 0.34 : 0.14;
+              ctx.globalAlpha = matched ? 0.3 : rejected ? 0.05 : 0.14;
               ctx.fill();
-              ctx.globalAlpha = 0.9;
-              ctx.fillRect(x + 1, y, w - 2, 2);
-
-              if (w > 40) {
-                /* Thumbnails: the clip's character repeated like an NLE filmstrip, clipped to the clip. */
-                const scale = (laneH * 1.05) / 120;
-                const thumbW = 100 * scale;
-                const step = thumbW * 0.92;
-                const count = Math.max(1, Math.floor((w - 10) / step));
-                const rejected = !clip.match && reached;
-                /* Matched clips show the reference character in one of its outfits, varied per clip. */
-                const look = clip.seed % (OUTFIT_COUNT + 1);
-                const outfit = clip.who === 0 && look < OUTFIT_COUNT ? look : undefined;
-                const sprite = characterSprite(lane.key as "face" | "anime", clip.who, outfit, scale, dpr, rejected, requestRedraw);
-                if (sprite) {
-                  ctx.save();
-                  roundRect(ctx, x + 1, y, w - 2, laneH, 6);
-                  ctx.clip();
-                  ctx.globalAlpha = clip.match ? (reached ? 1 : 0.88) : rejected ? 0.5 : 0.85;
-                  for (let i = 0; i < count; i += 1) {
-                    ctx.drawImage(sprite, x + 5 + i * step, y + laneH - 120 * scale + 3, 100 * scale, 120 * scale);
-                  }
-                  ctx.restore();
-                }
-                if (!clip.match && reached) {
-                  /* Rejected: a small cross in the clip's corner. */
-                  const bx = x + w - 12;
-                  const by = y + 11;
-                  ctx.globalAlpha = 0.9;
-                  ctx.fillStyle = palette.reject;
-                  ctx.beginPath();
-                  ctx.arc(bx, by, 7, 0, Math.PI * 2);
-                  ctx.fill();
-                  ctx.strokeStyle = "#fff";
-                  ctx.lineWidth = 1.8;
-                  ctx.beginPath();
-                  ctx.moveTo(bx - 2.8, by - 2.8); ctx.lineTo(bx + 2.8, by + 2.8);
-                  ctx.moveTo(bx + 2.8, by - 2.8); ctx.lineTo(bx - 2.8, by + 2.8);
-                  ctx.stroke();
-                }
+              /* The lock flashes the clip, then settles. */
+              if (matched && since < 0.5) {
+                ctx.globalAlpha = 0.4 * (1 - since / 0.5);
+                ctx.fill();
               }
 
-              if (clip.match && reached) {
-                const lock = Math.min(1, (headTime - cs) * 2.4);
+              ctx.save();
+              roundRect(ctx, x + 1, y, w - 2, laneH, 6);
+              ctx.clip();
+              if (rejected) {
+                /* Rejected clips are hatched out, like a disabled clip in an NLE. */
+                ctx.globalAlpha = 0.1;
+                ctx.strokeStyle = palette.reject;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                for (let hx = x - laneH; hx < x + w; hx += 7) {
+                  ctx.moveTo(hx, y + laneH);
+                  ctx.lineTo(hx + laneH, y);
+                }
+                ctx.stroke();
+              }
+              /* Matched clips show the reference character in one of its outfits, varied per clip. */
+              const look = clip.seed % (OUTFIT_COUNT + 1);
+              const outfit = clip.who === 0 && look < OUTFIT_COUNT ? look : undefined;
+              const sprite = characterSprite(lane.key as "face" | "anime", clip.who, outfit, scale, dpr, rejected, requestRedraw);
+              if (sprite) {
+                /* A rejected face shakes its head once. */
+                const shake = rejected && since < 0.35 ? Math.sin(since * 55) * 3 * (1 - since / 0.35) : 0;
+                ctx.globalAlpha = matched ? 1 : rejected ? 0.45 : 0.85;
+                ctx.drawImage(sprite, x + w / 2 - 50 * scale + shake, y + laneH - 120 * scale + 3, 100 * scale, 120 * scale);
+              }
+              if (scanning) {
+                const sy = faceTop + faceH * (t / decideAt);
+                ctx.fillStyle = lane.color;
+                ctx.globalAlpha = 0.22;
+                ctx.fillRect(faceX - 4, sy - 7, faceW + 8, 7);
+                ctx.globalAlpha = 0.95;
+                ctx.fillRect(faceX - 7, sy, faceW + 14, 1.5);
+                ctx.strokeStyle = lane.color;
+                ctx.lineWidth = 1.2;
+                ctx.setLineDash([3, 3]);
+                ctx.lineDashOffset = -t * 30;
+                ctx.globalAlpha = 0.8;
+                ctx.strokeRect(faceX - 3, faceTop - 2, faceW + 6, faceH + 4);
+                ctx.setLineDash([]);
+              }
+              ctx.restore();
+
+              ctx.globalAlpha = rejected ? 0.6 : 0.9;
+              ctx.fillStyle = rejected ? palette.reject : lane.color;
+              ctx.fillRect(x + 1, y, w - 2, 2);
+
+              if (matched) {
+                /* The brackets close in from the clip edges onto the face, with a small overshoot. */
+                const k = Math.min(1, since / 0.35);
+                const ease = 1 + 2.4 * (k - 1) ** 3 + 1.4 * (k - 1) ** 2;
+                const fromX = x + 6;
+                const fromY = y + 4;
+                const fromW = w - 12;
+                const fromH = laneH - 8;
                 ctx.globalAlpha = 1;
                 ctx.strokeStyle = palette.playhead;
                 ctx.lineWidth = 2;
-                /* The lock frames the first face only. */
-                const scale = (laneH * 1.05) / 120;
-                const faceTop = Math.max(y + 3, y + laneH - 120 * scale + 3 + 14 * scale);
-                drawReticle(ctx, x + 5 + 25 * scale, faceTop, 50 * scale, Math.min(y + laneH - 3 - faceTop, 62 * scale), lock);
+                drawReticle(ctx, fromX + (faceX - fromX) * ease, fromY + (faceTop - fromY) * ease, fromW + (faceW - fromW) * ease, fromH + (faceH - fromH) * ease, 1);
+                if (since < 0.6) {
+                  ctx.globalAlpha = 0.55 * (1 - since / 0.6);
+                  ctx.lineWidth = 1.5;
+                  ctx.beginPath();
+                  ctx.arc(faceX + faceW / 2, faceTop + faceH / 2, (faceW / 2) * (1 + since * 2.4), 0, Math.PI * 2);
+                  ctx.stroke();
+                }
+                drawTag(ctx, x + 6, y + 6, "MATCH", palette.playhead, "#1b1206", laneH, palette.mono, since, false);
               }
+              if (rejected) drawTag(ctx, x + w - 6, y + 6, "NO MATCH", palette.reject, "#fff", laneH, palette.mono, since, true);
             }
           }
         }
@@ -633,6 +879,12 @@ export function TimelineBackdrop({ className, scrubTarget }: TimelineBackdropPro
     const target = scrubTarget?.current ?? wrap;
     const onMove = (event: PointerEvent) => {
       if (event.pointerType === "touch") return;
+      /* Above the timeline (hero copy and buttons) the playhead keeps its own pace. */
+      const localY = event.pageY - wrapPageTop;
+      if (localY < bandTop || localY > height) {
+        scrubX = null;
+        return;
+      }
       scrubX = event.clientX - wrapLeft;
       if (reducedMotion.matches) {
         /* No autoplay, but the pointer still scrubs the timeline directly. */

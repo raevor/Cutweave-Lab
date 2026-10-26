@@ -407,6 +407,7 @@
   display: block;
   font-stretch: 112%;
   font-variation-settings: "wdth" 112;
+  transform-origin: left center;
   animation: trimIn 1.05s cubic-bezier(.2, .75, .15, 1) both;
 }
 
@@ -426,14 +427,20 @@
   animation-delay: .3s;
 }
 
+/*
+ * Lines stretch in horizontally. Only transform and opacity animate, so the
+ * compositor runs them and page start-up work on the main thread cannot stall them.
+ */
 @keyframes trimIn {
-  from { clip-path: inset(0 100% 0 0); font-variation-settings: "wdth" 62; }
-  to { clip-path: inset(0 0 0 0); font-variation-settings: "wdth" 112; }
+  from { transform: scaleX(.55); opacity: 0; }
+  35% { opacity: 1; }
+  to { transform: none; opacity: 1; }
 }
 
 @keyframes trimInNarrow {
-  from { clip-path: inset(0 100% 0 0); font-variation-settings: "wdth" 125; }
-  to { clip-path: inset(0 0 0 0); font-variation-settings: "wdth" 62; }
+  from { transform: scaleX(1.6); opacity: 0; }
+  35% { opacity: 1; }
+  to { transform: none; opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

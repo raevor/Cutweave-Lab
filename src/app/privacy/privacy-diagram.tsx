@@ -1,3 +1,4 @@
+import { Portrait } from "@/components/character-portraits";
 import { siteCopy as text } from "@/i18n/messages/en";
 import styles from "./privacy.module.css";
 
@@ -8,6 +9,8 @@ import styles from "./privacy.module.css";
 
 const CYCLE = 7;
 const FRAMES = 5;
+/* Who appears in each scanned frame. */
+const FRAME_CAST = ["noor", "kian", "yara", "theo", "rumi"];
 
 export function PrivacyDiagram() {
   const d = text.privacy.diagram;
@@ -39,9 +42,12 @@ export function PrivacyDiagram() {
         const delay = `${((0.18 + (0.4 * (i + 0.5)) / FRAMES) * CYCLE).toFixed(2)}s`;
         return (
           <g key={i}>
+            <clipPath id={`privacy-frame-${i}`}><rect x={x} y="170" width="64" height="50" rx="6" /></clipPath>
             <rect className={styles.frame} style={{ animationDelay: delay }} x={x} y="170" width="64" height="50" rx="6" />
-            <circle className={styles.frameHead} cx={x + 32 + (i % 2 ? 6 : -5)} cy="190" r="7" />
-            <path className={styles.frameHead} d={`M ${x + 16 + (i % 2 ? 6 : -5)} 220 q 16 -18 32 0 Z`} />
+            <g clipPath={`url(#privacy-frame-${i})`}>
+              <g transform={`translate(${x + 7} 174) scale(.5)`}><Portrait kind="person" variant={0} name={FRAME_CAST[i]} small /></g>
+            </g>
+            <rect className={styles.frameEdge} style={{ animationDelay: delay }} x={x} y="170" width="64" height="50" rx="6" />
           </g>
         );
       })}
@@ -50,7 +56,9 @@ export function PrivacyDiagram() {
       <rect className={styles.progressTrack} x="40" y="266" width="352" height="8" rx="4" />
       <rect className={styles.progress} x="40" y="266" width="352" height="8" rx="4" />
 
-      {/* Export happens here too. */}
+      {/* Export happens here too: the slot waits, then the result lands in it. */}
+      <rect className={styles.exportSlot} x="40" y="302" width="168" height="42" rx="9" />
+      <text className={styles.slotText} x="124" y="328" textAnchor="middle">{d.exported}</text>
       <g className={styles.exportChip}>
         <rect className={styles.chipOk} x="40" y="302" width="168" height="42" rx="9" />
         <path className={styles.check} d="M58 323 l6 6 l11 -12" />

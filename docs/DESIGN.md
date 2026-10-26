@@ -6,7 +6,7 @@ Cutweave combines a professional post-production control surface with an indepen
 
 ## Tool-first information architecture
 
-The lab opens as a focused tool library, not a miniature NLE. Large interactive tool panels explain the job, input and output of Face Recognition, Anime Face Recognition, Music & Bass Markers and Auto Subtitles. Selecting a tool opens a calm, single-purpose local-media workspace. A combined editing surface is outside the current scope.
+The lab opens as a focused tool library, not a miniature NLE. Large interactive tool panels explain the job, input and output of Face Recognition, Anime Face Recognition, Music & Bass Markers, Auto Subtitles and Background Remover. Selecting a tool opens a calm, single-purpose local-media workspace. A combined editing surface is outside the current scope.
 
 Tool panels may visualize UI anatomy and data relationships. They must not use prepared footage, decorative waveforms or fabricated metrics as if they came from analysis.
 
@@ -20,7 +20,9 @@ Home, `/lab` and `/roadmap` explain each tool with an animated illustration. The
 
 Auto Subtitles has its own speaker, Alin, who is not part of the face-matching cast. The subtitle illustration shows her on a video frame with the current line as a caption, the lines being written into a list as a playhead crosses a speech strip, and "4 lines written". She is also the faint portrait in the tool's empty source slot, above two dashed caption placeholders and a waiting cursor. The tool uses its own blue signal on the shared workspace layout.
 
-The home hero timeline has one lane per tool: Face, Anime, Bass and Subs. The Subs lane shows caption blocks with Alin's round avatar, the line and its speech. Ahead of the playhead a block waits in grey; as the playhead crosses it, the speech lights up and the line is typed with a cursor.
+Background Remover's subject is Kian, a red-haired man in front of a dusk landscape. In its illustration a scan crosses the original while the landscape is wiped away from the cut-out on a checkerboard, and a PNG chip pops in; Kian himself never moves. The empty source slot shows his faint portrait on a checkerboard. The tool uses a pink signal. Noor, Theo, Yara and Rumi are further portraits for the Cutout lane, the privacy diagram and the roadmap's Video Enhancer preview.
+
+The home hero timeline has one lane per tool: Face, Anime, Bass, Subs and Cutout. Clips on every lane share one grid of equal blocks. On the face lanes the playhead scans each clip's face, then locks on with a MATCH tag or greys the clip out with a NO MATCH tag. On the Cutout lane each clip is one character on one of eight backdrops; left of the playhead the backdrop is keyed out to a checkerboard. Only the timeline band itself scrubs with the pointer. The Subs lane shows caption blocks with Alin's round avatar, the line and its speech. Ahead of the playhead a block waits in grey; as the playhead crosses it, the speech lights up and the line is typed with a cursor.
 
 Illustrations carry an `Illustration:` accessible label and stay out of the tool workspaces. A workspace only ever shows results from a real local analysis.
 
@@ -30,7 +32,7 @@ Long sections carry slowly drifting editing marks (markers, crop corners, clips,
 
 ## Not found
 
-The 404 page uses the same frame as the public pages and the same visual language as the tool illustrations. The requested address is framed like a reference, the lab's four real tools are the frames, and a scan line checks each one and marks it as no match. The scene ends with "0 tools matched". With reduced motion, it shows the finished result.
+The 404 page uses the same frame as the public pages and the same visual language as the tool illustrations. The requested address is framed like a reference, the lab's five real tools are the frames, and a scan line checks each one and marks it as no match. The scene ends with "0 tools matched". With reduced motion, it shows the finished result.
 
 ## Token roles
 

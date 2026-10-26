@@ -1,4 +1,4 @@
-export type ToolSlug = "face-recognition" | "bass-markers" | "anime-face-recognition" | "auto-subtitles";
+export type ToolSlug = "face-recognition" | "bass-markers" | "anime-face-recognition" | "auto-subtitles" | "background-remover";
 
 export type ToolDefinition = {
   slug: ToolSlug;
@@ -30,7 +30,7 @@ export const primaryTools: ToolDefinition[] = [
   {
     slug: "bass-markers", index: "03", title: "Music & Bass Markers", shortTitle: "Put the hits on the timeline",
     eyebrow: "Music / bass and impact points", description: "Find strong hits in a local audio file and turn them into adjustable edit markers.",
-    promise: "Let the rhythm points arrive before you start cutting.", input: "One local audio file", output: "Marker-rich WAV + timing data", accent: "blue",
+    promise: "Let the rhythm points arrive before you start cutting.", input: "One local audio file", output: "WAV with markers + timing data", accent: "blue",
     results: ["Bass and impact candidates", "Sensitivity and spacing controls", "Editable marker timeline", "WAV, XMP, JSON and CSV export"],
   },
   {
@@ -39,6 +39,12 @@ export const primaryTools: ToolDefinition[] = [
     promise: "Stop typing subtitles by hand while scrubbing back and forth.", input: "One local video or audio file", output: "Timed English subtitles", accent: "blue",
     results: ["Local English transcription", "Timed, readable subtitle lines", "Editable text for every line", "SRT, VTT and transcript export"],
   },
+  {
+    slug: "background-remover", index: "05", title: "Background Remover", shortTitle: "Cut the subject out of an image",
+    eyebrow: "Images / subject cut-out", description: "Separate the subject from its background and export a transparent PNG or a matte.",
+    promise: "Stop masking thumbnails and stills by hand.", input: "One local image", output: "Transparent PNG + matte", accent: "rust",
+    results: ["Local subject separation", "Before and after comparison", "Adjustable edge", "PNG, background and matte export"],
+  },
 ];
 
 export function getTool(slug: string) {
@@ -46,5 +52,5 @@ export function getTool(slug: string) {
 }
 
 export function isToolAvailable(slug: ToolSlug) {
-  return slug === "face-recognition" || slug === "anime-face-recognition" || slug === "bass-markers" || slug === "auto-subtitles";
+  return slug === "face-recognition" || slug === "anime-face-recognition" || slug === "bass-markers" || slug === "auto-subtitles" || slug === "background-remover";
 }

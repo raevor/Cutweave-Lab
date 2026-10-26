@@ -31,10 +31,12 @@
 .anime { --ill-accent: oklch(0.82 0.12 168); }
 .bass { --ill-accent: oklch(0.75 0.16 32); }
 .subtitles { --ill-accent: oklch(0.78 0.13 230); }
+.remover { --ill-accent: oklch(0.76 0.14 350); }
 :global(html[data-theme="light"]) .face { --ill-accent: oklch(0.55 0.18 295); }
 :global(html[data-theme="light"]) .anime { --ill-accent: oklch(0.56 0.11 170); }
 :global(html[data-theme="light"]) .bass { --ill-accent: oklch(0.6 0.17 32); }
 :global(html[data-theme="light"]) .subtitles { --ill-accent: oklch(0.52 0.14 240); }
+:global(html[data-theme="light"]) .remover { --ill-accent: oklch(0.55 0.17 352); }
 
 .panel { fill: var(--ill-panel); stroke: var(--ill-line); stroke-width: 1.5; }
 .track { fill: var(--ill-panel); stroke: var(--ill-line); stroke-width: 1.5; }
@@ -71,6 +73,10 @@
 .cueTime { fill: var(--ill-accent); font: 700 10px var(--font-mono); }
 .cueText { fill: var(--ill-ink); font-size: 12px; font-weight: 550; }
 .speechBar { fill: var(--ill-accent); opacity: .85; }
+.checkerA { fill: var(--ill-line); opacity: .55; }
+.frameEdge { fill: none; stroke: var(--ill-line); stroke-width: 1.5; }
+.checkerB { fill: var(--ill-card); }
+.chipText { fill: oklch(0.16 0.02 265); font: 800 11px var(--font-mono); letter-spacing: .08em; }
 
 .bar {
   fill: var(--ill-dim);

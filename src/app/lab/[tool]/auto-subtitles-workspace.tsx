@@ -234,7 +234,7 @@ export function AutoSubtitlesWorkspace({ tool }: { tool: ToolDefinition }) {
     // The player remounts between steps; only a newly loaded file starts with the full range.
     setRangeEnd((current) => current > 0 ? current : nextDuration);
     if (nextDuration > MAX_DURATION_SECONDS) {
-      setError("This source is longer than 30 minutes. Trim it first so transcription stays fast and memory stays bounded.");
+      setError("This source is longer than 30 minutes. Trim it first so transcription stays fast and the browser does not run out of memory.");
       setPhase("error");
     }
   }
@@ -269,7 +269,7 @@ export function AutoSubtitlesWorkspace({ tool }: { tool: ToolDefinition }) {
     try {
       const { samples, duration: audioDuration } = await decodeSpeechAudio(file, () => activeJobRef.current === jobId);
       if (activeJobRef.current !== jobId) return;
-      if (audioDuration > MAX_DURATION_SECONDS) throw new Error("This source is longer than 30 minutes. Trim it first so transcription stays fast and memory stays bounded.");
+      if (audioDuration > MAX_DURATION_SECONDS) throw new Error("This source is longer than 30 minutes. Trim it first so transcription stays fast and the browser does not run out of memory.");
       if (!duration) setDuration(audioDuration);
       // Only the chosen part goes to the worker; times stay relative to the full source.
       const partStart = Math.min(rangeStart, audioDuration);
@@ -425,7 +425,7 @@ export function AutoSubtitlesWorkspace({ tool }: { tool: ToolDefinition }) {
         <div>
           <p className={base.eyebrow}>{tool.index} / English speech to subtitle file</p>
           <h1>Auto<br /><em>Subtitles</em></h1>
-          <p className={base.heroPromise}>Turn spoken English into timed subtitle lines, fix any word by hand, and download SRT or VTT for your editor or player.</p>
+          <p className={base.heroPromise}>Turn spoken English into timed subtitle lines, fix any word by hand, and download SRT, VTT or a transcript for your editor.</p>
         </div>
         <div className={base.localStatus}>
           <span><i /> Runs on this device</span>
@@ -507,7 +507,7 @@ export function AutoSubtitlesWorkspace({ tool }: { tool: ToolDefinition }) {
               <div className={base.analysisControls}>
                 <p>02 / Choose the part and engine</p>
                 <h2>Create English subtitles</h2>
-                <span>A Whisper speech model runs inside this tab. The first run downloads the model ({MODEL_SIZE[engine]}); later runs load it from the browser cache.</span>
+                <span>The speech model runs inside this tab. The first run downloads the model ({MODEL_SIZE[engine]}); later runs load it from the browser cache.</span>
                 <div className={styles.rangeBlock}>
                   <div className={styles.rangeHead}>
                     <small>PART TO SUBTITLE</small>
@@ -541,7 +541,7 @@ export function AutoSubtitlesWorkspace({ tool }: { tool: ToolDefinition }) {
                     <small>Works everywhere · slower</small>
                   </button>
                 </div>
-                {error ? <p className={base.error} role="alert">{error}</p> : null}
+                {error ? <div className={base.intakeError}><p className={base.error} role="alert">{error}</p></div> : null}
                 {busy ? (
                   <div className={base.progressPanel}>
                     <div className={progressPercent === null ? base.progressIndeterminate : ""}>

@@ -41,6 +41,7 @@
 @keyframes scan { to { transform: translateY(258px); } }
 
 .caption { fill: color-mix(in oklch, currentColor 60%, transparent); font: 500 13px var(--font-sans); }
+.checker { fill: color-mix(in oklch, currentColor 7%, transparent); }
 .captionSlot { fill: color-mix(in oklch, currentColor 8%, transparent); stroke: var(--slot-line); stroke-width: 1.2; stroke-dasharray: 4 4; }
 
 .grid { fill: color-mix(in oklch, currentColor 10%, transparent); }
